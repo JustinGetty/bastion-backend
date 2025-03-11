@@ -1,0 +1,27 @@
+{
+	"bmi-installation" : null,
+	"compiler-frontend-variant" : "GNU",
+	"compiler-id" : "GNU",
+	"compiler-simulate-id" : "",
+	"config" : "Debug",
+	"cxx-modules" : {},
+	"database-info" : null,
+	"dir-cur-bld" : "/root/CLionProjects/bastion-auth/cmake-build-debug",
+	"dir-cur-src" : "/root/CLionProjects/bastion-auth",
+	"dir-top-bld" : "/root/CLionProjects/bastion-auth/cmake-build-debug",
+	"dir-top-src" : "/root/CLionProjects/bastion-auth",
+	"exports" : [],
+	"forward-modules-from-target-dirs" : [],
+	"include-dirs" : [],
+	"language" : "CXX",
+	"linked-target-dirs" : [],
+	"module-dir" : "/root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir",
+	"sources" : 
+	{
+		"CMakeFiles/bastion_auth.dir/main.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/root/CLionProjects/bastion-auth/main.cpp"
+		}
+	}
+}
