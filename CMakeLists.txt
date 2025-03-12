@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(SQLite3 REQUIRED)
 
 # Define the executable target
-add_executable(database_daemon main.cpp sqldaemon.c)
+add_executable(database_daemon main.cpp)
 
 # Now, link SQLite3 to the target (after defining it)
 target_link_libraries(database_daemon PRIVATE SQLite::SQLite3)

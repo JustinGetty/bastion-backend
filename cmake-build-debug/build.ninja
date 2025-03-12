@@ -64,12 +64,6 @@ build CMakeFiles/database_daemon.dir/main.cpp.o: CXX_COMPILER__database_daemon_s
   OBJECT_FILE_DIR = CMakeFiles/database_daemon.dir
   dyndep = CMakeFiles/database_daemon.dir/CXX.dd
 
-build CMakeFiles/database_daemon.dir/sqldaemon.c.o: C_COMPILER__database_daemon_unscanned_Debug /root/CLionProjects/database_daemon/sqldaemon.c || cmake_object_order_depends_target_database_daemon
-  DEP_FILE = CMakeFiles/database_daemon.dir/sqldaemon.c.o.d
-  FLAGS = -g -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/database_daemon.dir
-  OBJECT_FILE_DIR = CMakeFiles/database_daemon.dir
-
 build CMakeFiles/database_daemon.dir/CXX.dd | /root/CLionProjects/database_daemon/cmake-build-debug/CMakeFiles/database_daemon.dir/CXXModules.json CMakeFiles/database_daemon.dir/main.cpp.o.modmap: CXX_DYNDEP__database_daemon_Debug CMakeFiles/database_daemon.dir/main.cpp.o.ddi | /root/CLionProjects/database_daemon/cmake-build-debug/CMakeFiles/database_daemon.dir/CXXDependInfo.json
 
 
@@ -80,7 +74,7 @@ build CMakeFiles/database_daemon.dir/CXX.dd | /root/CLionProjects/database_daemo
 #############################################
 # Link the executable database_daemon
 
-build database_daemon: CXX_EXECUTABLE_LINKER__database_daemon_Debug CMakeFiles/database_daemon.dir/main.cpp.o CMakeFiles/database_daemon.dir/sqldaemon.c.o | /usr/lib64/libsqlite3.so
+build database_daemon: CXX_EXECUTABLE_LINKER__database_daemon_Debug CMakeFiles/database_daemon.dir/main.cpp.o | /usr/lib64/libsqlite3.so
   DEP_FILE = CMakeFiles/database_daemon.dir/link.d
   FLAGS = -g
   LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/database_daemon.dir/link.d

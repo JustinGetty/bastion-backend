@@ -1,6 +1,5 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef SQLDAEMON_H
+#define SQLDAEMON_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,11 +11,12 @@ extern "C" {
 #include <errno.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <bastion_data.h>
 
-#define SOCKET_PATH "/tmp/sqlite_daemon.sock"
+
 #define THREAD_POOL_SIZE 10
 #define TASK_QUEUE_CAPACITY 100
-#define DATABASE "/infinite/Projects/NoPass/Server/Databases/ProdDatabase"
+
 
 typedef struct {
 	int client_socket;
@@ -32,13 +32,11 @@ typedef struct {
 	pthread_cond_t cond_not_full;
 } task_queue_t;
 
-
 void task_queue_init(task_queue_t *q);
 void task_queue_push(task_queue_t *q, int client_sock);
 int task_queue_pop(task_queue_t *q);
 void *worker_thread(void *arg);
 
 
-#ifdef __cplusplus
-}
+
 #endif
