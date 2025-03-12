@@ -7,7 +7,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <time.h>
-#include "../Headers/custom_data.h"
+#include <bastion_data.h>
 
 /*
 TODO:
@@ -20,11 +20,14 @@ datastruct getByUserRowsVals(int argc, char *username, char **argr);
 
 void send_post_query(const char *query);
 
+
+
 /* --------- PROD ------*/
 
-STATUS get_basic_user_by_id(int userID, user_data_struct &user_data);
+STATUS get_basic_user_by_id(int userID, user_data_basic &user_data);
 full_user_data_enc get_full_enc_user_by_id(int userID);
-STATUS post_basic_user_data(user_data_struct user_data);
+STATUS post_basic_user_data(user_data_basic user_data);
 STATUS post_full_user_data(full_user_data_enc user_data);
+
 
 #endif

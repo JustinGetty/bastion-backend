@@ -18,6 +18,11 @@
 	"module-dir" : "/root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir",
 	"sources" : 
 	{
+		"CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/root/CLionProjects/bastion-auth/Sources/database_comm.cpp"
+		},
 		"CMakeFiles/bastion_auth.dir/main.cpp.o" : 
 		{
 			"language" : "CXX",

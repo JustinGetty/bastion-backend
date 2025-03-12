@@ -1,7 +1,7 @@
 #ifndef CONN_DATA_STORAGE_H
 #define CONN_DATA_STORAGE_H
 
-#include "custom_data.h"
+#include <bastion_data.h>
 #include <iostream>
 #include <vector>
 
