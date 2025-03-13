@@ -9,14 +9,14 @@
 #include <time.h>
 #include <bastion_data.h>
 
+
+
 /*
 TODO:
 1. implement https://sqlite.org/com/see.html
 */
 
 int insertByUserRowVals(int argc, char *username, char **argr, char **argv);
-
-datastruct getByUserRowsVals(int argc, char *username, char **argr);
 
 void send_post_query(const char *query);
 
