@@ -4,35 +4,14 @@
 task_queue_t queue;
 //NEVER ADD POINTERS TO THIS
 
-/* ----- CALLBACKS ---- */
-
-int basic_user_get_callback(void *data, int argc, char **argv, char **colNames) {
-    // argc: number of columns in the result
-    // argv: array of column values (as strings)
-    // colNames: array of column names
-
-    user_data_basic *user = (user_data_basic *)data; // Cast void* to user_data_basic
-
-    if (argc == 3) { //column count
-        user->user_id = atoi(argv[0]); // Convert string to int
-        strncpy(user->username, argv[1], sizeof(user->username) - 1);
-        strncpy(user->timestamp, argv[2], sizeof(user->timestamp) - 1);
-
-        user->username[sizeof(user->username) - 1] = '\0';
-        user->timestamp[sizeof(user->timestamp) - 1] = '\0';
-        user->status =  0;
-    }
-
-    return 0; // Returning 0 continues execution
-}
 
 void task_queue_init(task_queue_t *q) {
     q->front = 0;
     q->rear = 0;
     q->count = 0;
-    pthread_mutex_init(&q->mutex, NULL);
-    pthread_cond_init(&q->cond_not_empty, NULL);
-    pthread_cond_init(&q->cond_not_full, NULL);
+    pthread_mutex_init(&q->mutex, nullptr);
+    pthread_cond_init(&q->cond_not_empty, nullptr);
+    pthread_cond_init(&q->cond_not_full, nullptr);
 }
 
 void task_queue_push(task_queue_t *q, int client_sock) {
@@ -68,55 +47,130 @@ void *worker_thread(void *arg) {
     if (sqlite3_open(DATABASE, &db) != SQLITE_OK) {
         fprintf(stderr, "Thread %lu: Cannot open database: %s\n",
                 pthread_self(), sqlite3_errmsg(db));
-        pthread_exit(NULL);
+        pthread_exit(nullptr);
     }
 
     printf("Thread %lu: Opening database %s\n", pthread_self(), DATABASE);
 	//lets get this closer to actual max query size
    //also free this after use lmao???
-    char buffer[4096];
+    query_data inbound_data;
 
-
-    while (1) {
-        int client_sock = task_queue_pop(&queue);
-        user_data_basic user;
-        memset(&user, 0, sizeof(user));
-
+    while (true) {
+        const int client_sock = task_queue_pop(&queue);
+        int temp_status = -2;
         printf("Client sock in worker = %d\n", client_sock);
-        memset(buffer, 0, sizeof(buffer));
+        memset(&inbound_data, 0, sizeof(query_data));
 
-        ssize_t bytes_read = read(client_sock, buffer, sizeof(buffer) - 1);
+        ssize_t bytes_read = read(client_sock, &inbound_data, sizeof(query_data) - 1);
         if (bytes_read <= 0) {
             close(client_sock);
             continue;
         }
-        printf("Thread %lu received query: %s\n", pthread_self(), buffer);
+        printf("thread %lu received query: %s\n", pthread_self(), inbound_data.query);
 
-        char *errMsg = NULL;
-        int rc = sqlite3_exec(db, buffer, basic_user_get_callback, &user, &errMsg);
-        if (rc != SQLITE_OK) {
-            fprintf(stderr, "SQLite error: %s\n", errMsg);
-			int err = -1;
-            send(client_sock, errMsg, sizeof(int), 0);
-            sqlite3_free(errMsg);
-        } else {
-            printf("Query executed successfully\n");
-            printf("User ID: %d\n", user.user_id);
-            printf("Username: %s\n", user.username);
-            printf("Timestamp: %s\n", user.timestamp);
+        sqlite3_stmt *stmt;
+        const char *query = inbound_data.query;
+        if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
 
-			char buff[] = "Success";
-            //send full struct here, add success parameter to struct
-            send(client_sock, &user, sizeof(user), 0);
+            temp_status = -1;
         }
+        else {
+            for (int i = 0; i < inbound_data.num_params; i++) {
+                int index = i + 1;
+                query_param param = inbound_data.params[i];
+                 switch (param.type) {
+                     case PARAM_INT:
+                         if (sqlite3_bind_int(stmt, index, param.data.int_val) != SQLITE_OK) {
+                             //FUCKKKK THERES AN ERROR AHHHHHHHHHH
+                             temp_status = -1;
+                         }
+                         break;
+                     case PARAM_FLOAT:
+                         if (sqlite3_bind_double(stmt, index, param.data.float_val) != SQLITE_OK) {
+                             temp_status = -1;
+                         }
+                        break;
+                     case PARAM_TEXT:
+                         if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+                             temp_status = -1;
+                         }
+                         break;
+                     default:
+                         //ahhhh more errors to fix
+                         //#hope for good user input!
+                         break;
+                 }
+                if (temp_status == -1) {
+                    break;
+                }
+            }
+            //get requests
+            if (inbound_data.type == 'g') {
+                switch (inbound_data.real_type) {
+                    case GET_BASIC_USER_BY_ID: {
+                        user_data_basic user = {0};
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
+                            user.user_id = sqlite3_column_int(stmt, 0);
+                            const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
+                            if (raw_username != NULL) {
+                                strncpy(user.username, (const char*)raw_username, 49);
+                                user.username[49] = '\0';
+                            } else {
+                                user.username[0] = '\0';
+                            }
+                            user.timestamp = sqlite3_column_int(stmt, 2);
+                            if (temp_status == -2) {
+                                user.status = 0;
+                            }
+                            else {
+                                user.status = temp_status;
+                            }
+                            //error handle this as well
+                            send(client_sock, &user, sizeof(user_data_basic),0);
+
+                            printf("Query executed successfully\n");
+                            printf("User ID: %d\n", user.user_id);
+                            printf("Username: %s\n", user.username);
+                            printf("Timestamp: %d\n", user.timestamp);
+                        }
+                        break;
+                    }
+                    case GET_FULL_USER_BY_ID:
+                        //something
+                        printf("Not implemented FUll USER");
+                        break;
+
+                }
+            }
+        if (inbound_data.type == 'p') {
+            switch (inbound_data.real_type) {
+                case POST_BASIC_USER:
+                    if (sqlite3_step(stmt) != SQLITE_DONE) {
+                        if (temp_status == -1) {
+                            fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
+                            STATUS insert_status = DATABASE_FAILURE;
+                            send(client_sock, &insert_status, sizeof(STATUS),0);
+                        }
+
+                        } else {
+                            printf("Insert Successfull\n");
+                            STATUS insert_status = SUCCESS;
+                            send(client_sock, &insert_status, sizeof(STATUS),0);
+                        }
+                    }
+                break;
+            }
+        }
+        sqlite3_finalize(stmt);
         close(client_sock);
+
     }
-
-
-	//again this will prob never be hit
+    //again this will prob never be hit
     sqlite3_close(db);
     return NULL;
-}
+
+    }
+
 
 
 // TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
@@ -126,7 +180,7 @@ int main() {
 
     pthread_t threads[THREAD_POOL_SIZE];
     for (int i = 0; i < THREAD_POOL_SIZE; i++) {
-        if (pthread_create(&threads[i], NULL, worker_thread, NULL) != 0) {
+        if (pthread_create(&threads[i], nullptr, worker_thread, nullptr) != 0) {
             perror("pthread_create");
             exit(EXIT_FAILURE);
         }

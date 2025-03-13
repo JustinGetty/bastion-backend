@@ -107899,7 +107899,7 @@ namespace uWS {
     typedef uWS::TemplatedApp<true> SSLApp;
 }
 # 5 "/usr/local/include/bastion_data.h" 2 3
-# 17 "/usr/local/include/bastion_data.h" 3
+# 22 "/usr/local/include/bastion_data.h" 3
 typedef enum STATUS
 {
     SUCCESS,
@@ -107925,19 +107925,50 @@ typedef struct
 
 
 
+typedef enum {
+    PARAM_INT,
+    PARAM_FLOAT,
+    PARAM_TEXT
+} param_type;
 
-typedef struct
-{
-    char **rows;
-    char **values;
-} datastruct;
+typedef struct {
+    param_type type;
+    union {
+        int int_val;
+        float float_val;
+        char text_val[128];
+    } data;
+} query_param;
+
+
+
+typedef enum {
+    GET_BASIC_USER_BY_ID,
+     POST_BASIC_USER,
+     GET_FULL_USER_BY_ID,
+     POST_FULL_USER,
+     GET_USERNAME_BY_ID,
+     UPDATE_USERNAME_BY_ID,
+     GET_BASIC_USER_BY_USERNAME
+ }query_real_type;
+
+typedef struct {
+
+    char type;
+    query_real_type real_type;
+    char query[250];
+    int num_params;
+    query_param params[10];
+} query_data;
+
+
 
 
 typedef struct {
     int status;
     int user_id;
     char username[50];
-    char timestamp[30];
+    time_t timestamp;
 } user_data_basic;
 
 typedef struct
@@ -107982,46 +108013,13 @@ task_queue_t queue;
 
 
 
-
-int basic_user_get_callback(void *data, int argc, char **argv, char **colNames) {
-
-
-
-
-    user_data_basic *user = (user_data_basic *)data;
-
-    if (argc == 3) {
-        user->user_id = atoi(argv[0]);
-        strncpy(user->username, argv[1], sizeof(user->username) - 1);
-        strncpy(user->timestamp, argv[2], sizeof(user->timestamp) - 1);
-
-        user->username[sizeof(user->username) - 1] = '\0';
-        user->timestamp[sizeof(user->timestamp) - 1] = '\0';
-        user->status = 0;
-    }
-
-    return 0;
-}
-
 void task_queue_init(task_queue_t *q) {
     q->front = 0;
     q->rear = 0;
     q->count = 0;
-    pthread_mutex_init(&q->mutex, 
-# 33 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                 __null
-# 33 "/root/CLionProjects/database_daemon/main.cpp"
-                                     );
-    pthread_cond_init(&q->cond_not_empty, 
-# 34 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                         __null
-# 34 "/root/CLionProjects/database_daemon/main.cpp"
-                                             );
-    pthread_cond_init(&q->cond_not_full, 
-# 35 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                        __null
-# 35 "/root/CLionProjects/database_daemon/main.cpp"
-                                            );
+    pthread_mutex_init(&q->mutex, nullptr);
+    pthread_cond_init(&q->cond_not_empty, nullptr);
+    pthread_cond_init(&q->cond_not_full, nullptr);
 }
 
 void task_queue_push(task_queue_t *q, int client_sock) {
@@ -108055,92 +108053,192 @@ int task_queue_pop(task_queue_t *q) {
 void *worker_thread(void *arg) {
     sqlite3 *db;
     if (sqlite3_open(
-# 68 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 47 "/root/CLionProjects/database_daemon/main.cpp" 3
                     "/infinite/Projects/NoPass/Server/Databases/ProductionDatabase"
-# 68 "/root/CLionProjects/database_daemon/main.cpp"
+# 47 "/root/CLionProjects/database_daemon/main.cpp"
                             , &db) != 
-# 68 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 47 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                       0
-# 68 "/root/CLionProjects/database_daemon/main.cpp"
+# 47 "/root/CLionProjects/database_daemon/main.cpp"
                                                ) {
         fprintf(
-# 69 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 48 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                stderr
-# 69 "/root/CLionProjects/database_daemon/main.cpp"
+# 48 "/root/CLionProjects/database_daemon/main.cpp"
                      , "Thread %lu: Cannot open database: %s\n",
                 pthread_self(), sqlite3_errmsg(db));
-        pthread_exit(
-# 71 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                    __null
-# 71 "/root/CLionProjects/database_daemon/main.cpp"
-                        );
+        pthread_exit(nullptr);
     }
 
     printf("Thread %lu: Opening database %s\n", pthread_self(), 
-# 74 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 53 "/root/CLionProjects/database_daemon/main.cpp" 3
                                                                "/infinite/Projects/NoPass/Server/Databases/ProductionDatabase"
-# 74 "/root/CLionProjects/database_daemon/main.cpp"
+# 53 "/root/CLionProjects/database_daemon/main.cpp"
                                                                        );
 
 
-    char buffer[4096];
+    query_data inbound_data;
 
-    while (1) {
-        int client_sock = task_queue_pop(&queue);
-        user_data_basic user;
-        memset(&user, 0, sizeof(user));
-
+    while (true) {
+        const int client_sock = task_queue_pop(&queue);
+        int temp_status = -2;
         printf("Client sock in worker = %d\n", client_sock);
-        memset(buffer, 0, sizeof(buffer));
+        memset(&inbound_data, 0, sizeof(query_data));
 
-        ssize_t bytes_read = read(client_sock, buffer, sizeof(buffer) - 1);
+        ssize_t bytes_read = read(client_sock, &inbound_data, sizeof(query_data) - 1);
         if (bytes_read <= 0) {
             close(client_sock);
             continue;
         }
-        printf("Thread %lu received query: %s\n", pthread_self(), buffer);
+        printf("thread %lu received query: %s\n", pthread_self(), inbound_data.query);
 
-        char *errMsg = 
-# 94 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                      __null
-# 94 "/root/CLionProjects/database_daemon/main.cpp"
-                          ;
-        int rc = sqlite3_exec(db, buffer, basic_user_get_callback, &user, &errMsg);
-        if (rc != 
-# 96 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                 0
-# 96 "/root/CLionProjects/database_daemon/main.cpp"
-                          ) {
-            fprintf(
-# 97 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                   stderr
-# 97 "/root/CLionProjects/database_daemon/main.cpp"
-                         , "SQLite error: %s\n", errMsg);
-   int err = -1;
-            send(client_sock, errMsg, sizeof(int), 0);
-            sqlite3_free(errMsg);
-        } else {
-            printf("Query executed successfully\n");
-            printf("User ID: %d\n", user.user_id);
-            printf("Username: %s\n", user.username);
-            printf("Timestamp: %s\n", user.timestamp);
+        sqlite3_stmt *stmt;
+        const char *query = inbound_data.query;
+        if (sqlite3_prepare_v2(db, query, -1, &stmt, 
+# 73 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                    __null
+# 73 "/root/CLionProjects/database_daemon/main.cpp"
+                                                        ) != 
+# 73 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                             0
+# 73 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                      ) {
 
-   char buff[] = "Success";
-
-            send(client_sock, &user, sizeof(user), 0);
+            temp_status = -1;
         }
+        else {
+            for (int i = 0; i < inbound_data.num_params; i++) {
+                int index = i + 1;
+                query_param param = inbound_data.params[i];
+                 switch (param.type) {
+                     case PARAM_INT:
+                         if (sqlite3_bind_int(stmt, index, param.data.int_val) != 
+# 83 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                 0
+# 83 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                          ) {
+
+                             temp_status = -1;
+                         }
+                         break;
+                     case PARAM_FLOAT:
+                         if (sqlite3_bind_double(stmt, index, param.data.float_val) != 
+# 89 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                      0
+# 89 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                               ) {
+                             temp_status = -1;
+                         }
+                        break;
+                     case PARAM_TEXT:
+                         if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, 
+# 94 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                    ((sqlite3_destructor_type)-1)
+# 94 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                                    ) != 
+# 94 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                                         0
+# 94 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                                                  ) {
+                             temp_status = -1;
+                         }
+                         break;
+                     default:
+
+
+                         break;
+                 }
+                if (temp_status == -1) {
+                    break;
+                }
+            }
+
+            if (inbound_data.type == 'g') {
+                switch (inbound_data.real_type) {
+                    case GET_BASIC_USER_BY_ID: {
+                        user_data_basic user = {0};
+                        while (sqlite3_step(stmt) == 
+# 112 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                    100
+# 112 "/root/CLionProjects/database_daemon/main.cpp"
+                                                              ) {
+                            user.user_id = sqlite3_column_int(stmt, 0);
+                            const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
+                            if (raw_username != 
+# 115 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                               __null
+# 115 "/root/CLionProjects/database_daemon/main.cpp"
+                                                   ) {
+                                strncpy(user.username, (const char*)raw_username, 49);
+                                user.username[49] = '\0';
+                            } else {
+                                user.username[0] = '\0';
+                            }
+                            user.timestamp = sqlite3_column_int(stmt, 2);
+                            if (temp_status == -2) {
+                                user.status = 0;
+                            }
+                            else {
+                                user.status = temp_status;
+                            }
+
+                            send(client_sock, &user, sizeof(user_data_basic),0);
+
+                            printf("Query executed successfully\n");
+                            printf("User ID: %d\n", user.user_id);
+                            printf("Username: %s\n", user.username);
+                            printf("Timestamp: %d\n", user.timestamp);
+                        }
+                        break;
+                    }
+                    case GET_FULL_USER_BY_ID:
+
+                        printf("Not implemented FUll USER");
+                        break;
+
+                }
+            }
+        if (inbound_data.type == 'p') {
+            switch (inbound_data.real_type) {
+                case POST_BASIC_USER:
+                    if (sqlite3_step(stmt) != 
+# 148 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                             101
+# 148 "/root/CLionProjects/database_daemon/main.cpp"
+                                                        ) {
+                        if (temp_status == -1) {
+                            fprintf(
+# 150 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                   stderr
+# 150 "/root/CLionProjects/database_daemon/main.cpp"
+                                         , "Execution failed: %s\n", sqlite3_errmsg(db));
+                            STATUS insert_status = DATABASE_FAILURE;
+                            send(client_sock, &insert_status, sizeof(STATUS),0);
+                        }
+
+                        } else {
+                            printf("Insert Successfull\n");
+                            STATUS insert_status = SUCCESS;
+                            send(client_sock, &insert_status, sizeof(STATUS),0);
+                        }
+                    }
+                break;
+            }
+        }
+        sqlite3_finalize(stmt);
         close(client_sock);
+
     }
-
-
 
     sqlite3_close(db);
     return 
-# 117 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 170 "/root/CLionProjects/database_daemon/main.cpp" 3 4
           __null
-# 117 "/root/CLionProjects/database_daemon/main.cpp"
+# 170 "/root/CLionProjects/database_daemon/main.cpp"
               ;
-}
+
+    }
+
 
 
 
@@ -108150,20 +108248,12 @@ int main() {
 
     pthread_t threads[10];
     for (int i = 0; i < 10; i++) {
-        if (pthread_create(&threads[i], 
-# 128 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                       __null
-# 128 "/root/CLionProjects/database_daemon/main.cpp"
-                                           , worker_thread, 
-# 128 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                                            __null
-# 128 "/root/CLionProjects/database_daemon/main.cpp"
-                                                                ) != 0) {
+        if (pthread_create(&threads[i], nullptr, worker_thread, nullptr) != 0) {
             perror("pthread_create");
             exit(
-# 130 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 185 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                 1
-# 130 "/root/CLionProjects/database_daemon/main.cpp"
+# 185 "/root/CLionProjects/database_daemon/main.cpp"
                             );
         }
     }
@@ -108174,46 +108264,46 @@ int main() {
     socklen_t addrlen = sizeof(address);
 
     if ((server_fd = socket(
-# 139 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 194 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                            1
-# 139 "/root/CLionProjects/database_daemon/main.cpp"
+# 194 "/root/CLionProjects/database_daemon/main.cpp"
                                   , 
-# 139 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 194 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                     SOCK_STREAM
-# 139 "/root/CLionProjects/database_daemon/main.cpp"
+# 194 "/root/CLionProjects/database_daemon/main.cpp"
                                                , 0)) < 0) {
         perror("socket failed");
         exit(
-# 141 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 196 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 141 "/root/CLionProjects/database_daemon/main.cpp"
+# 196 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
     unlink(
-# 144 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 199 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 144 "/root/CLionProjects/database_daemon/main.cpp"
+# 199 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
 
     memset(&address, 0, sizeof(address));
     address.sun_family = 
-# 147 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 202 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                         1
-# 147 "/root/CLionProjects/database_daemon/main.cpp"
+# 202 "/root/CLionProjects/database_daemon/main.cpp"
                                ;
     strncpy(address.sun_path, 
-# 148 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 203 "/root/CLionProjects/database_daemon/main.cpp" 3
                              "/tmp/sqlite_daemon.sock"
-# 148 "/root/CLionProjects/database_daemon/main.cpp"
+# 203 "/root/CLionProjects/database_daemon/main.cpp"
                                                       , sizeof(address.sun_path) - 1);
 
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(
-# 152 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 207 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 152 "/root/CLionProjects/database_daemon/main.cpp"
+# 207 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
@@ -108221,15 +108311,15 @@ int main() {
     if (listen(server_fd, 64) < 0) {
         perror("listen failed");
         exit(
-# 158 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 213 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 158 "/root/CLionProjects/database_daemon/main.cpp"
+# 213 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
     printf("SQLite daemon listening on UNIX socket %s...\n", 
-# 160 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 215 "/root/CLionProjects/database_daemon/main.cpp" 3
                                                             "/tmp/sqlite_daemon.sock"
-# 160 "/root/CLionProjects/database_daemon/main.cpp"
+# 215 "/root/CLionProjects/database_daemon/main.cpp"
                                                                                      );
 
     while (1) {
@@ -108245,9 +108335,9 @@ int main() {
 
     close(server_fd);
     unlink(
-# 174 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 229 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 174 "/root/CLionProjects/database_daemon/main.cpp"
+# 229 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
     return 0;
 }
