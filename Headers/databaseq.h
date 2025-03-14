@@ -28,6 +28,8 @@ STATUS get_basic_user_by_id(int userID, user_data_basic &user_data);
 full_user_data_enc get_full_enc_user_by_id(int userID);
 STATUS post_basic_user_data(user_data_basic user_data);
 STATUS post_full_user_data(full_user_data_enc user_data);
+STATUS store_token_hash(const unsigned char *hash, size_t hash_len);
+STATUS get_token_hash(int id, unsigned char *hash_out, size_t hash_size);
 
 
 #endif
