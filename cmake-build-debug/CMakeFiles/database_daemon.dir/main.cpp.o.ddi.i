@@ -107899,7 +107899,7 @@ namespace uWS {
     typedef uWS::TemplatedApp<true> SSLApp;
 }
 # 5 "/usr/local/include/bastion_data.h" 2 3
-# 22 "/usr/local/include/bastion_data.h" 3
+# 23 "/usr/local/include/bastion_data.h" 3
 typedef enum STATUS
 {
     SUCCESS,
@@ -107928,7 +107928,8 @@ typedef struct
 typedef enum {
     PARAM_INT,
     PARAM_FLOAT,
-    PARAM_TEXT
+    PARAM_TEXT,
+    PARAM_BLOB
 } param_type;
 
 typedef struct {
@@ -107937,6 +107938,7 @@ typedef struct {
         int int_val;
         float float_val;
         char text_val[128];
+        blob blob_val;
     } data;
 } query_param;
 
@@ -107946,7 +107948,7 @@ typedef enum {
     GET_BASIC_USER_BY_ID,
      POST_BASIC_USER,
      GET_FULL_USER_BY_ID,
-     POST_FULL_USER,
+     POST_FULL_NEW_USER,
      GET_USERNAME_BY_ID,
      UPDATE_USERNAME_BY_ID,
      GET_BASIC_USER_BY_USERNAME
@@ -108199,30 +108201,26 @@ void *worker_thread(void *arg) {
                 }
             }
         if (inbound_data.type == 'p') {
-            switch (inbound_data.real_type) {
-                case POST_BASIC_USER:
-                    if (sqlite3_step(stmt) != 
+            if (sqlite3_step(stmt) != 
+# 146 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                     101
+# 146 "/root/CLionProjects/database_daemon/main.cpp"
+                                                ) {
+                if (temp_status == -1) {
+                    fprintf(
 # 148 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                             101
+                           stderr
 # 148 "/root/CLionProjects/database_daemon/main.cpp"
-                                                        ) {
-                        if (temp_status == -1) {
-                            fprintf(
-# 150 "/root/CLionProjects/database_daemon/main.cpp" 3 4
-                                   stderr
-# 150 "/root/CLionProjects/database_daemon/main.cpp"
-                                         , "Execution failed: %s\n", sqlite3_errmsg(db));
-                            STATUS insert_status = DATABASE_FAILURE;
-                            send(client_sock, &insert_status, sizeof(STATUS),0);
-                        }
+                                 , "Execution failed: %s\n", sqlite3_errmsg(db));
+                    STATUS insert_status = DATABASE_FAILURE;
+                    send(client_sock, &insert_status, sizeof(STATUS),0);
+                }
 
-                        } else {
-                            printf("Insert Successfull\n");
-                            STATUS insert_status = SUCCESS;
-                            send(client_sock, &insert_status, sizeof(STATUS),0);
-                        }
-                    }
-                break;
+                } else {
+                    printf("Insert Successfull\n");
+                    STATUS insert_status = SUCCESS;
+                    send(client_sock, &insert_status, sizeof(STATUS),0);
+                }
             }
         }
         sqlite3_finalize(stmt);
@@ -108232,9 +108230,9 @@ void *worker_thread(void *arg) {
 
     sqlite3_close(db);
     return 
-# 170 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 166 "/root/CLionProjects/database_daemon/main.cpp" 3 4
           __null
-# 170 "/root/CLionProjects/database_daemon/main.cpp"
+# 166 "/root/CLionProjects/database_daemon/main.cpp"
               ;
 
     }
@@ -108251,9 +108249,9 @@ int main() {
         if (pthread_create(&threads[i], nullptr, worker_thread, nullptr) != 0) {
             perror("pthread_create");
             exit(
-# 185 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 181 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                 1
-# 185 "/root/CLionProjects/database_daemon/main.cpp"
+# 181 "/root/CLionProjects/database_daemon/main.cpp"
                             );
         }
     }
@@ -108264,46 +108262,46 @@ int main() {
     socklen_t addrlen = sizeof(address);
 
     if ((server_fd = socket(
-# 194 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 190 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                            1
-# 194 "/root/CLionProjects/database_daemon/main.cpp"
+# 190 "/root/CLionProjects/database_daemon/main.cpp"
                                   , 
-# 194 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 190 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                     SOCK_STREAM
-# 194 "/root/CLionProjects/database_daemon/main.cpp"
+# 190 "/root/CLionProjects/database_daemon/main.cpp"
                                                , 0)) < 0) {
         perror("socket failed");
         exit(
-# 196 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 192 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 196 "/root/CLionProjects/database_daemon/main.cpp"
+# 192 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
     unlink(
-# 199 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 195 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 199 "/root/CLionProjects/database_daemon/main.cpp"
+# 195 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
 
     memset(&address, 0, sizeof(address));
     address.sun_family = 
-# 202 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 198 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                         1
-# 202 "/root/CLionProjects/database_daemon/main.cpp"
+# 198 "/root/CLionProjects/database_daemon/main.cpp"
                                ;
     strncpy(address.sun_path, 
-# 203 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 199 "/root/CLionProjects/database_daemon/main.cpp" 3
                              "/tmp/sqlite_daemon.sock"
-# 203 "/root/CLionProjects/database_daemon/main.cpp"
+# 199 "/root/CLionProjects/database_daemon/main.cpp"
                                                       , sizeof(address.sun_path) - 1);
 
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(
-# 207 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 203 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 207 "/root/CLionProjects/database_daemon/main.cpp"
+# 203 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
@@ -108311,15 +108309,15 @@ int main() {
     if (listen(server_fd, 64) < 0) {
         perror("listen failed");
         exit(
-# 213 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 209 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 213 "/root/CLionProjects/database_daemon/main.cpp"
+# 209 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
     printf("SQLite daemon listening on UNIX socket %s...\n", 
-# 215 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 211 "/root/CLionProjects/database_daemon/main.cpp" 3
                                                             "/tmp/sqlite_daemon.sock"
-# 215 "/root/CLionProjects/database_daemon/main.cpp"
+# 211 "/root/CLionProjects/database_daemon/main.cpp"
                                                                                      );
 
     while (1) {
@@ -108335,9 +108333,9 @@ int main() {
 
     close(server_fd);
     unlink(
-# 229 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 225 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 229 "/root/CLionProjects/database_daemon/main.cpp"
+# 225 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
     return 0;
 }

@@ -65,3 +65,9 @@
 121	123	1741881542272110059	CMakeFiles/database_daemon.dir/main.cpp.o.modmap	22e1dd4a720eb0f0
 123	1047	1741881542274110074	CMakeFiles/database_daemon.dir/main.cpp.o	8d90fa8e89c50c05
 1047	1083	1741881543198116666	database_daemon	8beea9bebd3b5949
+2	132	1741897707001516062	CMakeFiles/database_daemon.dir/main.cpp.o.ddi	b0c6e89c753c0d7f
+132	134	1741897707131516976	CMakeFiles/database_daemon.dir/CXX.dd	22e1dd4a720eb0f0
+132	134	1741897707131516976	/root/CLionProjects/database_daemon/cmake-build-debug/CMakeFiles/database_daemon.dir/CXXModules.json	22e1dd4a720eb0f0
+132	134	1741897707131516976	CMakeFiles/database_daemon.dir/main.cpp.o.modmap	22e1dd4a720eb0f0
+134	1077	1741897707133516990	CMakeFiles/database_daemon.dir/main.cpp.o	8d90fa8e89c50c05
+1077	1113	1741897708076523614	database_daemon	8beea9bebd3b5949

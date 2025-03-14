@@ -95,6 +95,10 @@ void *worker_thread(void *arg) {
                              temp_status = -1;
                          }
                          break;
+                     case PARAM_TOK_BLOB:
+                         if (sqlite3_bind_blob(stmt, index, param.data.token_val, TOKEN_HEX_LENGTH, SQLITE_TRANSIENT) != SQLITE_OK) {
+                             temp_status = -1;
+                         }
                      default:
                          //ahhhh more errors to fix
                          //#hope for good user input!
@@ -143,22 +147,18 @@ void *worker_thread(void *arg) {
                 }
             }
         if (inbound_data.type == 'p') {
-            switch (inbound_data.real_type) {
-                case POST_BASIC_USER:
-                    if (sqlite3_step(stmt) != SQLITE_DONE) {
-                        if (temp_status == -1) {
-                            fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
-                            STATUS insert_status = DATABASE_FAILURE;
-                            send(client_sock, &insert_status, sizeof(STATUS),0);
-                        }
+            if (sqlite3_step(stmt) != SQLITE_DONE) {
+                if (temp_status == -1) {
+                    fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
+                    STATUS insert_status = DATABASE_FAILURE;
+                    send(client_sock, &insert_status, sizeof(STATUS),0);
+                }
 
-                        } else {
-                            printf("Insert Successfull\n");
-                            STATUS insert_status = SUCCESS;
-                            send(client_sock, &insert_status, sizeof(STATUS),0);
-                        }
-                    }
-                break;
+                } else {
+                    printf("Insert Successfull\n");
+                    STATUS insert_status = SUCCESS;
+                    send(client_sock, &insert_status, sizeof(STATUS),0);
+                }
             }
         }
         sqlite3_finalize(stmt);
