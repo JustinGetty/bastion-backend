@@ -107899,7 +107899,133 @@ namespace uWS {
     typedef uWS::TemplatedApp<true> SSLApp;
 }
 # 5 "/usr/local/include/bastion_data.h" 2 3
-# 23 "/usr/local/include/bastion_data.h" 3
+# 1 "/usr/include/openssl/sha.h" 1 3 4
+# 12 "/usr/include/openssl/sha.h" 3 4
+        
+
+# 1 "/usr/include/openssl/macros.h" 1 3 4
+# 12 "/usr/include/openssl/macros.h" 3 4
+        
+
+# 1 "/usr/include/openssl/opensslconf.h" 1 3 4
+# 12 "/usr/include/openssl/opensslconf.h" 3 4
+        
+
+# 1 "/usr/include/openssl/configuration.h" 1 3 4
+# 42 "/usr/include/openssl/configuration.h" 3 4
+# 1 "/usr/include/openssl/configuration-x86_64.h" 1 3 4
+# 23 "/usr/include/openssl/configuration-x86_64.h" 3 4
+        
+
+
+extern "C" {
+# 156 "/usr/include/openssl/configuration-x86_64.h" 3 4
+}
+# 43 "/usr/include/openssl/configuration.h" 2 3 4
+# 15 "/usr/include/openssl/opensslconf.h" 2 3 4
+# 15 "/usr/include/openssl/macros.h" 2 3 4
+# 1 "/usr/include/openssl/opensslv.h" 1 3 4
+# 15 "/usr/include/openssl/opensslv.h" 3 4
+        
+
+
+extern "C" {
+# 106 "/usr/include/openssl/opensslv.h" 3 4
+}
+# 16 "/usr/include/openssl/macros.h" 2 3 4
+# 15 "/usr/include/openssl/sha.h" 2 3 4
+
+
+
+
+# 1 "/usr/include/openssl/e_os2.h" 1 3 4
+# 12 "/usr/include/openssl/e_os2.h" 3 4
+        
+# 22 "/usr/include/openssl/e_os2.h" 3 4
+extern "C" {
+# 265 "/usr/include/openssl/e_os2.h" 3 4
+typedef int64_t ossl_intmax_t;
+typedef uint64_t ossl_uintmax_t;
+# 307 "/usr/include/openssl/e_os2.h" 3 4
+}
+# 20 "/usr/include/openssl/sha.h" 2 3 4
+# 1 "/usr/lib/gcc/x86_64-redhat-linux/14/include/stddef.h" 1 3 4
+# 21 "/usr/include/openssl/sha.h" 2 3 4
+
+
+extern "C" {
+# 42 "/usr/include/openssl/sha.h" 3 4
+typedef struct SHAstate_st {
+    unsigned int h0, h1, h2, h3, h4;
+    unsigned int Nl, Nh;
+    unsigned int data[16];
+    unsigned int num;
+} SHA_CTX;
+
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA1_Init(SHA_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA1_Update(SHA_CTX *c, const void *data, size_t len);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA1_Final(unsigned char *md, SHA_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) void SHA1_Transform(SHA_CTX *c, const unsigned char *data);
+
+
+unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md);
+
+
+
+
+
+
+typedef struct SHA256state_st {
+    unsigned int h[8];
+    unsigned int Nl, Nh;
+    unsigned int data[16];
+    unsigned int num, md_len;
+} SHA256_CTX;
+
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA224_Init(SHA256_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA224_Update(SHA256_CTX *c,
+                                        const void *data, size_t len);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA224_Final(unsigned char *md, SHA256_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA256_Init(SHA256_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA256_Update(SHA256_CTX *c,
+                                        const void *data, size_t len);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA256_Final(unsigned char *md, SHA256_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) void SHA256_Transform(SHA256_CTX *c,
+                                            const unsigned char *data);
+
+
+unsigned char *SHA224(const unsigned char *d, size_t n, unsigned char *md);
+unsigned char *SHA256(const unsigned char *d, size_t n, unsigned char *md);
+# 110 "/usr/include/openssl/sha.h" 3 4
+typedef struct SHA512state_st {
+    unsigned long long h[8];
+    unsigned long long Nl, Nh;
+    union {
+        unsigned long long d[16];
+        unsigned char p[(16*8)];
+    } u;
+    unsigned int num, md_len;
+} SHA512_CTX;
+
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA384_Init(SHA512_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA384_Update(SHA512_CTX *c,
+                                        const void *data, size_t len);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA384_Final(unsigned char *md, SHA512_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA512_Init(SHA512_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA512_Update(SHA512_CTX *c,
+                                        const void *data, size_t len);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) int SHA512_Final(unsigned char *md, SHA512_CTX *c);
+__attribute__((deprecated("Since OpenSSL " "3.0"))) void SHA512_Transform(SHA512_CTX *c,
+                                            const unsigned char *data);
+
+
+unsigned char *SHA384(const unsigned char *d, size_t n, unsigned char *md);
+unsigned char *SHA512(const unsigned char *d, size_t n, unsigned char *md);
+
+
+}
+# 6 "/usr/local/include/bastion_data.h" 2 3
+# 32 "/usr/local/include/bastion_data.h" 3
 typedef enum STATUS
 {
     SUCCESS,
@@ -107910,11 +108036,14 @@ typedef enum STATUS
     BAD_DATA_LENGTH,
     BAD_DATA_TYPE,
     LOGIC_FAILURE,
-    UNKNOWN_FAILURE
+    UNKNOWN_FAILURE,
+    CRYPTO_FAILURE,
+    VERIFICATION_FAILURE
 } STATUS;
 
 
-typedef unsigned char *blob;
+typedef unsigned char token_hash[32];
+typedef unsigned char token[32];
 
 typedef struct
 {
@@ -107925,11 +108054,17 @@ typedef struct
 
 
 
+typedef struct {
+    STATUS status_;
+    token_hash token_hash_;
+}hash_token_struct;
+
 typedef enum {
     PARAM_INT,
     PARAM_FLOAT,
     PARAM_TEXT,
-    PARAM_BLOB
+    PARAM_TOKEN_HASH
+
 } param_type;
 
 typedef struct {
@@ -107938,7 +108073,8 @@ typedef struct {
         int int_val;
         float float_val;
         char text_val[128];
-        blob blob_val;
+        token_hash token_val_hash;
+
     } data;
 } query_param;
 
@@ -107951,7 +108087,9 @@ typedef enum {
      POST_FULL_NEW_USER,
      GET_USERNAME_BY_ID,
      UPDATE_USERNAME_BY_ID,
-     GET_BASIC_USER_BY_USERNAME
+     GET_BASIC_USER_BY_USERNAME,
+     GET_AUTH_TOKEN,
+     POST_AUTH_TOKEN
  }query_real_type;
 
 typedef struct {
@@ -107966,6 +108104,8 @@ typedef struct {
 
 
 
+
+
 typedef struct {
     int status;
     int user_id;
@@ -107973,13 +108113,13 @@ typedef struct {
     time_t timestamp;
 } user_data_basic;
 
+
 typedef struct
 {
     int user_id;
     char username[20];
     time_t user_creation_time;
-    blob enc_auth_token;
-    blob asym_priv_key;
+    token_hash enc_auth_token;
 
 } full_user_data_enc;
 # 15 "/root/CLionProjects/database_daemon/sqldaemon.h" 2
@@ -108145,6 +108285,22 @@ void *worker_thread(void *arg) {
                              temp_status = -1;
                          }
                          break;
+                     case PARAM_TOKEN_HASH:
+                         if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, 
+# 99 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                      32
+# 99 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                               , 
+# 99 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                                 ((sqlite3_destructor_type)-1)
+# 99 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                                                 ) != 
+# 99 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                                                                      0
+# 99 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                                                                               ) {
+                             temp_status = -1;
+                         }
                      default:
 
 
@@ -108160,16 +108316,16 @@ void *worker_thread(void *arg) {
                     case GET_BASIC_USER_BY_ID: {
                         user_data_basic user = {0};
                         while (sqlite3_step(stmt) == 
-# 112 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 116 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                                     100
-# 112 "/root/CLionProjects/database_daemon/main.cpp"
+# 116 "/root/CLionProjects/database_daemon/main.cpp"
                                                               ) {
                             user.user_id = sqlite3_column_int(stmt, 0);
                             const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
                             if (raw_username != 
-# 115 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 119 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                                __null
-# 115 "/root/CLionProjects/database_daemon/main.cpp"
+# 119 "/root/CLionProjects/database_daemon/main.cpp"
                                                    ) {
                                 strncpy(user.username, (const char*)raw_username, 49);
                                 user.username[49] = '\0';
@@ -108197,20 +108353,45 @@ void *worker_thread(void *arg) {
 
                         printf("Not implemented FUll USER");
                         break;
-
+                    case GET_AUTH_TOKEN:
+                        hash_token_struct hash_token;
+                        while (sqlite3_step(stmt) == 
+# 148 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                    100
+# 148 "/root/CLionProjects/database_daemon/main.cpp"
+                                                              ) {
+                            const void* blob = sqlite3_column_blob(stmt, 0);
+                            int blob_size = sqlite3_column_bytes(stmt, 0);
+                            if (blob_size != 
+# 151 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                            32 
+# 151 "/root/CLionProjects/database_daemon/main.cpp"
+                                                      || temp_status == -1) {
+                                hash_token.status_ = DATABASE_FAILURE;
+                            } else {
+                                memcpy(hash_token.token_hash_, blob, 
+# 154 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+                                                                    32
+# 154 "/root/CLionProjects/database_daemon/main.cpp"
+                                                                             );
+                                hash_token.status_ = SUCCESS;
+                            }
+                        }
+                        send(client_sock, &hash_token, sizeof(hash_token),0);
+                        printf("Query executed successfully\n");
                 }
             }
         if (inbound_data.type == 'p') {
             if (sqlite3_step(stmt) != 
-# 146 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 163 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                      101
-# 146 "/root/CLionProjects/database_daemon/main.cpp"
+# 163 "/root/CLionProjects/database_daemon/main.cpp"
                                                 ) {
                 if (temp_status == -1) {
                     fprintf(
-# 148 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 165 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                            stderr
-# 148 "/root/CLionProjects/database_daemon/main.cpp"
+# 165 "/root/CLionProjects/database_daemon/main.cpp"
                                  , "Execution failed: %s\n", sqlite3_errmsg(db));
                     STATUS insert_status = DATABASE_FAILURE;
                     send(client_sock, &insert_status, sizeof(STATUS),0);
@@ -108230,9 +108411,9 @@ void *worker_thread(void *arg) {
 
     sqlite3_close(db);
     return 
-# 166 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 183 "/root/CLionProjects/database_daemon/main.cpp" 3 4
           __null
-# 166 "/root/CLionProjects/database_daemon/main.cpp"
+# 183 "/root/CLionProjects/database_daemon/main.cpp"
               ;
 
     }
@@ -108249,9 +108430,9 @@ int main() {
         if (pthread_create(&threads[i], nullptr, worker_thread, nullptr) != 0) {
             perror("pthread_create");
             exit(
-# 181 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 198 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                 1
-# 181 "/root/CLionProjects/database_daemon/main.cpp"
+# 198 "/root/CLionProjects/database_daemon/main.cpp"
                             );
         }
     }
@@ -108262,46 +108443,46 @@ int main() {
     socklen_t addrlen = sizeof(address);
 
     if ((server_fd = socket(
-# 190 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 207 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                            1
-# 190 "/root/CLionProjects/database_daemon/main.cpp"
+# 207 "/root/CLionProjects/database_daemon/main.cpp"
                                   , 
-# 190 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 207 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                                     SOCK_STREAM
-# 190 "/root/CLionProjects/database_daemon/main.cpp"
+# 207 "/root/CLionProjects/database_daemon/main.cpp"
                                                , 0)) < 0) {
         perror("socket failed");
         exit(
-# 192 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 209 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 192 "/root/CLionProjects/database_daemon/main.cpp"
+# 209 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
     unlink(
-# 195 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 212 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 195 "/root/CLionProjects/database_daemon/main.cpp"
+# 212 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
 
     memset(&address, 0, sizeof(address));
     address.sun_family = 
-# 198 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 215 "/root/CLionProjects/database_daemon/main.cpp" 3 4
                         1
-# 198 "/root/CLionProjects/database_daemon/main.cpp"
+# 215 "/root/CLionProjects/database_daemon/main.cpp"
                                ;
     strncpy(address.sun_path, 
-# 199 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 216 "/root/CLionProjects/database_daemon/main.cpp" 3
                              "/tmp/sqlite_daemon.sock"
-# 199 "/root/CLionProjects/database_daemon/main.cpp"
+# 216 "/root/CLionProjects/database_daemon/main.cpp"
                                                       , sizeof(address.sun_path) - 1);
 
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(
-# 203 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 220 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 203 "/root/CLionProjects/database_daemon/main.cpp"
+# 220 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
 
@@ -108309,15 +108490,15 @@ int main() {
     if (listen(server_fd, 64) < 0) {
         perror("listen failed");
         exit(
-# 209 "/root/CLionProjects/database_daemon/main.cpp" 3 4
+# 226 "/root/CLionProjects/database_daemon/main.cpp" 3 4
             1
-# 209 "/root/CLionProjects/database_daemon/main.cpp"
+# 226 "/root/CLionProjects/database_daemon/main.cpp"
                         );
     }
     printf("SQLite daemon listening on UNIX socket %s...\n", 
-# 211 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 228 "/root/CLionProjects/database_daemon/main.cpp" 3
                                                             "/tmp/sqlite_daemon.sock"
-# 211 "/root/CLionProjects/database_daemon/main.cpp"
+# 228 "/root/CLionProjects/database_daemon/main.cpp"
                                                                                      );
 
     while (1) {
@@ -108333,9 +108514,9 @@ int main() {
 
     close(server_fd);
     unlink(
-# 225 "/root/CLionProjects/database_daemon/main.cpp" 3
+# 242 "/root/CLionProjects/database_daemon/main.cpp" 3
           "/tmp/sqlite_daemon.sock"
-# 225 "/root/CLionProjects/database_daemon/main.cpp"
+# 242 "/root/CLionProjects/database_daemon/main.cpp"
                                    );
     return 0;
 }

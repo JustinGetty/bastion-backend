@@ -95,8 +95,8 @@ void *worker_thread(void *arg) {
                              temp_status = -1;
                          }
                          break;
-                     case PARAM_TOK_BLOB:
-                         if (sqlite3_bind_blob(stmt, index, param.data.token_val, TOKEN_HEX_LENGTH, SQLITE_TRANSIENT) != SQLITE_OK) {
+                     case PARAM_TOKEN_HASH:
+                         if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
                              temp_status = -1;
                          }
                      default:
@@ -143,7 +143,20 @@ void *worker_thread(void *arg) {
                         //something
                         printf("Not implemented FUll USER");
                         break;
-
+                    case GET_AUTH_TOKEN:
+                        hash_token_struct hash_token;
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
+                            const void* blob = sqlite3_column_blob(stmt, 0);
+                            int blob_size = sqlite3_column_bytes(stmt, 0);
+                            if (blob_size != HASH_SIZE || temp_status == -1) {
+                                hash_token.status_ = DATABASE_FAILURE;
+                            } else {
+                                memcpy(hash_token.token_hash_, blob, HASH_SIZE);
+                                hash_token.status_ = SUCCESS;
+                            }
+                        }
+                        send(client_sock, &hash_token, sizeof(hash_token),0);
+                        printf("Query executed successfully\n");
                 }
             }
         if (inbound_data.type == 'p') {

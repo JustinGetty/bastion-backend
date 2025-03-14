@@ -247,4 +247,8 @@ CMakeFiles/database_daemon.dir/main.cpp.o.ddi: \
  /infinite/Projects/NoPass/SourceFiles/uWebSockets/src/WebSocketHandshake.h \
  /infinite/Projects/NoPass/SourceFiles/uWebSockets/src/WebSocket.h \
  /infinite/Projects/NoPass/SourceFiles/uWebSockets/src/WebSocketContextData.h \
- /infinite/Projects/NoPass/SourceFiles/uWebSockets/src/WebSocketContext.h
+ /infinite/Projects/NoPass/SourceFiles/uWebSockets/src/WebSocketContext.h \
+ /usr/include/openssl/sha.h /usr/include/openssl/macros.h \
+ /usr/include/openssl/opensslconf.h /usr/include/openssl/configuration.h \
+ /usr/include/openssl/configuration-x86_64.h \
+ /usr/include/openssl/opensslv.h /usr/include/openssl/e_os2.h
