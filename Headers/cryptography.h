@@ -1,3 +1,5 @@
+#ifndef CRYPTOGRAPHY_H
+#define CRYPTOGRAPHY_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,13 +20,13 @@
         - use CRYPTO_memcmp() to check for match
  */
 
-STATUS generate_token(unsigned char *token, size_t token_size);
-void compute_token_hash(const unsigned char *token, size_t token_size, unsigned char *hash);
-int constant_time_compare(const unsigned char *a, const unsigned char *b, size_t len);
-int verify_token(int id, const unsigned char *received_token);
+STATUS generate_token(token token_, size_t token_size);
+void compute_token_hash(const token token_, size_t token_size, token_hash token_hash_);
+STATUS constant_time_compare(const token_hash a, const token_hash *b, size_t len);
+STATUS verify_token(int id, const token received_token);
 
-
-
+void print_token_hash(token_hash token_hash);
+#endif
 
 
 
