@@ -1,11 +1,5 @@
 #ifndef CRYPTOGRAPHY_H
 #define CRYPTOGRAPHY_H
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <openssl/rand.h>
-#include <openssl/sha.h>
-#include <openssl/crypto.h>
 #include <bastion_data.h>
 
 /*
@@ -20,12 +14,25 @@
         - use CRYPTO_memcmp() to check for match
  */
 
+// AUTH TOKEN ------------------------------------------------------
 STATUS generate_token(token token_, size_t token_size);
 void compute_token_hash(const token token_, size_t token_size, token_hash token_hash_);
 STATUS constant_time_compare(const token_hash a, const token_hash *b, size_t len);
 STATUS verify_token(int id, const token received_token);
-
 void print_token_hash(token_hash token_hash);
+
+// ASYMMETRIC KEYS ---------------------------------------------------
+STATUS generate_asym_keypair(asym_key_struct key_structure);
+STATUS encrypt_with_pub_key(const unsigned char *pub_blob, int pub_blob_len,
+                const unsigned char *message, int message_len,
+                unsigned char *encrypted);
+STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_len,
+                const unsigned char *encrypted, int encrypted_len,
+                unsigned char *decrypted);
+
+// SYMMETRIC KEY ---------------------------------------------------
+STATUS generate_sym_key();
+STATUS decrypt_with_sym_key();
 #endif
 
 
