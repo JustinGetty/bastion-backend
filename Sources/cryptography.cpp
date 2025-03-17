@@ -287,6 +287,15 @@ cleanup:
     return status;
 }
 
+STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int encrypted_len, unsigned char *decrypted) {
+    priv_key_w_length priv_key_full;
+    get_user_private_key(user_id, &priv_key_full);
+    STATUS decrypt_status = decrypt_with_private_key(priv_key_full.priv_key, priv_key_full.priv_key_len, encrypted, encrypted_len, decrypted);
+    return decrypt_status;
+}
+
+/* SYMMETRIC KEYS ---------------------------------------------------*/
+
 int main(void) {
     /*
     // Token, hash and verification test code (omitted)

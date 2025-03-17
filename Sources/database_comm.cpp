@@ -56,6 +56,53 @@ query_param create_param_hash_token(const token_hash value) {
     return param;
 }
 
+query_param create_param_asym_key(priv_key_w_length priv_key) {
+    query_param param;
+    param.type = PARAM_ASM_KEY;
+    memcpy(&param.data.priv_key_w_len, &priv_key, priv_key.priv_key_len);
+}
+
+STATUS send_query(int sock, query_data data) {
+    size_t total_sent = 0;
+    size_t to_send = sizeof(query_data);
+    const unsigned char *buffer = (const unsigned char *)&data;
+
+    while (total_sent < to_send) {
+        ssize_t sent = send(sock, buffer + total_sent, to_send - total_sent, 0);
+        if (sent < 0) {
+            return TOO_FEW_BYTES_SENT;
+        }
+        if (sent == 0) {
+            return TOO_FEW_BYTES_SENT;
+        }
+        total_sent += sent;
+    }
+
+    return SUCCESS;
+}
+
+STATUS read_status(int sock) {
+    STATUS status;
+    size_t total_received = 0;
+    size_t to_receive = sizeof(STATUS);
+    unsigned char *buffer = (unsigned char *)&status;
+
+    while (total_received < to_receive) {
+        ssize_t received = recv(sock, buffer + total_received, to_receive - total_received, 0);
+        if (received < 0) {
+            return TOO_FEW_BYTES_RECEIVED;
+        }
+        if (received == 0) {
+            return TOO_FEW_BYTES_RECEIVED;
+        }
+        total_received += received;
+    }
+
+    return status;
+}
+
+
+
 STATUS get_basic_user_by_id(int userID, user_data_basic *user_data)
 {
     int sock = connect_to_database_daemon();
@@ -68,10 +115,35 @@ STATUS get_basic_user_by_id(int userID, user_data_basic *user_data)
     query_data data = set_query_data('g', GET_BASIC_USER_BY_ID, 1, params);
     strncpy(data.query, GET_BASIC_USER_QUERY, sizeof(data.query));
 
-    send(sock, &data, sizeof(query_data), 0);
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
     printf("Query Sent\n");
 
-    read(sock, user_data, sizeof(user_data_basic));
+
+    size_t total_received = 0;
+    size_t to_receive = sizeof(user_data_basic);
+    unsigned char *buffer = (unsigned char *)user_data;
+
+    while (total_received < to_receive) {
+        ssize_t received = recv(sock, buffer + total_received, to_receive - total_received, 0);
+        if (received < 0) {
+            perror("recv error");
+            return TOO_FEW_BYTES_RECEIVED;
+        }
+        if (received == 0) {
+            // The connection has been closed before reading all the data.
+            break;
+        }
+        total_received += received;
+    }
+
+    if (total_received != to_receive) {
+            perror("recv error");
+            return TOO_FEW_BYTES_RECEIVED;
+    }
+
     printf("Username Retrieved: %s\n", user_data->username);
 
     if (user_data->status != 0) {
@@ -94,11 +166,13 @@ STATUS post_basic_user_data(user_data_basic user_data) {
     query_data data = set_query_data('p', POST_BASIC_USER, 2, params);
 
     strncpy(data.query, POST_BASIC_USER_QUERY, sizeof(data.query));
-    send(sock, &data, sizeof(query_data), 0);
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
     printf("Query Sent\n");
 
-    STATUS post_status;
-    read(sock, &post_status, sizeof(STATUS));
+    STATUS post_status = read_status(sock);
     close(sock);
     return post_status;
 }
@@ -113,17 +187,20 @@ STATUS post_full_user_data(full_user_data_enc user_data) {
     query_param params[MAX_PARAMS];
     params[0] = create_param_text(user_data.username);
     params[1] = create_param_hash_token(user_data.enc_auth_token);
+    params[2] = create_param_asym_key(user_data.priv_key_w_len);
 
     //fill data
     query_data data = set_query_data('p', POST_FULL_NEW_USER, 3, params);
 
     strncpy(data.query, POST_FULL_NEW_USER_QUERY, sizeof(data.query));
     printf("query: %s\n", POST_FULL_NEW_USER_QUERY);
-    send(sock, &data, sizeof(query_data), 0);
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
     printf("Query Sent\n");
 
-    STATUS post_status;
-    read(sock, &post_status, sizeof(STATUS));
+    STATUS post_status = read_status(sock);
     close(sock);
     return post_status;
 }
@@ -139,10 +216,12 @@ STATUS store_token_hash(const int user_id, const token_hash token_hash_, const s
     params[1] = create_param_int(user_id);
     query_data data = set_query_data('p', POST_AUTH_TOKEN, 2, params);
     strncpy(data.query, UPDATE_USER_AUTH_TOKEN_BY_ID, sizeof(data.query));
-    send(sock, &data, sizeof(query_data), 0);
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
     printf("Query Sent\n");
-    STATUS post_status;
-    read(sock, &post_status, sizeof(STATUS));
+    STATUS post_status = read_status(sock);
     if (post_status != SUCCESS) {
         printf("FAilure");
     }
@@ -162,17 +241,75 @@ STATUS get_token_hash(const int id, token_hash hash_out) {
     query_data data = set_query_data('g', GET_AUTH_TOKEN, 1, params);
     strncpy(data.query, GET_AUTH_TOKEN_BY_ID, sizeof(data.query));
 
-    send(sock, &data, sizeof(query_data), 0);
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
+
     printf("Query Sent\n");
 
     hash_token_struct token_hash;
 
-    read(sock, &token_hash, sizeof(hash_token_struct));
+    size_t total_received = 0;
+    size_t to_receive = sizeof(hash_token_struct);
+    unsigned char *buffer = (unsigned char *)&token_hash;
+    while (total_received < to_receive) {
+        ssize_t received = recv(sock, buffer + total_received, to_receive - total_received, 0);
+        if (received < 0) {
+            perror("recv error");
+            return TOO_FEW_BYTES_RECEIVED;
+        }
+        if (received == 0) {
+            break;
+        }
+        total_received += received;
+    }
+
+    if (total_received != to_receive) {
+        return TOO_FEW_BYTES_RECEIVED;
+    }
+
     if (token_hash.status_ == SUCCESS) {
         memcpy(hash_out, token_hash.token_hash_, HASH_SIZE);
     }
 
     return token_hash.status_;
+}
+
+STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full) {
+
+    return SUCCESS;
+}
+STATUS store_user_private_key(const int user_id, priv_key_w_length *priv_key_full) {
+    int sock = connect_to_database_daemon();
+    if (sock < 0) {
+        return DATABASE_FAILURE;
+    }
+    query_param params[MAX_PARAMS];
+    params[0] = create_param_asym_key(*priv_key_full);
+    params[1] = create_param_int(user_id);
+
+    query_data data = set_query_data('p', POST_ASYM_PRIV_KEY, 2, params);
+    strncpy(data.query, UPDATE_USER_PRIV_KEY_BY_ID, sizeof(data.query));
+
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
+    printf("Query Sent\n");
+
+    STATUS post_status = read_status(sock);
+    if (post_status != SUCCESS) {
+        printf("Failure\n");
+    }
+    else printf("Success\n");
+
+    close(sock);
+    return post_status;
+
+}
+STATUS get_full_user_data(int user_id, user_data_basic &user_data) {
+    return SUCCESS;
 }
 
 //should only exist for the purpose of testing, DEF remove in prod!!!

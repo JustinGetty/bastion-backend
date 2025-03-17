@@ -23,12 +23,17 @@ void print_token_hash(token_hash token_hash);
 
 // ASYMMETRIC KEYS ---------------------------------------------------
 STATUS generate_asym_keypair(asym_key_struct key_structure);
+
 STATUS encrypt_with_pub_key(const unsigned char *pub_blob, int pub_blob_len,
                 const unsigned char *message, int message_len,
                 unsigned char *encrypted);
+
 STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_len,
                 const unsigned char *encrypted, int encrypted_len,
                 unsigned char *decrypted);
+
+STATUS decrypt_user_message(const unsigned char *encrypted, int encrypted_len, unsigned char *decrypted);
+
 
 // SYMMETRIC KEY ---------------------------------------------------
 STATUS generate_sym_key();
