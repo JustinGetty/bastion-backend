@@ -32,7 +32,13 @@ STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_le
                 const unsigned char *encrypted, int encrypted_len,
                 unsigned char *decrypted);
 
-STATUS decrypt_user_message(const unsigned char *encrypted, int encrypted_len, unsigned char *decrypted);
+STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_len,
+                                const unsigned char *encrypted, int encrypted_len,
+                                unsigned char *decrypted, int *decrypted_len_out);
+
+// Returns the total length of the DER-encoded object (header + content)
+// If the blob is malformed or max_blob_size is insufficient, returns 0.
+
 
 
 // SYMMETRIC KEY ---------------------------------------------------

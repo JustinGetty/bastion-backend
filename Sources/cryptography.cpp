@@ -19,6 +19,14 @@ void print_token_hash(token_hash token_hash) {
     printf("\n");
 }
 
+void print_private_key(priv_key_w_length private_key) {
+    printf("Private key: ");
+    for (int i = 0; i < private_key.priv_key_len; i++) {
+        printf("%02x", private_key.priv_key[i]);
+    }
+    printf("\n");
+}
+
 STATUS generate_token(token token_, size_t token_size) {
     if (RAND_bytes(token_, token_size) != 1) {
         fprintf(stderr, "Error generating random token.\n");
@@ -73,6 +81,9 @@ STATUS verify_token(int id, const token received_token) {
    The DER-encoded private key is in PKCS#8 format.
    Returns SUCCESS on success, or CRYPTO_FAILURE on error.
 */
+
+
+
 STATUS generate_asym_keypair(asym_key_struct *key_structure) {
     EVP_PKEY_CTX *ctx = nullptr;
     EVP_PKEY *pkey = nullptr;
@@ -82,7 +93,6 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
     int priv_len = 0, pub_len = 0;
     STATUS status = SUCCESS;
 
-    // Create a context for RSA key generation.
     ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
     if (!ctx) {
         fprintf(stderr, "Error creating EVP_PKEY_CTX\n");
@@ -230,7 +240,7 @@ cleanup:
 /* Decrypts a message using an RSA private key stored as a DER-encoded blob.
    The private key is decoded using d2i_PrivateKey_ex.
    The decrypted data is written into 'decrypted', and its length is stored in 'decrypted_len_out'.
-   Returns SUCCESS on success, or CRYPTO_FAILURE on error.
+   Returns SUCCESS on success, or CRYPTO_FAILURE on error
 */
 STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_len,
                                 const unsigned char *encrypted, int encrypted_len,
@@ -290,16 +300,15 @@ cleanup:
 STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int encrypted_len, unsigned char *decrypted) {
     priv_key_w_length priv_key_full;
     get_user_private_key(user_id, &priv_key_full);
-    STATUS decrypt_status = decrypt_with_private_key(priv_key_full.priv_key, priv_key_full.priv_key_len, encrypted, encrypted_len, decrypted);
+    int len_out;
+    int *ptr = &len_out;
+    STATUS decrypt_status = decrypt_with_private_key(priv_key_full.priv_key, priv_key_full.priv_key_len, encrypted, encrypted_len, decrypted, ptr);
     return decrypt_status;
 }
 
 /* SYMMETRIC KEYS ---------------------------------------------------*/
 
 int main(void) {
-    /*
-    // Token, hash and verification test code (omitted)
-    */
 
     asym_key_struct asym_keys;
     if (generate_asym_keypair(&asym_keys) != SUCCESS) {
@@ -307,6 +316,25 @@ int main(void) {
         return -1;
     }
 
+    priv_key_w_length private_key_full;
+    memcpy(private_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
+    private_key_full.priv_key_len = asym_keys.priv_key_len;
+
+    STATUS store_status = store_user_private_key(1, &private_key_full);
+    printf("stored private key status: %s\n", store_status);
+    printf("\nPrivate key stored: \n");
+    print_private_key(private_key_full);
+    printf("stored private key length: %d\n", asym_keys.priv_key);
+
+    priv_key_w_length priv_key_retrieved;
+    STATUS retrieval_status = get_user_private_key(1, &priv_key_retrieved);
+    printf("Retrieval status: %s\n", retrieval_status);
+    printf("Private key retrieved length: %d", priv_key_retrieved.priv_key_len);
+    printf("\nPrivate key retrieved: \n");
+    print_private_key(priv_key_retrieved);
+
+
+    /*
     const char *message = "Hello world!";
     int message_len = strlen(message);
     unsigned char encrypted[ASYM_SIZE] = {0};
@@ -322,7 +350,6 @@ int main(void) {
     }
     printf("Encryption succeeded. Encrypted length: %d bytes\n", encrypted_len);
 
-    // Print encrypted data in hexadecimal format.
     printf("Encrypted text: ");
     for (int i = 0; i < encrypted_len; i++) {
         printf("%02x", encrypted[i]);
@@ -337,5 +364,6 @@ int main(void) {
     }
     decrypted[decrypted_len] = '\0';
     printf("Decrypted message: %s\n", decrypted);
+    */
     return 0;
 }
