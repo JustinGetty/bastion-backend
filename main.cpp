@@ -99,6 +99,10 @@ void *worker_thread(void *arg) {
                          if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
                              temp_status = -1;
                          }
+                     case PARAM_ASM_KEY:
+                         if (sqlite3_bind_blob(stmt, index, param.data.priv_key_w_len.priv_key, param.data.priv_key_w_len.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK) {
+                             temp_status = -1;
+                         }
                      default:
                          //ahhhh more errors to fix
                          //#hope for good user input!
