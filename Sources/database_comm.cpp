@@ -430,11 +430,12 @@ STATUS get_full_user_data(int user_id, full_user_data *user_data) {
     }
     if (full_user_data.user_status == SUCCESS) {
         //memcopy
-        memcpy(&user_data, &full_user_data, sizeof(full_user_data));
+        memcpy(user_data, &full_user_data, sizeof(full_user_data));
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {
            return CRYPTO_FAILURE;
         }
+        printf("Here\n");
         user_data->priv_key_w_len.priv_key_len = len_of_key;
     }
     return user_data->user_status;

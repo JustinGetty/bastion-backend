@@ -13,6 +13,7 @@
 #include <openssl/evp.h>
 
 void print_token_hash(token_hash token_hash) {
+    printf("Token Hash:\n");
     for (int i = 0; i < HASH_SIZE; i++) {
         printf("%02x", token_hash[i]);
     }
@@ -20,7 +21,7 @@ void print_token_hash(token_hash token_hash) {
 }
 
 void print_private_key(priv_key_w_length private_key) {
-    printf("Private key: ");
+    printf("Private key: \n");
     for (int i = 0; i < private_key.priv_key_len; i++) {
         printf("%02x", private_key.priv_key[i]);
     }
@@ -310,29 +311,17 @@ STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int enc
 
 int main(void) {
 
-    asym_key_struct asym_keys;
-    if (generate_asym_keypair(&asym_keys) != SUCCESS) {
-        printf("ERROR generating asym keypair\n");
-        return -1;
+    full_user_data *user_data;
+    STATUS ret_status = get_full_user_data(1, user_data);
+    if (ret_status == SUCCESS) {
+        printf("retrieval success\n");
+        printf("User ID: %d\n", user_data->user_id);
+        printf("Username: %s\n", user_data->username);
+        print_token_hash(user_data->enc_auth_token);
+        print_private_key(user_data->priv_key_w_len);
+    } else {
+        printf("Failure");
     }
-
-    priv_key_w_length private_key_full;
-    memcpy(private_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
-    private_key_full.priv_key_len = asym_keys.priv_key_len;
-
-    STATUS store_status = store_user_private_key(1, &private_key_full);
-    printf("stored private key status: %s\n", store_status);
-    printf("\nPrivate key stored: \n");
-    print_private_key(private_key_full);
-    printf("stored private key length: %d\n", asym_keys.priv_key);
-
-    priv_key_w_length priv_key_retrieved;
-    STATUS retrieval_status = get_user_private_key(1, &priv_key_retrieved);
-    printf("Retrieval status: %s\n", retrieval_status);
-    printf("Private key retrieved length: %d", priv_key_retrieved.priv_key_len);
-    printf("\nPrivate key retrieved: \n");
-    print_private_key(priv_key_retrieved);
-
 
     /*
     const char *message = "Hello world!";
