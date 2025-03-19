@@ -51,8 +51,8 @@
         }
 
         printf("Thread %lu: Opening database %s\n", pthread_self(), DATABASE);
-	    //lets get this closer to actual max query size
-       //also free this after use lmao???
+        //lets get this closer to actual max query size
+        //also free this after use lmao???
         query_data inbound_data;
 
         while (true) {
@@ -78,54 +78,87 @@
                 for (int i = 0; i < inbound_data.num_params; i++) {
                     int index = i + 1;
                     query_param param = inbound_data.params[i];
-                     switch (param.type) {
-                         case PARAM_INT:
-                             printf("Binding INT\n");
-                             printf("Int to bind: %d\n", param.data.int_val);
-                             if (sqlite3_bind_int(stmt, index, param.data.int_val) != SQLITE_OK) {
-                                 //FUCKKKK THERES AN ERROR AHHHHHHHHHH
-                                 temp_status = -1;
-                             }
-                             break;
-                         case PARAM_FLOAT:
-                             printf("Binding FLOAT\n");
-                             printf("Float to bind: %f\n", param.data.float_val);
-                             if (sqlite3_bind_double(stmt, index, param.data.float_val) != SQLITE_OK) {
-                                 temp_status = -1;
-                             }
-                            break;
-                         case PARAM_TEXT:
-                             printf("Binding TEXT\n");
-                                printf("Text to bind: %s\n", param.data.text_val);
-                             if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
-                                 temp_status = -1;
-                             }
-                             break;
-                         case PARAM_TOKEN_HASH:
-                             printf("Binding TOKEN_HASH\n");
-                             for (int i = 0; i < HASH_SIZE; i++) {
-                                 printf("%02x", param.data.token_val_hash[i]);
-                             }
-                             printf("\n");
-                             if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
-                                 temp_status = -1;
-                             }
-                         case PARAM_ASM_KEY:
-                             printf("Binding ASM_KEY\n");
-                             printf("Private key: ");
-                             for (int i = 0; i < param.data.priv_key_w_len.priv_key_len; i++) {
-                                 printf("%02x", param.data.priv_key_w_len.priv_key[i]);
-                             }
-                             printf("\n");
+                    switch (param.type) {
+                        case PARAM_INT:
+                            printf("Binding INT\n");
+                        printf("Int to bind: %d\n", param.data.int_val);
+                        if (sqlite3_bind_int(stmt, index, param.data.int_val) != SQLITE_OK) {
+                            //FUCKKKK THERES AN ERROR AHHHHHHHHHH
+                            printf("Int bind error");
+                            temp_status = -1;
+                        }
+                        break;
 
-                             if (sqlite3_bind_blob(stmt, index, param.data.priv_key_w_len.priv_key, param.data.priv_key_w_len.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK) {
-                                 temp_status = -1;
-                             }
-                         default:
-                             //ahhhh more errors to fix
-                             //#hope for good user input!
-                             break;
-                     }
+                        case PARAM_FLOAT:
+                            printf("Binding FLOAT\n");
+                        printf("Float to bind: %f\n", param.data.float_val);
+                        if (sqlite3_bind_double(stmt, index, param.data.float_val) != SQLITE_OK) {
+                            temp_status = -1;
+                        }
+                        break;
+
+                        case PARAM_TEXT:
+                            printf("Binding TEXT\n");
+                        printf("Text to bind: %s\n", param.data.text_val);
+                        if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+                            temp_status = -1;
+                        }
+                        break;
+
+                        case PARAM_TOKEN_HASH:
+                            printf("Binding TOKEN_HASH\n");
+                        for (int i = 0; i < HASH_SIZE; i++) {
+                            printf("%02x", param.data.token_val_hash[i]);
+                        }
+                        printf("\n");
+                        if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                            temp_status = -1;
+                        }
+                        break;
+
+                        case PARAM_ASM_KEY:
+                            printf("Binding ASM_KEY\n");
+                        printf("Private key: ");
+                        for (int i = 0; i < param.data.priv_key_w_len.priv_key_len; i++) {
+                            printf("%02x", param.data.priv_key_w_len.priv_key[i]);
+                        }
+                        printf("\n");
+
+                        if (sqlite3_bind_blob(stmt, index, param.data.priv_key_w_len.priv_key, param.data.priv_key_w_len.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK) {
+                            temp_status = -1;
+                        }
+                        break;
+
+                        case PARAM_SYM_KEY:
+                            printf("Binding SYM_KEY\n");
+                            printf("Sym key: ");
+                            for (int i = 0; i < KEY_SIZE; i++) {
+                                printf("%02x", param.data.sym_key_val[i]);
+                            }
+
+                            if (sqlite3_bind_blob(stmt, index, param.data.sym_key_val, KEY_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                                temp_status = -1;
+                            }
+                            break;
+
+                        case PARAM_SYM_IV:
+                            printf("Binding SYM_IV\n");
+                            printf("\nIV:\n");
+                            for (int i = 0; i < IV_SIZE; i++) {
+                                printf("%02x", param.data.sym_iv_val[i]);
+                            }
+                            printf("\n");
+                            if (sqlite3_bind_blob(stmt, index, param.data.sym_iv_val, IV_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                                temp_status = -1;
+                            }
+                            break;
+
+                        default:
+                            //ahhhh more errors to fix
+                                //#hope for good user input!
+                                    printf("Error\n");
+                        break;
+                    }
                     if (temp_status == -1) {
                         break;
                     }
@@ -163,100 +196,144 @@
                         }
                         case GET_FULL_USER_BY_ID:
                             full_user_data user_data;
-                            while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
                             //"SELECT user_id, username, CAST(strftime('%%s', timestamp) AS INTEGER), auth_token, asym_priv_key FROM user WHERE user_id = ?"
-                                user_data.user_id = sqlite3_column_int(stmt, 0);
-                                const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
-                                if (raw_username != NULL) {
-                                    strncpy(user_data.username, (const char*)raw_username, 49);
-                                    user_data.username[49] = '\0';
-                                } else {
-                                    user_data.username[0] = '\0';
-                                }
-                                user_data.user_creation_time = sqlite3_column_int(stmt, 2);
-                                const unsigned char* raw_auth = (const unsigned char*)sqlite3_column_blob(stmt, 3);
-                                if (raw_auth != NULL) {
-                                    memcpy(user_data.enc_auth_token, raw_auth, sizeof(user_data.enc_auth_token));
-                                }
-                                const unsigned char* raw_asym_key = (const unsigned char*)sqlite3_column_blob(stmt, 4);
-                                if (raw_asym_key != NULL) {
-                                    memcpy(user_data.priv_key_w_len.priv_key, raw_asym_key, sizeof(user_data.priv_key_w_len.priv_key));
-                                }
-                                //add sym key here
-                                if (temp_status == -1) {
-                                    user_data.user_status = DATABASE_FAILURE;
-                                }
-                                else {
-                                    user_data.user_status = SUCCESS;
-                                }
-                                send(client_sock, &user_data, sizeof(user_data_basic),0);
-                                printf("Data retreived:\n");
-                                printf("User ID: %d\n", user_data.user_id);
-                                printf("Username: %s\n", user_data.username);
-                                printf("User creation time: %ld\n", user_data.user_creation_time);
+                            user_data.user_id = sqlite3_column_int(stmt, 0);
+                            const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
+                            if (raw_username != NULL) {
+                                strncpy(user_data.username, (const char*)raw_username, 49);
+                                user_data.username[49] = '\0';
+                            } else {
+                                user_data.username[0] = '\0';
                             }
-                            break;
+                            user_data.user_creation_time = sqlite3_column_int(stmt, 2);
+                            const unsigned char* raw_auth = (const unsigned char*)sqlite3_column_blob(stmt, 3);
+                            if (raw_auth != NULL) {
+                                memcpy(user_data.enc_auth_token, raw_auth, sizeof(user_data.enc_auth_token));
+                            }
+                            const unsigned char* raw_asym_key = (const unsigned char*)sqlite3_column_blob(stmt, 4);
+                            if (raw_asym_key != NULL) {
+                                memcpy(user_data.priv_key_w_len.priv_key, raw_asym_key, sizeof(user_data.priv_key_w_len.priv_key));
+                            }
+                            //add sym key here
+                            if (temp_status == -1) {
+                                user_data.user_status = DATABASE_FAILURE;
+                            }
+                            else {
+                                user_data.user_status = SUCCESS;
+                            }
+                            send(client_sock, &user_data, sizeof(full_user_data),0);
+                            printf("Data retreived:\n");
+                            printf("User ID: %d\n", user_data.user_id);
+                            printf("Username: %s\n", user_data.username);
+                            printf("User creation time: %d\n", user_data.user_creation_time);
+                        }
+                        break;
 
                         case GET_AUTH_TOKEN:
                             hash_token_struct hash_token;
-                            while (sqlite3_step(stmt) == SQLITE_ROW) {
-                                const void* blob = sqlite3_column_blob(stmt, 0);
-                                int blob_size = sqlite3_column_bytes(stmt, 0);
-                                if (blob_size != HASH_SIZE || temp_status == -1) {
-                                    hash_token.status_ = DATABASE_FAILURE;
-                                } else {
-                                    memcpy(hash_token.token_hash_, blob, HASH_SIZE);
-                                    hash_token.status_ = SUCCESS;
-                                }
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
+                            const void* blob = sqlite3_column_blob(stmt, 0);
+                            int blob_size = sqlite3_column_bytes(stmt, 0);
+                            if (blob_size != HASH_SIZE || temp_status == -1) {
+                                hash_token.status_ = DATABASE_FAILURE;
+                            } else {
+                                memcpy(hash_token.token_hash_, blob, HASH_SIZE);
+                                hash_token.status_ = SUCCESS;
                             }
-                            send(client_sock, &hash_token, sizeof(hash_token),0);
-                            printf("Query executed successfully\n");
-                            break;
+                        }
+                        send(client_sock, &hash_token, sizeof(hash_token),0);
+                        if (hash_token.status_ = SUCCESS) {
+
+                        }
+                        printf("Query executed successfully\n");
+                        break;
                         case GET_ASYM_PRIV_KEY:
                             priv_key_struct priv_key;
                         /*
                          *STORE LENGTH OF KEY TO COMPARE WHEN GRABBED
                          */
-                            while (sqlite3_step(stmt) == SQLITE_ROW) {
-                                const void* blob = sqlite3_column_blob(stmt, 0);
-                                int blob_size = sqlite3_column_bytes(stmt, 0);
-                                //ensure correct size here !!!!!! somehow
-                                if (temp_status == -1) {
-                                    priv_key.priv_key_status = DATABASE_FAILURE;
-                                } else {
-                                    memcpy(priv_key.priv_key, blob, blob_size);
-                                    priv_key.priv_key_status = SUCCESS;
-                                }
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
+                            const void* blob = sqlite3_column_blob(stmt, 0);
+                            int blob_size = sqlite3_column_bytes(stmt, 0);
+                            //ensure correct size here !!!!!! somehow
+                            if (temp_status == -1) {
+                                priv_key.priv_key_status = DATABASE_FAILURE;
+                            } else {
+                                memcpy(priv_key.priv_key, blob, blob_size);
+                                priv_key.priv_key_status = SUCCESS;
                             }
-                            send(client_sock, &priv_key, sizeof(priv_key),0);
-                            printf("Query executed successfully\n");
-                            break;
                         }
-                }
-            if (inbound_data.type == 'p') {
-                if (sqlite3_step(stmt) != SQLITE_DONE) {
-                    if (temp_status == -1) {
-                        fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
-                        STATUS insert_status = DATABASE_FAILURE;
-                        send(client_sock, &insert_status, sizeof(STATUS),0);
-                    }
+                        send(client_sock, &priv_key, sizeof(priv_key),0);
+                        if (priv_key.priv_key_status == SUCCESS) {
+                            printf("Query executed successfully\n");
+                        } else {
+                            printf("Query failed\n");
+                        }
+                        break;
 
+                        case GET_SYM_KEY:
+                            sym_key_full sym_key;
+                        while (sqlite3_step(stmt) == SQLITE_ROW) {
+                            const void* key = sqlite3_column_blob(stmt, 0);
+                            int key_len = sqlite3_column_bytes(stmt, 0);
+                            const void* iv = sqlite3_column_blob(stmt, 1);
+                            int iv_len = sqlite3_column_bytes(stmt, 1);
+                            if (temp_status == -1) {
+                                sym_key.sym_key_status = DATABASE_FAILURE;
+                            } else {
+                                memcpy(sym_key.symmetric_key, key, key_len);
+                                memcpy(sym_key.symmetric_iv, iv, iv_len);
+                                sym_key.sym_key_status = SUCCESS;
+                            }
+                        }
+                        send(client_sock, &sym_key, sizeof(sym_key),0);
+                        if (sym_key.sym_key_status == SUCCESS) {
+                            printf("Query executed successfully\n");
+                        } else {
+                            printf("Query failed\n");
+                        }
+                        break;
+
+                        default:
+                            printf("Error\n");
+                        break;
+                    }
+                }
+                if (inbound_data.type == 'p') {
+                    printf("Hit the post statement\n");
+                    int step_result = sqlite3_step(stmt);
+
+                    if (step_result == SQLITE_DONE) {
+                        // Success path - query executed successfully
+                        if (temp_status == -1) {
+                            // There was a binding error earlier
+                            fprintf(stderr, "Binding failed: %s\n", sqlite3_errmsg(db));
+                            STATUS update_status = DATABASE_FAILURE;
+                            send(client_sock, &update_status, sizeof(STATUS), 0);
+                            printf("Failed due to binding error\n");
+                        } else {
+                            printf("Update Successful\n");
+                            STATUS update_status = SUCCESS;
+                            send(client_sock, &update_status, sizeof(STATUS), 0);
+                        }
                     } else {
-                        printf("Insert Successfull\n");
-                        STATUS insert_status = SUCCESS;
-                        send(client_sock, &insert_status, sizeof(STATUS),0);
+                        // Failure path - query execution failed
+                        fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
+                        STATUS update_status = DATABASE_FAILURE;
+                        send(client_sock, &update_status, sizeof(STATUS), 0);
+                        printf("Failed due to execution error: %d\n", step_result);
                     }
                 }
             }
             sqlite3_finalize(stmt);
             close(client_sock);
-
         }
-        //again this will prob never be hit
-        sqlite3_close(db);
-        return NULL;
 
-        }
+            //again this will prob never be hit
+            sqlite3_close(db);
+            return NULL;
+}
 
 
 
