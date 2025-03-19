@@ -1,3 +1,4 @@
+/root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_data.dir
 /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir
 /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/edit_cache.dir
 /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/rebuild_cache.dir

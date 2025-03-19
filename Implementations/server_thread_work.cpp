@@ -1,6 +1,7 @@
 #include <iostream>
-#include "Headers/connection_data_queue.h"
-#include "Headers/databaseq.h"
+#include "connection_data_queue.h"
+#include "databaseq.h"
+
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
 {
@@ -21,6 +22,7 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
     }
 }
 
+//SERVER WORK GOES HERE
 void processConnectionData(ConnectionData data)
 {
     /*

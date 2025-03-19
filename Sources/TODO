@@ -3,3 +3,4 @@
 3. Signup process (starts with phone)
 4. make shit CONST where it can be
 5. all sensitive memory should be erased with explicit_bzero()
+6. https daemon should also have support for user account creation from the app

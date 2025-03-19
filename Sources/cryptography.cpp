@@ -4,9 +4,9 @@
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 #include <openssl/crypto.h>
-#include "Headers/cryptography.h"
+#include "cryptography.h"
 #include <bastion_data.h>
-#include "Headers/databaseq.h"
+#include "databaseq.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bn.h>
@@ -131,6 +131,7 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
+
     // Avoid double free: set bn_e to nullptr since ownership has been transferred.
     bn_e = nullptr;
 
@@ -395,6 +396,7 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
 }
 
 
+    /*
 int main() {
 
     sym_key key;
@@ -471,7 +473,6 @@ int main() {
 
     return 0;
 
-    /*
     full_user_data *user_data;
     STATUS ret_status = get_full_user_data(1, user_data);
     if (ret_status == SUCCESS) {
@@ -513,6 +514,6 @@ int main() {
     }
     decrypted[decrypted_len] = '\0';
     printf("Decrypted message: %s\n", decrypted);
-    */
     return 0;
 }
+*/

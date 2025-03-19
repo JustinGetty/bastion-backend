@@ -41,18 +41,148 @@ include CMakeFiles/rules.ninja
 
 cmake_ninja_workdir = /root/CLionProjects/bastion-auth/cmake-build-debug/
 # =============================================================================
+# Object build statements for STATIC_LIBRARY target bastion_data
+
+
+#############################################
+# Order-only phony target for bastion_data
+
+build cmake_object_order_depends_target_bastion_data: phony || .
+
+build CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Implementations/conn_data_storage.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Implementations/conn_data_storage.cpp | CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Implementations
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Implementations/conn_thread_pool.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Implementations/conn_thread_pool.cpp | CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Implementations
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Implementations/connection_data_queue.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Implementations/connection_data_queue.cpp | CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Implementations
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Implementations/server_thread_work.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Implementations/server_thread_work.cpp | CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Implementations
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Sources/cryptography.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Sources/cryptography.cpp | CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Sources
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.ddi: CXX_SCAN__bastion_data_Debug /root/CLionProjects/bastion-auth/Sources/database_comm.cpp || cmake_object_order_depends_target_bastion_data
+  DEP_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJ_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.ddi.i
+
+build CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o: CXX_COMPILER__bastion_data_scanned_Debug /root/CLionProjects/bastion-auth/Sources/database_comm.cpp | CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.modmap || cmake_object_order_depends_target_bastion_data CMakeFiles/bastion_data.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_data.dir/Sources
+  dyndep = CMakeFiles/bastion_data.dir/CXX.dd
+
+build CMakeFiles/bastion_data.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_data.dir/CXXModules.json CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.modmap CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.modmap CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.modmap CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.modmap CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.modmap CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.modmap: CXX_DYNDEP__bastion_data_Debug CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o.ddi CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o.ddi CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o.ddi CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o.ddi CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o.ddi CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o.ddi | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_data.dir/CXXDependInfo.json
+
+
+# =============================================================================
+# Link build statements for STATIC_LIBRARY target bastion_data
+
+
+#############################################
+# Link the static library libbastion_data.a
+
+build libbastion_data.a: CXX_STATIC_LIBRARY_LINKER__bastion_data_Debug CMakeFiles/bastion_data.dir/Implementations/conn_data_storage.cpp.o CMakeFiles/bastion_data.dir/Implementations/conn_thread_pool.cpp.o CMakeFiles/bastion_data.dir/Implementations/connection_data_queue.cpp.o CMakeFiles/bastion_data.dir/Implementations/server_thread_work.cpp.o CMakeFiles/bastion_data.dir/Sources/cryptography.cpp.o CMakeFiles/bastion_data.dir/Sources/database_comm.cpp.o
+  LANGUAGE_COMPILE_FLAGS = -g
+  OBJECT_DIR = CMakeFiles/bastion_data.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = libbastion_data.a
+  TARGET_PDB = bastion_data.a.dbg
+
+# =============================================================================
 # Object build statements for EXECUTABLE target bastion_auth
 
 
 #############################################
 # Order-only phony target for bastion_auth
 
-build cmake_object_order_depends_target_bastion_auth: phony || .
+build cmake_object_order_depends_target_bastion_auth: phony || cmake_object_order_depends_target_bastion_data
 
 build CMakeFiles/bastion_auth.dir/main.cpp.o.ddi: CXX_SCAN__bastion_auth_Debug /root/CLionProjects/bastion-auth/main.cpp || cmake_object_order_depends_target_bastion_auth
   DEP_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o.ddi.d
   DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o.ddi
   FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/src -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src
   OBJ_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o
   PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o.ddi.i
 
@@ -60,26 +190,12 @@ build CMakeFiles/bastion_auth.dir/main.cpp.o: CXX_COMPILER__bastion_auth_scanned
   DEP_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o.d
   DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_auth.dir/main.cpp.o.modmap
   FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/src -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src
   OBJECT_DIR = CMakeFiles/bastion_auth.dir
   OBJECT_FILE_DIR = CMakeFiles/bastion_auth.dir
   dyndep = CMakeFiles/bastion_auth.dir/CXX.dd
 
-build CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.ddi: CXX_SCAN__bastion_auth_Debug /root/CLionProjects/bastion-auth/Sources/database_comm.cpp || cmake_object_order_depends_target_bastion_auth
-  DEP_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.ddi.d
-  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.ddi
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJ_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o
-  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.ddi.i
-
-build CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o: CXX_COMPILER__bastion_auth_scanned_Debug /root/CLionProjects/bastion-auth/Sources/database_comm.cpp | CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.modmap || cmake_object_order_depends_target_bastion_auth CMakeFiles/bastion_auth.dir/CXX.dd
-  DEP_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.d
-  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.modmap
-  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/bastion_auth.dir
-  OBJECT_FILE_DIR = CMakeFiles/bastion_auth.dir/Sources
-  dyndep = CMakeFiles/bastion_auth.dir/CXX.dd
-
-build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXModules.json CMakeFiles/bastion_auth.dir/main.cpp.o.modmap CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.modmap: CXX_DYNDEP__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o.ddi CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o.ddi | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXDependInfo.json
+build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXModules.json CMakeFiles/bastion_auth.dir/main.cpp.o.modmap: CXX_DYNDEP__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o.ddi | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXDependInfo.json
 
 
 # =============================================================================
@@ -89,10 +205,11 @@ build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmak
 #############################################
 # Link the executable bastion_auth
 
-build bastion_auth: CXX_EXECUTABLE_LINKER__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o CMakeFiles/bastion_auth.dir/Sources/database_comm.cpp.o
+build bastion_auth: CXX_EXECUTABLE_LINKER__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o | libbastion_data.a /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/uSockets.a /usr/lib64/libcrypto.so /usr/lib64/libz.so || libbastion_data.a
   DEP_FILE = CMakeFiles/bastion_auth.dir/link.d
   FLAGS = -g
   LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/bastion_auth.dir/link.d
+  LINK_LIBRARIES = libbastion_data.a  /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/uSockets.a  /usr/lib64/libcrypto.so  /usr/lib64/libz.so
   OBJECT_DIR = CMakeFiles/bastion_auth.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -125,6 +242,8 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
+build bastion_data: phony libbastion_data.a
+
 # =============================================================================
 # Folder targets.
 
@@ -140,7 +259,7 @@ build codegen: phony
 #############################################
 # Folder: /root/CLionProjects/bastion-auth/cmake-build-debug
 
-build all: phony bastion_auth
+build all: phony libbastion_data.a bastion_auth
 
 # =============================================================================
 # Built-in targets
@@ -149,14 +268,14 @@ build all: phony bastion_auth
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /root/CLionProjects/bastion-auth/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.4/CMakeCCompiler.cmake CMakeFiles/3.31.4/CMakeCXXCompiler.cmake CMakeFiles/3.31.4/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindOpenSSL.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPackageMessage.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPkgConfig.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindZLIB.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/SelectLibraryConfigurations.cmake /root/CLionProjects/bastion-auth/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.4/CMakeCCompiler.cmake CMakeFiles/3.31.4/CMakeCXXCompiler.cmake CMakeFiles/3.31.4/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /root/CLionProjects/bastion-auth/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.4/CMakeCCompiler.cmake CMakeFiles/3.31.4/CMakeCXXCompiler.cmake CMakeFiles/3.31.4/CMakeSystem.cmake: phony
+build /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Compiler/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindOpenSSL.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPackageMessage.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindPkgConfig.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/FindZLIB.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-C.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/Linux.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/Platform/UnixPaths.cmake /root/.cache/JetBrains/RemoteDev/dist/16e0cd638d74a_CLion-251.23536.43/bin/cmake/linux/x64/share/cmake-3.31/Modules/SelectLibraryConfigurations.cmake /root/CLionProjects/bastion-auth/CMakeLists.txt CMakeCache.txt CMakeFiles/3.31.4/CMakeCCompiler.cmake CMakeFiles/3.31.4/CMakeCXXCompiler.cmake CMakeFiles/3.31.4/CMakeSystem.cmake: phony
 
 
 #############################################
