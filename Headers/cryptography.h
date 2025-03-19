@@ -42,8 +42,16 @@ STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_le
 
 
 // SYMMETRIC KEY ---------------------------------------------------
-STATUS generate_sym_key();
-STATUS decrypt_with_sym_key();
+STATUS generate_symmetric_key(unsigned char *key, size_t key_size);
+
+STATUS sym_decrypt(const unsigned char *ciphertext, int *ciphertext_len,
+                   const unsigned char *key, const unsigned char *iv,
+                   unsigned char *plaintext);
+
+STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
+                   const unsigned char *key, const unsigned char *iv,
+                   unsigned char *ciphertext, int *ciphertext_len);
+
 #endif
 
 

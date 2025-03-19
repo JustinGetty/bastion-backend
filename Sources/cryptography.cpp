@@ -20,6 +20,8 @@ void print_token_hash(token_hash token_hash) {
     printf("\n");
 }
 
+
+
 void print_private_key(priv_key_w_length private_key) {
     printf("Private key: \n");
     for (int i = 0; i < private_key.priv_key_len; i++) {
@@ -309,8 +311,167 @@ STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int enc
 
 /* SYMMETRIC KEYS ---------------------------------------------------*/
 
-int main(void) {
+STATUS generate_symmetric_key(unsigned char *key, size_t key_size) {
+    if (RAND_bytes(key, key_size) != 1) {
+        fprintf(stderr, "Error generating symmetric key\n");
+        return SYM_KEY_GEN_FAILURE;
+    }
+    return SUCCESS;
+}
 
+STATUS sym_decrypt(const unsigned char *ciphertext, int *ciphertext_len,
+                   const unsigned char *key, const unsigned char *iv,
+                   unsigned char *plaintext)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    int len, plaintext_len = 0;
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) {
+        fprintf(stderr, "Error creating EVP_CIPHER_CTX\n");
+        return SYM_DECRYPT_FAILURE;
+    }
+
+    if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) != 1) {
+        fprintf(stderr, "Error initializing decryption\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_DECRYPT_FAILURE;
+    }
+
+    if (EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, *ciphertext_len) != 1) {
+        fprintf(stderr, "Error during decryption\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_DECRYPT_FAILURE;
+    }
+    plaintext_len = len;
+
+    if (EVP_DecryptFinal_ex(ctx, plaintext + len, &len) != 1) {
+        fprintf(stderr, "Error during final decryption (possibly padding issue)\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_DECRYPT_FAILURE;
+    }
+    plaintext_len += len;
+
+    *ciphertext_len = plaintext_len;
+
+    EVP_CIPHER_CTX_free(ctx);
+    return SUCCESS;
+}
+
+
+STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
+                   const unsigned char *key, const unsigned char *iv,
+                   unsigned char *ciphertext, int *ciphertext_len)
+{
+    EVP_CIPHER_CTX *ctx = NULL;
+    int len;
+
+    if (!(ctx = EVP_CIPHER_CTX_new())) {
+        fprintf(stderr, "Error creating EVP_CIPHER_CTX\n");
+        return SYM_ENCRYPT_FAILURE;
+    }
+
+    if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) != 1) {
+        fprintf(stderr, "Error initializing encryption\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_ENCRYPT_FAILURE;
+    }
+
+    if (EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, *plaintext_len) != 1) {
+        fprintf(stderr, "Error during encryption\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_ENCRYPT_FAILURE;
+    }
+    *ciphertext_len = len;
+
+    if (EVP_EncryptFinal_ex(ctx, ciphertext + len, &len) != 1) {
+        fprintf(stderr, "Error during final encryption\n");
+        EVP_CIPHER_CTX_free(ctx);
+        return SYM_ENCRYPT_FAILURE;
+    }
+    *ciphertext_len += len;
+
+    EVP_CIPHER_CTX_free(ctx);
+    return SUCCESS;
+}
+
+
+int main() {
+
+    sym_key key;
+    sym_iv iv;
+    unsigned char plaintext[] = "ahhhhhh oh my god";
+    unsigned char ciphertext[256];
+    unsigned char decryptedtext[256];
+
+    int plaintext_len = strlen((char *)plaintext);
+    int ciphertext_len = 0, decryptedtext_len = 0;
+
+    if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
+        fprintf(stderr, "Key generation failed\n");
+        return -1;
+    }
+
+    if (RAND_bytes(iv, IV_SIZE) != 1) {
+        fprintf(stderr, "Error generating IV\n");
+        return -1;
+    }
+
+    sym_key_full key_full;
+    memcpy(&key_full.symmetric_key, key, KEY_SIZE);
+    memcpy(&key_full.symmetric_iv, iv, IV_SIZE);
+
+    STATUS store_status = store_user_sym_key(1, &key_full);
+    if (store_status != SUCCESS) {
+        printf("Error storing key\n");
+        return -1;
+    }
+    printf("KEYYY:\n");
+    print_hex(key, KEY_SIZE);
+    printf("IV:\n");
+    print_hex(iv, IV_SIZE);
+    printf("Key stored :)\n");
+
+    if (sym_encrypt(plaintext, &plaintext_len, key, iv, ciphertext, &ciphertext_len) != SUCCESS) {
+        fprintf(stderr, "Encryption failed\n");
+        return -1;
+    }
+
+    printf("Ciphertext (hex): ");
+    for (int i = 0; i < ciphertext_len; i++) {
+        printf("%02x", ciphertext[i]);
+    }
+    printf("\n");
+
+    sym_key_full sym_key_from_db;
+    STATUS get_key_status = get_user_sym_key(1, &sym_key_from_db);
+    if (get_key_status != SUCCESS) {
+        fprintf(stderr, "AHH ERROR GETTING KEY");
+        return -1;
+    }
+
+    printf("KEYYY GOOOD\nSymmetric key: \n");
+    print_hex(sym_key_from_db.symmetric_key, KEY_SIZE);
+    printf("IV: \n");
+    print_hex(sym_key_from_db.symmetric_iv, IV_SIZE);
+
+    decryptedtext_len = ciphertext_len;
+    if (sym_decrypt(ciphertext, &decryptedtext_len, sym_key_from_db.symmetric_key, sym_key_from_db.symmetric_iv, decryptedtext) != SUCCESS) {
+        fprintf(stderr, "Decryption failed\n");
+        return -1;
+    }
+
+    decryptedtext[decryptedtext_len] = '\0';
+    printf("Decrypted text: %s\n", decryptedtext);
+
+    if (strcmp((char *)plaintext, (char *)decryptedtext) == 0) {
+        printf("Decryption successful! The decrypted message is the same as the original plaintext.\n");
+    } else {
+        printf("Decryption failed! The decrypted message doesn't match the original plaintext.\n");
+    }
+
+    return 0;
+
+    /*
     full_user_data *user_data;
     STATUS ret_status = get_full_user_data(1, user_data);
     if (ret_status == SUCCESS) {
@@ -323,7 +484,6 @@ int main(void) {
         printf("Failure");
     }
 
-    /*
     const char *message = "Hello world!";
     int message_len = strlen(message);
     unsigned char encrypted[ASYM_SIZE] = {0};

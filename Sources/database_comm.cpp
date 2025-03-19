@@ -8,6 +8,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+void print_hex(unsigned char *data, int length) {
+    for (int i = 0; i < length; i++) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
+}
+
 int connect_to_database_daemon() {
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -68,6 +75,19 @@ query_param create_param_asym_key(priv_key_w_length priv_key) {
     query_param param;
     param.type = PARAM_ASM_KEY;
     memcpy(&param.data.priv_key_w_len, &priv_key, sizeof(param.data.priv_key_w_len));
+    return param;
+}
+query_param create_param_sym_key(sym_key sym_key) {
+    query_param param;
+    param.type = PARAM_SYM_KEY;
+    memcpy(&param.data.sym_key_val, sym_key, KEY_SIZE);
+    return param;
+}
+
+query_param create_param_sym_iv(sym_iv iv) {
+    query_param param;
+    param.type = PARAM_SYM_IV;
+    memcpy(&param.data.sym_iv_val, iv, IV_SIZE);
     return param;
 }
 
@@ -441,9 +461,71 @@ STATUS get_full_user_data(int user_id, full_user_data *user_data) {
     return user_data->user_status;
 }
 
+STATUS get_user_sym_key(const int user_id, sym_key_full *user_data) {
+    int sock = connect_to_database_daemon();
+    if (sock < 0) {
+        return CONNECTION_TO_DB_FAILURE;
+    }
+
+    query_param params[MAX_PARAMS];
+    params[0] = create_param_int(user_id);
+    query_data data = set_query_data('g', GET_SYM_KEY, 1, params);
+    strncpy(data.query, GET_USER_SYM_KEY_QUERY, sizeof(data.query));
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
+    printf("Query sent\n");
+    sym_key_full sym_key;
+    size_t to_receive = sizeof(sym_key);
+    unsigned char* buffer = (unsigned char*)&sym_key;
+    size_t bytes_rec = receive_from_db(to_receive, buffer, sock);
+    if (bytes_rec != to_receive) {
+        return TOO_FEW_BYTES_RECEIVED;
+    }
+    if (sym_key.sym_key_status != SUCCESS) {
+        return DATABASE_FAILURE;
+    }
+
+    if (sym_key.sym_key_status == SUCCESS) {
+        memcpy(user_data, &sym_key, sizeof(sym_key));
+    }
+    return user_data->sym_key_status;
+}
+
+STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key) {
+    int sock = connect_to_database_daemon();
+    if (sock < 0) {
+        return CONNECTION_TO_DB_FAILURE;
+    }
+
+    query_param params[MAX_PARAMS];
+    params[0] = create_param_sym_key((unsigned char*)sym_key->symmetric_key);
+    params[1] = create_param_sym_iv((unsigned char*)sym_key->symmetric_iv);
+    params[2] = create_param_int(user_id);
+
+    query_data data = set_query_data('p', POST_SYM_KEY, 3, params);
+    strncpy(data.query, UPDATE_USER_SYM_KEY_QUERY, sizeof(data.query));
+
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
+    printf("Query sent\n");
+    STATUS post_status = read_status(sock);
+    if (post_status != SUCCESS) {
+        printf("Failure\n");
+    }
+    else printf("Success\n");
+
+    close(sock);
+    return post_status;
+}
+
 //should only exist for the purpose of testing, DEF remove in prod!!!
 /*
 int main()
+
 {
     token_hash out_token_hash;
     STATUS get_status = get_token_hash(1, out_token_hash, TOKEN_SIZE);

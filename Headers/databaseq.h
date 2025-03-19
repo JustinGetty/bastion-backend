@@ -26,6 +26,9 @@ STATUS store_token_hash(const int user_id, const unsigned char *hash, const size
 STATUS get_token_hash(const int id, token_hash hash_out);
 STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full);
 STATUS store_user_private_key(const int user_id, priv_key_w_length *priv_key_full);
+STATUS get_user_sym_key(const int user_id, sym_key_full *sym_key);
+STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key);
+void print_hex(unsigned char *data, int length);
 
 
 #endif
