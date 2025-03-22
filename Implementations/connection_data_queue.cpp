@@ -28,8 +28,9 @@ bool ConnectionQueue::isEmpty()
 	return connections.size == 0;
 }
 
-int ConnectionQueue::enqueue(ConnectionData *insert_data)
+int ConnectionQueue::enqueue(std::shared_ptr<ConnectionData> insert_data)
 {
+	printf("Here is the queue\n");
 	std::lock_guard<std::mutex> lock(conn_mutex);
 
 	if (isFull())

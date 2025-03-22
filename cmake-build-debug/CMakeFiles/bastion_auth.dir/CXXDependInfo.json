@@ -23,6 +23,11 @@
 	"module-dir" : "/root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir",
 	"sources" : 
 	{
+		"CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o" : 
+		{
+			"language" : "CXX",
+			"source" : "/root/CLionProjects/bastion-auth/Implementations/parse_message_json.cpp"
+		},
 		"CMakeFiles/bastion_auth.dir/main.cpp.o" : 
 		{
 			"language" : "CXX",

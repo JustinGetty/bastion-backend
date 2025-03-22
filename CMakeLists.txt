@@ -30,7 +30,9 @@ target_link_libraries(bastion_data PUBLIC
 )
 
 # Define the main executable.
-add_executable(bastion_auth main.cpp)
+add_executable(bastion_auth main.cpp
+        Implementations/parse_message_json.cpp
+        Headers/parse_message_json.h)
 
 # Add include directories for the executable.
 # Here we add both our project Headers and the uWebSockets include paths (as in your g++ command).

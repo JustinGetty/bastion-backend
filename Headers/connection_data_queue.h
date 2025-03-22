@@ -21,7 +21,7 @@
 
 typedef struct
 {
-	ConnectionData *connections[MAX_CONNECTIONS];
+	std::shared_ptr<ConnectionData> connections[MAX_CONNECTIONS];
 	int front;
 	int size;
 } Queue;
@@ -38,7 +38,7 @@ public:
 	void destroy_queue();
 	bool isFull();
 	bool isEmpty();
-	int enqueue(ConnectionData *insert_data);
+	int enqueue(std::shared_ptr<ConnectionData> insert_data);
 	ConnectionData dequeue();
 	ConnectionData getFront();
 

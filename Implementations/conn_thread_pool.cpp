@@ -3,10 +3,13 @@
 
 ConnThreadPool::ConnThreadPool()
 {
-    unsigned int num_threads = std::thread::hardware_concurrency();
+    /* FIX only returning 1 */
+    //unsigned int num_threads = std::thread::hardware_concurrency();
+    unsigned int num_threads = 8;
+    /*
     if (num_threads == 0)
         num_threads = 2;
-
+    */
     // create threads
     for (unsigned int i = 0; i < num_threads; i++)
     {
@@ -20,7 +23,7 @@ void ConnThreadPool::worker()
     connection_queue.main_server_management(stop_);
 }
 
-void ConnThreadPool::enqueueConnection(ConnectionData *data)
+void ConnThreadPool::enqueueConnection(std::shared_ptr<ConnectionData> data)
 {
     connection_queue.enqueue(data);
 }

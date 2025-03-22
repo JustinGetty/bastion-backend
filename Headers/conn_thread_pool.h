@@ -18,7 +18,7 @@ public:
     ConnThreadPool();
     ~ConnThreadPool();
 
-    void enqueueConnection(ConnectionData *data);
+    void enqueueConnection(std::shared_ptr<ConnectionData> data);
 };
 
 #endif

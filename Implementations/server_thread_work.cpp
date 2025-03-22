@@ -9,15 +9,16 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
     {
         ConnectionData data;
         {
-            std::unique_lock<std::mutex> lock(conn_mutex);
+            //std::unique_lock<std::mutex> lock(conn_mutex);
             if (isEmpty())
             {
-                lock.unlock();
+                //lock.unlock();
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 continue;
             }
             data = dequeue();
         }
+        std::cout << "Processing connection" << "\n";
         processConnectionData(data);
     }
 }
@@ -34,5 +35,6 @@ void processConnectionData(ConnectionData data)
         endpoint grabs username, looks up data in storage, pulls it
         processes it, sends it to client
     */
+    std::cout << "thread id: " << std::this_thread::get_id() << "\n";
     std::cout << "Processing connection data with id: " << data.connection_id << "\n";
 }

@@ -4,6 +4,7 @@
 #include "Headers/conn_data_storage.h"
 #include "Headers/conn_thread_pool.h"
 #include <bastion_data.h>
+#include <parse_message_json.h>
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -44,41 +45,9 @@ New solution:
 
 //pickup here
 // work should be done in server_thread_work.cpp
-/*
-*#include <stdio.h>
-#include <string.h>
 
-int parse_json(char json[]) {
-    int len = strlen(json);
-    for (int i = 0; i < len; i++) {
-        if (json[i] == '\"') {
-            // Start from the next character
-            int start = i + 1;
-            int j = start;
-            // Find the closing quote
-            while (j < len && json[j] != '\"') {
-                j++;
-            }
-            if (j < len) { // found a closing quote
-                printf("Quoted content: ");
-                for (int k = start; k < j; k++) {
-                    printf("%c", json[k]);
-                }
-                printf("\n");
-                // Jump to the closing quote to avoid reprocessing
-                i = j;
-            }
-        }
-    }
-    return 0;
-}
+ConnThreadPool* g_connThreadPool = nullptr;
 
-int main() {
-    char json[] = "{\"signin\" : [{ \"username\":\"test\", \"authtoken\":\"123456\" } ]}";
-    parse_json(json);
-    return 0;
-}
-*/
 struct WebSocketBehavior
 {
     static void open(uWS::WebSocket<false, true, int> *ws)
@@ -100,12 +69,30 @@ struct WebSocketBehavior
          */
 
         std::cout << "Received: " << message << std::endl;
-        ws->send(message, opCode);
+        MsgMethod msg_method;
+        try {
+            msg_method = parse_method(message);
+            std::cout << "Method type: " << msg_method.type << "\n";
+            for (const auto &kv : msg_method.keys)
+                std::cout << kv.first << " : " << kv.second << "\n";
+        } catch (const std::exception &ex) {
+            std::cerr << "Error: " << ex.what() << "\n";
+        }
+        std::shared_ptr<ConnectionData> connData = std::make_shared<ConnectionData>(*((ConnectionData*)ws->getUserData()));
+        connData->connection_id = 1;
+        g_connThreadPool->enqueueConnection(connData);
+
+//        ConnectionData *connData = (ConnectionData *)ws->getUserData();
+
+
+        //ws->send(message, opCode);
+
         // if message recieved == sign in, add to threadpool queue
-        /*
-        threadPool.enqueueConnection(createConnectionData(i));
-        std::cout << "Enqueued connection data " << i << std::endl;
-        */
+
+
+        //g_connThreadPool->enqueueConnection(connData);
+        std::cout << "Enqueued connection" << "\n";
+
     }
 
     static void close(uWS::WebSocket<false, true, int> *ws, int code, std::string_view message)
@@ -122,7 +109,10 @@ int main()
     create thread pool to do the work for each connection
     i.e get data, handle data, etc.
     */
-    ConnThreadPool connection_work_thread_pool;
+    ConnThreadPool local_thread_pool;
+    g_connThreadPool = &local_thread_pool;
+
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     // Attach WebSocket route
