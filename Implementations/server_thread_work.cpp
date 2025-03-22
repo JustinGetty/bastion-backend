@@ -2,6 +2,7 @@
 #include "connection_data_queue.h"
 #include "databaseq.h"
 
+void processConnectionData(std::unique_ptr<ConnectionData> data);
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
 {
@@ -34,6 +35,10 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         endpoint grabs username, looks up data in storage, pulls it
         processes it, sends it to client
     */
+
+    if (!data) {
+        std::cout << "No data to proccess\n";
+    }
     std::cout << "thread id: " << std::this_thread::get_id() << "\n";
     std::cout << "Processing connection data with id: " << data->connection_id << "\n";
 }

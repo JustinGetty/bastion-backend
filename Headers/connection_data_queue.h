@@ -46,7 +46,5 @@ public:
 	void main_server_management(bool &stop_flag);
 };
 
-// Dummy processing function; replace with your own logic.
-void processConnectionData(const ConnectionData data);
 
 #endif
