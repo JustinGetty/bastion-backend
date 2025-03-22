@@ -7,6 +7,8 @@
 #include <time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string>
+
 
 void print_hex(unsigned char *data, int length) {
     for (int i = 0; i < length; i++) {
@@ -34,6 +36,7 @@ int connect_to_database_daemon() {
 
 query_data set_query_data(char type, query_real_type real_type, int num_params, query_param params[MAX_PARAMS]) {
     query_data data;
+    memset(&data, 0, sizeof(data));
     data.type = type;
     data.real_type = real_type;
     data.num_params = num_params;
@@ -88,6 +91,16 @@ query_param create_param_sym_iv(sym_iv iv) {
     query_param param;
     param.type = PARAM_SYM_IV;
     memcpy(&param.data.sym_iv_val, iv, IV_SIZE);
+    return param;
+}
+
+query_param create_param_username(bastion_username *username) {
+    query_param param;
+    param.type = PARAM_USERNAME;
+    char uname_temp[MAX_USERNAME_LENGTH];
+    printf("Here 1\n");
+    std::strcpy(param.data.username_val, *username);
+    printf("Here 2\n");
     return param;
 }
 
@@ -520,6 +533,59 @@ STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key) {
 
     close(sock);
     return post_status;
+}
+
+
+STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data) {
+    int sock = connect_to_database_daemon();
+    if (sock < 0) {
+        return CONNECTION_TO_DB_FAILURE;
+    }
+    query_param params[MAX_PARAMS];
+    params[0] = create_param_username(uname);
+    query_data data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
+    strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
+
+    STATUS send_status = send_query(sock, data);
+    if (send_status != SUCCESS) {
+        return send_status;
+    }
+    printf("Query sent\n");
+
+    printf("Here3\n");
+    full_user_data full_user_data;
+    size_t to_receive = sizeof(full_user_data);
+    unsigned char *buffer = (unsigned char*)&full_user_data;
+    size_t bytes_rec = receive_from_db(to_receive, buffer, sock);
+
+    printf("Here4\n");
+    if (bytes_rec != to_receive) {
+        printf("Error1\n");
+        return TOO_FEW_BYTES_RECEIVED;
+    }
+    if (full_user_data.user_status != SUCCESS) {
+        printf("Error2\n");
+        return DATABASE_FAILURE;
+    }
+    if (full_user_data.user_status == SUCCESS) {
+        printf("Error3\n");
+        //memcopy
+        //issue here is memcopying wit a c++ value
+        /*
+         *TODO
+         *fix this tomorrow
+         */
+        memcpy(user_data, &full_user_data, sizeof(full_user_data));
+        printf("Here4.5\n");
+        size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
+        if (len_of_key <= 0) {
+            return CRYPTO_FAILURE;
+        }
+        printf("Here\n");
+        user_data->priv_key_w_len.priv_key_len = len_of_key;
+    }
+    printf("Here5\n");
+    return user_data->user_status;
 }
 
 //should only exist for the purpose of testing, DEF remove in prod!!!

@@ -21,6 +21,7 @@ size_t get_der_blob_total_length(const unsigned char *der_blob);
 STATUS get_basic_user_by_id(int userID, user_data_basic *user_data);
 STATUS post_basic_user_data(user_data_basic user_data);
 STATUS get_full_user_data(int user_id, full_user_data *user_data);
+STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data);
 STATUS post_full_user_data(full_user_data *user_data);
 STATUS store_token_hash(const int user_id, const unsigned char *hash, const size_t hash_len);
 STATUS get_token_hash(const int id, token_hash hash_out);

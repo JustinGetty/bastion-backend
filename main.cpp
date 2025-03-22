@@ -82,6 +82,7 @@ struct WebSocketBehavior
             std::cerr << "Error: " << ex.what() << "\n";
         }
         auto *connData = static_cast<ConnectionData*>(ws->getUserData());
+        connData->username = msg_method.keys["username"];
 
         ConnectionData* copyData = new ConnectionData(*connData);
         g_connThreadPool->enqueueConnection(copyData);
