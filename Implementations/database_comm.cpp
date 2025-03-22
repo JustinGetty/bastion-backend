@@ -574,8 +574,12 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         /*
          *TODO
          *fix this tomorrow
+         *issue possibly in ConnectionData with std::string username
+         *I switched to char[] to test
          */
-        memcpy(user_data, &full_user_data, sizeof(full_user_data));
+        //memcpy(user_data, &full_user_data, sizeof(full_user_data));
+        user_data->user_status = full_user_data.user_status;
+        strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
         printf("Here4.5\n");
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {

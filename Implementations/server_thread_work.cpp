@@ -40,21 +40,22 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         std::cout << "No data to proccess\n";
     }
 
-    full_user_data *user_data;
+    full_user_data local_data;
     bastion_username username;
     std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
     bastion_username* uname_ptr = &username;
     printf("Here6\n");
-    STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, user_data);
+
+    STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
     if (user_data_status != SUCCESS) {
         std::cerr << "Error: " << user_data_status << "\n";
     }
     if (user_data_status == SUCCESS) {
-        std::cout << "Got user id: " << user_data->user_id << "from DB!\n";
+        std::cout << "Got user id: " << local_data.user_id << "from DB!\n";
         std::cout << "thread id: " << std::this_thread::get_id() << "\n";
         std::cout << "Processing connection data with id: " << data->connection_id << "\n";
-        std::cout << "Username: " << data->username << "\n";
+        std::cout << "Username: " << local_data.username << "\n";
     }
-    free(uname_ptr);
-    free(user_data);
+
+    //this breaks client connection - good thing
 }
