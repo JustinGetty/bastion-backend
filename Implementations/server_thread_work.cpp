@@ -3,6 +3,7 @@
 #include "databaseq.h"
 #include "cryptography.h"
 
+int work_done = 0;
 void processConnectionData(std::unique_ptr<ConnectionData> data);
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
@@ -42,20 +43,28 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
     full_user_data local_data;
     bastion_username username;
-    std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
+    //std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
     bastion_username* uname_ptr = &username;
-    printf("Here6\n");
+    std::cout << "\n------------------\n";
+    std::cout << "Doing work!\n";
+    std::cout << "Finished working on: " << work_done << "\n";
+    std::cout << "\n------------------\n";
+    work_done += 1;
 
+
+    /*
+     *REMOVING THIS TO SEE WHICH DAEMON IS FUCKING UP
     STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
     if (user_data_status != SUCCESS) {
         std::cerr << "Error: " << user_data_status << "\n";
     }
     if (user_data_status == SUCCESS) {
-        std::cout << "Got user id: " << local_data.user_id << "from DB!\n";
+        std::cout << "Got user id: " << local_data.user_id << " from DB!\n";
         std::cout << "thread id: " << std::this_thread::get_id() << "\n";
         std::cout << "Processing connection data with id: " << data->connection_id << "\n";
         std::cout << "Username: " << local_data.username << "\n";
     }
+    */
 
     //this breaks client connection - good thing
 }

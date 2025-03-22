@@ -148,7 +148,7 @@ int receive_from_db(size_t to_receive, unsigned char *buffer, int sock) {
     while (total_received < to_receive) {
         ssize_t received = recv(sock, buffer + total_received, to_receive - total_received, 0);
         if (received < 0) {
-            fprintf(stderr, "ERROR RECEIVING");
+            fprintf(stderr, "ERROR RECEIVING\n");
             return TOO_FEW_BYTES_RECEIVED;
         }
         if (received == 0) {
@@ -543,7 +543,8 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     }
     query_param params[MAX_PARAMS];
     params[0] = create_param_username(uname);
-    query_data data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
+    query_data data{};
+    data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
     strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
 
     STATUS send_status = send_query(sock, data);
@@ -580,6 +581,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         //memcpy(user_data, &full_user_data, sizeof(full_user_data));
         user_data->user_status = full_user_data.user_status;
         strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
+        user_data->user_id = full_user_data.user_id;
         printf("Here4.5\n");
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {

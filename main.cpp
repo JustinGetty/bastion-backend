@@ -42,6 +42,10 @@ New solution:
 - ConnectionDataList stores connections while waiting for mobile verification. then mobile phone sends https POST request
     with the data and then the corresponding connection data is pulled from the list
 
+
+PROBLEMMMMMMMMM
+- STUPID FUCXKING ULIMIT STUCK AT 1000 WONT LET ME CHANGE
+- nuking socket connections ahhhhhhh ahhhh ahhh
  */
 
 //pickup here
