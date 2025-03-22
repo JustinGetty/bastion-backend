@@ -23,9 +23,9 @@ void ConnThreadPool::worker()
     connection_queue.main_server_management(stop_);
 }
 
-void ConnThreadPool::enqueueConnection(std::shared_ptr<ConnectionData> data)
+void ConnThreadPool::enqueueConnection(ConnectionData* data)
 {
-    connection_queue.enqueue(data);
+    connection_queue.enqueue(std::unique_ptr<ConnectionData>(data));
 }
 
 ConnThreadPool::~ConnThreadPool()

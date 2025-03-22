@@ -195,7 +195,24 @@ build CMakeFiles/bastion_auth.dir/main.cpp.o: CXX_COMPILER__bastion_auth_scanned
   OBJECT_FILE_DIR = CMakeFiles/bastion_auth.dir
   dyndep = CMakeFiles/bastion_auth.dir/CXX.dd
 
-build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXModules.json CMakeFiles/bastion_auth.dir/main.cpp.o.modmap: CXX_DYNDEP__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o.ddi | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXDependInfo.json
+build CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.ddi: CXX_SCAN__bastion_auth_Debug /root/CLionProjects/bastion-auth/Implementations/parse_message_json.cpp || cmake_object_order_depends_target_bastion_auth
+  DEP_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.ddi.d
+  DYNDEP_INTERMEDIATE_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.ddi
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/src -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src
+  OBJ_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o
+  PREPROCESSED_OUTPUT_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.ddi.i
+
+build CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o: CXX_COMPILER__bastion_auth_scanned_Debug /root/CLionProjects/bastion-auth/Implementations/parse_message_json.cpp | CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.modmap || cmake_object_order_depends_target_bastion_auth CMakeFiles/bastion_auth.dir/CXX.dd
+  DEP_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.d
+  DYNDEP_MODULE_MAP_FILE = CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.modmap
+  FLAGS = -g -std=gnu++20 -fdiagnostics-color=always
+  INCLUDES = -I/root/CLionProjects/bastion-auth/Headers -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/src -I/infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src
+  OBJECT_DIR = CMakeFiles/bastion_auth.dir
+  OBJECT_FILE_DIR = CMakeFiles/bastion_auth.dir/Implementations
+  dyndep = CMakeFiles/bastion_auth.dir/CXX.dd
+
+build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXModules.json CMakeFiles/bastion_auth.dir/main.cpp.o.modmap CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.modmap: CXX_DYNDEP__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o.ddi CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o.ddi | /root/CLionProjects/bastion-auth/cmake-build-debug/CMakeFiles/bastion_auth.dir/CXXDependInfo.json
 
 
 # =============================================================================
@@ -205,7 +222,7 @@ build CMakeFiles/bastion_auth.dir/CXX.dd | /root/CLionProjects/bastion-auth/cmak
 #############################################
 # Link the executable bastion_auth
 
-build bastion_auth: CXX_EXECUTABLE_LINKER__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o | libbastion_data.a /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/uSockets.a /usr/lib64/libcrypto.so /usr/lib64/libz.so || libbastion_data.a
+build bastion_auth: CXX_EXECUTABLE_LINKER__bastion_auth_Debug CMakeFiles/bastion_auth.dir/main.cpp.o CMakeFiles/bastion_auth.dir/Implementations/parse_message_json.cpp.o | libbastion_data.a /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/uSockets.a /usr/lib64/libcrypto.so /usr/lib64/libz.so || libbastion_data.a
   DEP_FILE = CMakeFiles/bastion_auth.dir/link.d
   FLAGS = -g
   LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/bastion_auth.dir/link.d

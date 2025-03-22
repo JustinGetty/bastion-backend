@@ -5,6 +5,7 @@
 #include "Headers/conn_thread_pool.h"
 #include <bastion_data.h>
 #include <parse_message_json.h>
+#include <atomic>
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -47,22 +48,24 @@ New solution:
 // work should be done in server_thread_work.cpp
 
 ConnThreadPool* g_connThreadPool = nullptr;
+std::atomic<int> globalConnectionId{1};
 
 struct WebSocketBehavior
 {
-    static void open(uWS::WebSocket<false, true, int> *ws)
+    static void open(uWS::WebSocket<false, true, ConnectionData> *ws)
     {
         // getUserData() returns empty memory space for particular conn data
         // fix cast here
-        ConnectionData *connData = (ConnectionData *)ws->getUserData();
+        auto *connData = ws->getUserData();
         connData->username = EMPTY_USERNAME;
-        connData->connection_id = -1;
-        std::cout << "Client connected!" << std::endl;
+        connData->connection_id = globalConnectionId.fetch_add(1);
+        std::cout << "Client connected! UserData pointer: " << connData
+                  << ", connection id: " << connData->connection_id << std::endl;
     }
 
     // for inbound message
     // first false is for ssl - false = no ssl
-    static void message(uWS::WebSocket<false, true, int> *ws, std::string_view message, uWS::OpCode opCode)
+    static void message(uWS::WebSocket<false, true, ConnectionData> *ws, std::string_view message, uWS::OpCode opCode)
     {
         /*
          *Need meta data structure for messages (sign in vs create account)
@@ -78,9 +81,13 @@ struct WebSocketBehavior
         } catch (const std::exception &ex) {
             std::cerr << "Error: " << ex.what() << "\n";
         }
-        std::shared_ptr<ConnectionData> connData = std::make_shared<ConnectionData>(*((ConnectionData*)ws->getUserData()));
-        connData->connection_id = 1;
-        g_connThreadPool->enqueueConnection(connData);
+        auto *connData = static_cast<ConnectionData*>(ws->getUserData());
+
+        ConnectionData* copyData = new ConnectionData(*connData);
+        g_connThreadPool->enqueueConnection(copyData);
+
+
+        std::cout << "Enqueued connection (id: " << connData->connection_id << ")" << "\n";
 
 //        ConnectionData *connData = (ConnectionData *)ws->getUserData();
 
@@ -95,7 +102,7 @@ struct WebSocketBehavior
 
     }
 
-    static void close(uWS::WebSocket<false, true, int> *ws, int code, std::string_view message)
+    static void close(uWS::WebSocket<false, true, ConnectionData> *ws, int code, std::string_view message)
     {
         std::cout << "Client disconnected!" << std::endl;
     }
@@ -117,7 +124,7 @@ int main()
 
     // Attach WebSocket route
     // equivalant to app.open = XX, app.close = XX
-    app.ws<int>("/*", {.open = &WebSocketBehavior::open,
+    app.ws<ConnectionData>("/*", {.open = &WebSocketBehavior::open,
                        .message = &WebSocketBehavior::message,
                        .close = &WebSocketBehavior::close});
 

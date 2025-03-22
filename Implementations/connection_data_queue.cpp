@@ -9,54 +9,56 @@ ConnectionQueue::ConnectionQueue()
 int ConnectionQueue::init_queue()
 {
 	std::lock_guard<std::mutex> lock(conn_mutex);
-	connections.front = 0;
-	connections.size = 0;
+	connection_queue.front = 0;
+	connection_queue.size = 0;
+	for (auto&ptr : connection_queue.connections) {
+		ptr = nullptr;
+	}
 	return GOOD_QUEUE_INIT_ERR_CODE;
 }
 
 void ConnectionQueue::destroy_queue()
 {
+	//redundant since using unique_ptrs
 }
 
 bool ConnectionQueue::isFull()
 {
-	return connections.size == MAX_CONNECTIONS;
+	return connection_queue.size == MAX_CONNECTIONS;
 }
 
 bool ConnectionQueue::isEmpty()
 {
-	return connections.size == 0;
+	return connection_queue.size == 0;
 }
 
-int ConnectionQueue::enqueue(std::shared_ptr<ConnectionData> insert_data)
+int ConnectionQueue::enqueue(std::unique_ptr<ConnectionData> insert_data)
 {
 	printf("Here is the queue\n");
 	std::lock_guard<std::mutex> lock(conn_mutex);
 
 	if (isFull())
 	{
-		std::cout << FULL_QUEUE_ERR;
+		std::cerr << FULL_QUEUE_ERR;
 		return FULL_QUEUE_ERR_CODE;
 	}
-	int rear = (connections.front + connections.size) % MAX_CONNECTIONS;
-	connections.connections[rear] = insert_data;
-	connections.size++;
+	int rear = (connection_queue.front + connection_queue.size) % MAX_CONNECTIONS;
+	connection_queue.connections[rear] = std::move(insert_data);
+	connection_queue.size++;
 	return GOOD_ENQUEUE_ERR_CODE;
 }
 
-ConnectionData ConnectionQueue::dequeue()
-{
+std::unique_ptr<ConnectionData> ConnectionQueue::dequeue() {
 	std::lock_guard<std::mutex> lock(conn_mutex);
 
 	if (isEmpty())
 	{
 		std::cout << EMPTY_QUEUE_ERR << std::endl;
-		return ConnectionData();
+		return nullptr;
 	}
-
-	ConnectionData data = *connections.connections[connections.front];
-	connections.front = (connections.front + 1) % MAX_CONNECTIONS;
-	connections.size--;
+	std::unique_ptr<ConnectionData> data = std::move(connection_queue.connections[connection_queue.front]);
+	connection_queue.front = (connection_queue.front + 1) % MAX_CONNECTIONS;
+	connection_queue.size--;
 	return data;
 }
 
@@ -70,5 +72,5 @@ ConnectionData ConnectionQueue::getFront()
 		return ConnectionData();
 	}
 
-	return *connections.connections[connections.front];
+	return *connection_queue.connections[connection_queue.front];
 }

@@ -7,7 +7,7 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
 {
     while (!stop_flag)
     {
-        ConnectionData data;
+        std::unique_ptr<ConnectionData> data;
         {
             //std::unique_lock<std::mutex> lock(conn_mutex);
             if (isEmpty())
@@ -17,15 +17,14 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
                 continue;
             }
             data = dequeue();
+
         }
-        std::cout << "Processing connection" << "\n";
-        processConnectionData(data);
+        processConnectionData(std::move(data));
     }
 }
 
 //SERVER WORK GOES HERE
-void processConnectionData(ConnectionData data)
-{
+void processConnectionData(std::unique_ptr<ConnectionData> data) {
     /*
     Steps:
     1. Get data from DB
@@ -36,5 +35,5 @@ void processConnectionData(ConnectionData data)
         processes it, sends it to client
     */
     std::cout << "thread id: " << std::this_thread::get_id() << "\n";
-    std::cout << "Processing connection data with id: " << data.connection_id << "\n";
+    std::cout << "Processing connection data with id: " << data->connection_id << "\n";
 }

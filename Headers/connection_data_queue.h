@@ -21,7 +21,7 @@
 
 typedef struct
 {
-	std::shared_ptr<ConnectionData> connections[MAX_CONNECTIONS];
+	std::array<std::unique_ptr<ConnectionData>, MAX_CONNECTIONS> connections;
 	int front;
 	int size;
 } Queue;
@@ -29,7 +29,7 @@ typedef struct
 class ConnectionQueue
 {
 private:
-	Queue connections;
+	Queue connection_queue;
 	std::mutex conn_mutex;
 
 public:
@@ -38,14 +38,15 @@ public:
 	void destroy_queue();
 	bool isFull();
 	bool isEmpty();
-	int enqueue(std::shared_ptr<ConnectionData> insert_data);
-	ConnectionData dequeue();
+	int enqueue(std::unique_ptr<ConnectionData> insert_data);
+
+	std::unique_ptr<ConnectionData> dequeue();
 	ConnectionData getFront();
 
 	void main_server_management(bool &stop_flag);
 };
 
 // Dummy processing function; replace with your own logic.
-void processConnectionData(ConnectionData data);
+void processConnectionData(const ConnectionData data);
 
 #endif
