@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
+#include <errno.h>
 
 
 void print_hex(unsigned char *data, int length) {
@@ -98,9 +99,7 @@ query_param create_param_username(bastion_username *username) {
     query_param param;
     param.type = PARAM_USERNAME;
     char uname_temp[MAX_USERNAME_LENGTH];
-    printf("Here 1\n");
     std::strcpy(param.data.username_val, *username);
-    printf("Here 2\n");
     return param;
 }
 
@@ -143,21 +142,23 @@ STATUS read_status(int sock) {
     return status;
 }
 
+
 int receive_from_db(size_t to_receive, unsigned char *buffer, int sock) {
     size_t total_received = 0;
     while (total_received < to_receive) {
         ssize_t received = recv(sock, buffer + total_received, to_receive - total_received, 0);
         if (received < 0) {
-            fprintf(stderr, "ERROR RECEIVING\n");
+            fprintf(stderr, "ERROR RECEIVING: %s\n", strerror(errno));
             return TOO_FEW_BYTES_RECEIVED;
         }
         if (received == 0) {
-            break;
+            break; // connection closed by peer
         }
         total_received += received;
     }
     return total_received;
 }
+
 
 
 size_t get_der_blob_total_length(const unsigned char *der_blob) {
@@ -468,7 +469,6 @@ STATUS get_full_user_data(int user_id, full_user_data *user_data) {
         if (len_of_key <= 0) {
            return CRYPTO_FAILURE;
         }
-        printf("Here\n");
         user_data->priv_key_w_len.priv_key_len = len_of_key;
     }
     return user_data->user_status;
@@ -546,6 +546,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     query_data data{};
     data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
     strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
+    std::cout << "Username being sent: " << data.params[0].data.text_val << "\n";
 
     STATUS send_status = send_query(sock, data);
     if (send_status != SUCCESS) {
@@ -553,13 +554,11 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     }
     printf("Query sent\n");
 
-    printf("Here3\n");
     full_user_data full_user_data;
     size_t to_receive = sizeof(full_user_data);
     unsigned char *buffer = (unsigned char*)&full_user_data;
     size_t bytes_rec = receive_from_db(to_receive, buffer, sock);
 
-    printf("Here4\n");
     if (bytes_rec != to_receive) {
         printf("Error1\n");
         return TOO_FEW_BYTES_RECEIVED;
@@ -569,7 +568,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         return DATABASE_FAILURE;
     }
     if (full_user_data.user_status == SUCCESS) {
-        printf("Error3\n");
+        printf("Yay Success\n");
         //memcopy
         //issue here is memcopying wit a c++ value
         /*
@@ -582,15 +581,12 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         user_data->user_status = full_user_data.user_status;
         strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
         user_data->user_id = full_user_data.user_id;
-        printf("Here4.5\n");
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {
             return CRYPTO_FAILURE;
         }
-        printf("Here\n");
         user_data->priv_key_w_len.priv_key_len = len_of_key;
     }
-    printf("Here5\n");
     return user_data->user_status;
 }
 

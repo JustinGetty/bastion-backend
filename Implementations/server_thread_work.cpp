@@ -42,15 +42,16 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     }
 
     full_user_data local_data;
-    bastion_username username;
+    bastion_username username = "swag_guy";
     //std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
     bastion_username* uname_ptr = &username;
     std::cout << "\n------------------\n";
     std::cout << "Doing work!\n";
+    STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
+    std::cout << "Work status: " << user_data_status << "\n";
     std::cout << "Finished working on: " << work_done << "\n";
     std::cout << "\n------------------\n";
     work_done += 1;
-
 
     /*
      *REMOVING THIS TO SEE WHICH DAEMON IS FUCKING UP

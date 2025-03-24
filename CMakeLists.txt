@@ -14,7 +14,7 @@ add_library(bastion_data STATIC
         Implementations/connection_data_queue.cpp
         Implementations/server_thread_work.cpp
         Sources/cryptography.cpp
-        Sources/database_comm.cpp
+        Implementations/database_comm.cpp
 )
 
 # Specify include directories for the bastion_data library.

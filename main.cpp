@@ -46,6 +46,7 @@ New solution:
 PROBLEMMMMMMMMM
 - STUPID FUCXKING ULIMIT STUCK AT 1000 WONT LET ME CHANGE
 - nuking socket connections ahhhhhhh ahhhh ahhh
+- works well at 800 so far
  */
 
 //pickup here
