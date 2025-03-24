@@ -3,7 +3,6 @@
 #include "databaseq.h"
 #include "cryptography.h"
 
-int work_done = 0;
 void processConnectionData(std::unique_ptr<ConnectionData> data);
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
@@ -42,20 +41,26 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     }
 
     full_user_data local_data;
-    bastion_username username = "swag_guy";
-    //std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
+    //TODO remove hardcoding
+    bastion_username username;
+    if (!data) {
+        std::cout << "No data to process\n";
+        return;
+    }
+
+    std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
+    //TODO why is this being hit twice in some cases?
+    std::cout << "Username in work thread: " << data->username.c_str() << "\n";
+    username[MAX_USERNAME_LENGTH - 1] = '\0';
+    std::cout << "Username in work thread as username: " << username << "\n";
     bastion_username* uname_ptr = &username;
+    std::cout << "Username in work thread as username ptr: " << *uname_ptr << "\n";
     std::cout << "\n------------------\n";
     std::cout << "Doing work!\n";
     STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
     std::cout << "Work status: " << user_data_status << "\n";
-    std::cout << "Finished working on: " << work_done << "\n";
     std::cout << "\n------------------\n";
-    work_done += 1;
 
-    /*
-     *REMOVING THIS TO SEE WHICH DAEMON IS FUCKING UP
-    STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
     if (user_data_status != SUCCESS) {
         std::cerr << "Error: " << user_data_status << "\n";
     }
@@ -65,7 +70,8 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         std::cout << "Processing connection data with id: " << data->connection_id << "\n";
         std::cout << "Username: " << local_data.username << "\n";
     }
-    */
+
+    //send to mobile daemon here
 
     //this breaks client connection - good thing
 }

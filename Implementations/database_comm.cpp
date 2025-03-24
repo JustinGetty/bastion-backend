@@ -535,12 +535,15 @@ STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key) {
     return post_status;
 }
 
-
+int num = 0;
 STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data) {
     int sock = connect_to_database_daemon();
     if (sock < 0) {
+        close(sock);
         return CONNECTION_TO_DB_FAILURE;
     }
+    std::cout << "Num : " << num << std::endl;
+    num += 1;
     query_param params[MAX_PARAMS];
     params[0] = create_param_username(uname);
     query_data data{};
@@ -550,6 +553,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
 
     STATUS send_status = send_query(sock, data);
     if (send_status != SUCCESS) {
+        close(sock);
         return send_status;
     }
     printf("Query sent\n");
@@ -561,10 +565,12 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
 
     if (bytes_rec != to_receive) {
         printf("Error1\n");
+        close(sock);
         return TOO_FEW_BYTES_RECEIVED;
     }
     if (full_user_data.user_status != SUCCESS) {
         printf("Error2\n");
+        close(sock);
         return DATABASE_FAILURE;
     }
     if (full_user_data.user_status == SUCCESS) {
@@ -583,10 +589,12 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         user_data->user_id = full_user_data.user_id;
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {
+            close(sock);
             return CRYPTO_FAILURE;
         }
         user_data->priv_key_w_len.priv_key_len = len_of_key;
     }
+    close(sock);
     return user_data->user_status;
 }
 

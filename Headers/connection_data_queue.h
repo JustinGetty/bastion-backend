@@ -6,7 +6,7 @@
 #include <mutex>
 #include <bastion_data.h>
 
-#define MAX_CONNECTIONS 1000
+#define MAX_CONNECTIONS 10000
 
 #define SUCC_ENQUEUE "Data inserted successfully!\n"
 #define SUCC_DEQUEUE "Data dequeued successfully!\n"
