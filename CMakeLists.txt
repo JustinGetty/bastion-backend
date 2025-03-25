@@ -15,6 +15,7 @@ add_library(bastion_data STATIC
         Implementations/server_thread_work.cpp
         Sources/cryptography.cpp
         Implementations/database_comm.cpp
+        Implementations/database_manager.cpp
 )
 
 # Specify include directories for the bastion_data library.
@@ -27,12 +28,15 @@ target_include_directories(bastion_data PUBLIC
 target_link_libraries(bastion_data PUBLIC
         OpenSSL::Crypto
         ZLIB::ZLIB
+        sqlite3
 )
 
 # Define the main executable.
 add_executable(bastion_auth main.cpp
         Implementations/parse_message_json.cpp
-        Headers/parse_message_json.h)
+        Headers/parse_message_json.h
+)
+
 
 # Add include directories for the executable.
 # Here we add both our project Headers and the uWebSockets include paths (as in your g++ command).

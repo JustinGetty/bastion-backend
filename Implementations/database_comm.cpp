@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <string>
 #include <errno.h>
+#include "../Headers/database_head.h"
 
 
 void print_hex(unsigned char *data, int length) {
@@ -537,11 +538,6 @@ STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key) {
 
 int num = 0;
 STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data) {
-    int sock = connect_to_database_daemon();
-    if (sock < 0) {
-        close(sock);
-        return CONNECTION_TO_DB_FAILURE;
-    }
     std::cout << "Num : " << num << std::endl;
     num += 1;
     query_param params[MAX_PARAMS];
@@ -551,26 +547,26 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
     std::cout << "Username being sent: " << data.params[0].data.text_val << "\n";
 
-    STATUS send_status = send_query(sock, data);
-    if (send_status != SUCCESS) {
-        close(sock);
-        return send_status;
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    add_to_queue(queryDataPtr);
+
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    STATUS process_status = queryDataPtr->status;
+    if (process_status != SUCCESS) {
+        return process_status;
     }
     printf("Query sent\n");
 
-    full_user_data full_user_data;
-    size_t to_receive = sizeof(full_user_data);
-    unsigned char *buffer = (unsigned char*)&full_user_data;
-    size_t bytes_rec = receive_from_db(to_receive, buffer, sock);
-
-    if (bytes_rec != to_receive) {
-        printf("Error1\n");
-        close(sock);
-        return TOO_FEW_BYTES_RECEIVED;
-    }
+    //if queryDataPtr->querydata->realtype  == blah blah blah TODO
+    full_user_data full_user_data = queryDataPtr->processed_data.user_data;
     if (full_user_data.user_status != SUCCESS) {
         printf("Error2\n");
-        close(sock);
         return DATABASE_FAILURE;
     }
     if (full_user_data.user_status == SUCCESS) {
@@ -589,12 +585,10 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         user_data->user_id = full_user_data.user_id;
         size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
         if (len_of_key <= 0) {
-            close(sock);
             return CRYPTO_FAILURE;
         }
         user_data->priv_key_w_len.priv_key_len = len_of_key;
     }
-    close(sock);
     return user_data->user_status;
 }
 

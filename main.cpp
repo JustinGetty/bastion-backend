@@ -6,6 +6,9 @@
 #include <bastion_data.h>
 #include <parse_message_json.h>
 #include <atomic>
+#include "Headers/database_head.h"
+#include "database_head.h"
+
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -125,9 +128,9 @@ int main()
     ConnThreadPool local_thread_pool;
     g_connThreadPool = &local_thread_pool;
 
-
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
+    setup_threads();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     // Attach WebSocket route
     // equivalant to app.open = XX, app.close = XX
     app.ws<ConnectionData>("/*", {.open = &WebSocketBehavior::open,
