@@ -16,10 +16,11 @@ class ConnectionDataStorage
 {
 private:
     std::vector<ConnectionData *> connection_data_storage;
+    std::mutex mtx;
 
 public:
     ConnectionDataStorage();
-    int insert_connection_data(ConnectionData *data);
+    STATUS insert_connection_data(ConnectionData *data);
     ConnectionData *get_connection_data(int connection_identifier);
 };
 

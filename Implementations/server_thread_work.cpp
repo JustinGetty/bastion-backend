@@ -1,9 +1,12 @@
 #include <iostream>
 #include "connection_data_queue.h"
+#include "conn_data_storage.h"
 #include "databaseq.h"
 #include "cryptography.h"
 
+
 void processConnectionData(std::unique_ptr<ConnectionData> data);
+ConnectionDataStorage connection_storage;
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
 {
@@ -29,13 +32,18 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
 void processConnectionData(std::unique_ptr<ConnectionData> data) {
     /*
     Steps:
-    1. Get data from DB
-    2. Send mobile verification request
+    1. Send mobile verification request
+    2. Get data from DB
     3. Add to connection storage to wait
     4. Mobile sends POST request with approval,
         endpoint grabs username, looks up data in storage, pulls it
         processes it, sends it to client
     */
+
+    //send to mobile daemon here
+    std::cout << "\n------------------\n";
+    std::cout << "Pretending to send request to mobile blah blah blah\n";
+    std::cout << "\n------------------\n";
     if (!data) {
         std::cout << "No data to proccess\n";
     }
@@ -48,9 +56,9 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         return;
     }
 
-    std::strncpy(username, data->username.c_str(), MAX_USERNAME_LENGTH - 1);
+    std::strncpy(username, data->username, MAX_USERNAME_LENGTH - 1);
     //TODO why is this being hit twice in some cases?
-    std::cout << "Username in work thread: " << data->username.c_str() << "\n";
+    std::cout << "Username in work thread: " << data->username << "\n";
     username[MAX_USERNAME_LENGTH - 1] = '\0';
     std::cout << "Username in work thread as username: " << username << "\n";
     bastion_username* uname_ptr = &username;
@@ -71,7 +79,28 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         std::cout << "Username: " << local_data.username << "\n";
     }
 
-    //send to mobile daemon here
+    data->user_data = local_data;
+
+    //get unique ptrrr
+    ConnectionData *raw_conn_data_ptr = data.get();
+    //add to storage queue
+    if (connection_storage.insert_connection_data(raw_conn_data_ptr) != SUCCESS) {
+        std::cout << "could not insert connection data ahhh\n";
+        return;
+    }
+
+    //works only for valid connections, should not be ran with stress test
+    /*
+    ConnectionData *data_from_storage = connection_storage.get_connection_data(data->connection_id);
+    std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
+    */
+
+
+
+
+
+
 
     //this breaks client connection - good thing
+    std::cout << "Client connection broken, have a good day\n";
 }

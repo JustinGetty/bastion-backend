@@ -65,7 +65,6 @@ struct WebSocketBehavior
         // getUserData() returns empty memory space for particular conn data
         // fix cast here
         auto *connData = ws->getUserData();
-        connData->username = EMPTY_USERNAME;
         connData->connection_id = globalConnectionId.fetch_add(1);
         std::cout << "Client connected! UserData pointer: " << connData
                   << ", connection id: " << connData->connection_id << std::endl;
@@ -90,7 +89,8 @@ struct WebSocketBehavior
             std::cerr << "Error: " << ex.what() << "\n";
         }
         auto *connData = static_cast<ConnectionData*>(ws->getUserData());
-        connData->username = msg_method.keys["username"];
+        strncpy(connData->username, msg_method.keys["username"].c_str(), sizeof(connData->username));
+        //connData->username = msg_method.keys["username"];
 
         ConnectionData* copyData = new ConnectionData(*connData);
         g_connThreadPool->enqueueConnection(copyData);
