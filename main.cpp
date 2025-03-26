@@ -88,6 +88,8 @@ struct WebSocketBehavior
         } catch (const std::exception &ex) {
             std::cerr << "Error: " << ex.what() << "\n";
         }
+
+
         auto *connData = static_cast<ConnectionData*>(ws->getUserData());
         strncpy(connData->username, msg_method.keys["username"].c_str(), sizeof(connData->username));
         //connData->username = msg_method.keys["username"];

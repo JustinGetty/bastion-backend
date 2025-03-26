@@ -41,6 +41,8 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     */
 
     //send to mobile daemon here
+    /*
+     *SEND CONNECTION ID SO WHEN THE USER SENDS BACK POST WITH THEIR RESPONSE IT CAN BE FOUND IN CONN STORAGE
     std::cout << "\n------------------\n";
     std::cout << "Pretending to send request to mobile blah blah blah\n";
     std::cout << "\n------------------\n";
@@ -94,10 +96,6 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     ConnectionData *data_from_storage = connection_storage.get_connection_data(data->connection_id);
     std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
     */
-
-
-
-
 
 
 

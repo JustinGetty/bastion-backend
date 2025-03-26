@@ -15,7 +15,8 @@
 class ConnectionDataStorage
 {
 private:
-    std::vector<ConnectionData *> connection_data_storage;
+    //static gives it "global" reach, all members alter one vector
+    static std::vector<ConnectionData *> connection_data_storage;
     std::mutex mtx;
 
 public:
