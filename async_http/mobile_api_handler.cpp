@@ -1,5 +1,6 @@
 #include "../Headers/mobile_api_handler.h"
 #include "../Headers/conn_data_storage.h"
+#include "../Headers/parse_message_json.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -18,9 +19,9 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-// Return a reasonable mime type based on the extension of a file.
-beast::string_view
-mime_type(beast::string_view path)
+// (Optional) A helper function to return a mime type for files.
+// Not used in this JSON-only version.
+beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
     auto const ext = [&path]
@@ -38,19 +39,7 @@ mime_type(beast::string_view path)
     if(iequals(ext, ".js"))   return "application/javascript";
     if(iequals(ext, ".json")) return "application/json";
     if(iequals(ext, ".xml"))  return "application/xml";
-    if(iequals(ext, ".swf"))  return "application/x-shockwave-flash";
-    if(iequals(ext, ".flv"))  return "video/x-flv";
-    if(iequals(ext, ".png"))  return "image/png";
-    if(iequals(ext, ".jpe"))  return "image/jpeg";
-    if(iequals(ext, ".jpeg")) return "image/jpeg";
-    if(iequals(ext, ".jpg"))  return "image/jpeg";
-    if(iequals(ext, ".gif"))  return "image/gif";
-    if(iequals(ext, ".bmp"))  return "image/bmp";
-    if(iequals(ext, ".ico"))  return "image/vnd.microsoft.icon";
-    if(iequals(ext, ".tiff")) return "image/tiff";
-    if(iequals(ext, ".tif"))  return "image/tiff";
-    if(iequals(ext, ".svg"))  return "image/svg+xml";
-    if(iequals(ext, ".svgz")) return "image/svg+xml";
+    // ... other mappings if needed ...
     return "application/text";
 }
 
@@ -74,47 +63,39 @@ public:
 
 private:
     using alloc_t = std::allocator<char>;
-
-    //using request_body_t = http::basic_dynamic_body<beast::flat_static_buffer<1024 * 1024>>;
+    // We use a string_body for both incoming requests and outgoing responses.
     using request_body_t = http::string_body;
 
     // The acceptor used to listen for incoming connections.
     tcp::acceptor& acceptor_;
 
-    // The path to the root of the document directory.
+    // The document root is unused in this JSON-only version,
+    // but we leave it here for potential future use.
     std::string doc_root_;
 
     // The socket for the currently connected client.
     tcp::socket socket_{acceptor_.get_executor()};
 
-    // The buffer for performing reads
+    // Buffer used for reading.
     beast::flat_static_buffer<8192> buffer_;
 
-    // The allocator used for the fields in the request and reply.
+    // Allocator for header fields.
     alloc_t alloc_{};
 
-    // The parser for reading the requests
+    // HTTP request parser.
     boost::optional<http::request_parser<request_body_t, alloc_t>> parser_;
 
-    // The timer putting a time limit on requests.
+    // Deadline timer for the request.
     net::steady_timer request_deadline_{
         acceptor_.get_executor(), (std::chrono::steady_clock::time_point::max)()};
 
-    // The string-based response message.
+    // Optional response and serializer objects for string-based (JSON) responses.
     boost::optional<http::response<http::string_body, http::basic_fields<alloc_t>>> string_response_;
-
-    // The string-based response serializer.
     boost::optional<http::response_serializer<http::string_body, http::basic_fields<alloc_t>>> string_serializer_;
 
-    // The file-based response message.
-    boost::optional<http::response<http::file_body, http::basic_fields<alloc_t>>> file_response_;
-
-    // The file-based response serializer.
-    boost::optional<http::response_serializer<http::file_body, http::basic_fields<alloc_t>>> file_serializer_;
-
+    // Accept a new connection.
     void accept()
     {
-        // Clean up any previous connection.
         beast::error_code ec;
         socket_.close(ec);
         buffer_.consume(buffer_.size());
@@ -129,32 +110,21 @@ private:
                 }
                 else
                 {
-                    // Request must be fully processed within 60 seconds.
-                    request_deadline_.expires_after(
-                        std::chrono::seconds(60));
-
+                    //set deadline, use read_request as callback
+                    request_deadline_.expires_after(std::chrono::seconds(60));
                     read_request();
                 }
             });
     }
 
+    // Read an HTTP request from the socket.
     void read_request()
     {
-        // On each read the parser needs to be destroyed and
-        // recreated. We store it in a boost::optional to
-        // achieve that.
-        //
-        // Arguments passed to the parser constructor are
-        // forwarded to the message object. A single argument
-        // is forwarded to the body constructor.
-        //
-        // We construct the dynamic body with a 1MB limit
-        // to prevent vulnerability to buffer attacks.
-        //
         parser_.emplace(
             std::piecewise_construct,
-            std::make_tuple(),
-            std::make_tuple(alloc_));
+            std::make_tuple(),        // Construct message object with default constructor.
+            std::make_tuple(alloc_)   // Construct the header fields with our allocator.
+        );
 
         http::async_read(
             socket_,
@@ -169,33 +139,54 @@ private:
             });
     }
 
+    // Process the HTTP request.
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
-        switch (req.method())
+        //get requests
+        if(req.method() == http::verb::get)
         {
-        case http::verb::get:
-            send_file(req.target());
-            break;
+            //likely never using get, since apple notif will be post to apple ANS server and then post back here
+            send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
+        }
+        //post requests
+        /*
+         *READ BACK THE users's sign in details and keys
+         *notif to user sent in different thread with APPLE/ANDROID notif services
+         */
+        else if(req.method() == http::verb::post)
+        {
+            std::string received_json = req.body();
+            std::cout << "Data Received: " << received_json << std::endl;
+            //std::string response_json = "{\"received\": " + received_json + "}";
 
-        default:
-            // We return responses indicating an error if
-            // we do not recognize the request method.
+            MsgMethod msg_method;
+            try {
+                msg_method = parse_method(received_json);
+                std::cout << "Method type: " << msg_method.type << "\n";
+                for (const auto &kv : msg_method.keys)
+                    std::cout << kv.first << " : " << kv.second << "\n";
+            } catch (const std::exception &ex) {
+                std::cerr << "Error: " << ex.what() << "\n";
+            }
+
+
+            send_json_response(received_json, http::status::ok);
+        }
+        else
+        {
             send_bad_response(
                 http::status::bad_request,
                 "Invalid request-method '" + std::string(req.method_string()) + "'\r\n");
-            break;
         }
     }
 
-    void send_bad_response(
-        http::status status,
-        std::string const& error)
+    // Send a generic bad response.
+    void send_bad_response(http::status status, std::string const& error)
     {
         string_response_.emplace(
             std::piecewise_construct,
             std::make_tuple(),
             std::make_tuple(alloc_));
-
         string_response_->result(status);
         string_response_->keep_alive(false);
         string_response_->set(http::field::server, "Beast");
@@ -204,7 +195,6 @@ private:
         string_response_->prepare_payload();
 
         string_serializer_.emplace(*string_response_);
-
         http::async_write(
             socket_,
             *string_serializer_,
@@ -217,75 +207,41 @@ private:
             });
     }
 
-    void send_file(beast::string_view target)
+    // Helper to send a JSON response.
+    void send_json_response(std::string const& body, http::status status = http::status::ok)
     {
-        // Request path must be absolute and not contain "..".
-        if (target.empty() || target[0] != '/' || target.find("..") != std::string::npos)
-        {
-            send_bad_response(
-                http::status::not_found,
-                "File not found\r\n");
-            return;
-        }
-
-        std::string full_path = doc_root_;
-        full_path.append(
-            target.data(),
-            target.size());
-
-        http::file_body::value_type file;
-        beast::error_code ec;
-        file.open(
-            full_path.c_str(),
-            beast::file_mode::read,
-            ec);
-        if(ec)
-        {
-            send_bad_response(
-                http::status::not_found,
-                "File not found\r\n");
-            return;
-        }
-
-        file_response_.emplace(
+        string_response_.emplace(
             std::piecewise_construct,
             std::make_tuple(),
             std::make_tuple(alloc_));
+        string_response_->result(status);
+        string_response_->keep_alive(false);
+        string_response_->set(http::field::server, "Beast");
+        string_response_->set(http::field::content_type, "application/json");
+        string_response_->body() = body;
+        string_response_->prepare_payload();
 
-        file_response_->result(http::status::ok);
-        file_response_->keep_alive(false);
-        file_response_->set(http::field::server, "Beast");
-        file_response_->set(http::field::content_type, mime_type(std::string(target)));
-        file_response_->body() = std::move(file);
-        file_response_->prepare_payload();
-
-        file_serializer_.emplace(*file_response_);
-
+        string_serializer_.emplace(*string_response_);
         http::async_write(
             socket_,
-            *file_serializer_,
+            *string_serializer_,
             [this](beast::error_code ec, std::size_t)
             {
                 socket_.shutdown(tcp::socket::shutdown_send, ec);
-                file_serializer_.reset();
-                file_response_.reset();
+                string_serializer_.reset();
+                string_response_.reset();
                 accept();
             });
     }
 
+    // Periodically check if the request deadline has expired.
     void check_deadline()
     {
-        //check deadline, current max is 60 seconds
         if (request_deadline_.expiry() <= std::chrono::steady_clock::now())
         {
-            // Close socket to cancel any outstanding operation.
             socket_.close();
-
-            // Sleep indefinitely until we're given a new deadline.
-            request_deadline_.expires_at(
-                (std::chrono::steady_clock::time_point::max)());
+            request_deadline_.expires_at((std::chrono::steady_clock::time_point::max)());
         }
-
         request_deadline_.async_wait(
             [this](beast::error_code)
             {
@@ -298,25 +254,13 @@ int main()
 {
     try
     {
-        // Check command line arguments.
-        /*
-        if (argc != 6)
-        {
-            std::cerr << "Usage: http_server_fast <address> <port> <doc_root> <num_workers> {spin|block}\n";
-            std::cerr << "  For IPv4, try:\n";
-            std::cerr << "    http_server_fast 0.0.0.0 80 . 100 block\n";
-            std::cerr << "  For IPv6, try:\n";
-            std::cerr << "    http_server_fast 0::0 80 . 100 block\n";
-            return EXIT_FAILURE;
-        }
-*/
+        // Hardcoded server settings equivalent to:
+        // ./mobile_handler 192.168.1.213 8444 ./async_http 100 block
         auto const address = net::ip::make_address("192.168.1.213");
         unsigned short port = 8444;
-        std::string doc_root = "./async_http";
+        std::string doc_root = "./async_http"; // Not used in our JSON example.
         int num_workers = 100;
-        //bool spin = (std::strcmp(argv[5], "spin") == 0);
-        //switch to true later perhaps for lower latency idk
-        bool spin = false;
+        bool spin = false; // "block" mode
 
         net::io_context ioc{1};
         tcp::acceptor acceptor{ioc, {address, port}};
@@ -329,13 +273,14 @@ int main()
         }
 
         if (spin)
-          for (;;) ioc.poll();
+            for (;;) ioc.poll();
         else
-          ioc.run();
+            ioc.run();
     }
     catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+    return EXIT_SUCCESS;
 }

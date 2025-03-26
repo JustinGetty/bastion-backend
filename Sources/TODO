@@ -6,3 +6,4 @@
 6. https daemon should also have support for user account creation from the app
 7. make it so you can have 2 accounts udner 1 bastion account, switch between user id forwarded
 8. Move shit to heap to avoid stack overflow
+9. Server side "keep signed in", if sign in request is from same ip and < 30 or 60 days, approve without mobile approval
