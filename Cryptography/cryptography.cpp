@@ -11,6 +11,8 @@
 #include <openssl/pem.h>
 #include <openssl/bn.h>
 #include <openssl/evp.h>
+#include <iostream>
+#include <fstream>
 
 void print_token_hash(token_hash token_hash) {
     printf("Token Hash:\n");
@@ -396,10 +398,11 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
     return SUCCESS;
 }
 
-int main() {
-    // Step 1: Generate a symmetric key and IV.
-    sym_key key;       // defined as: unsigned char key[KEY_SIZE]
-    sym_iv iv;         // defined as: unsigned char iv[IV_SIZE]
+
+//this shit simulates main to test crypto functions
+int test_as_main() {
+    sym_key key;
+    sym_iv iv;
 
     if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
         std::fprintf(stderr, "Symmetric key generation failed\n");
@@ -416,15 +419,18 @@ int main() {
     std::printf("IV:\n");
     print_hex(iv, IV_SIZE);
 
-    // Step 2: Generate an asymmetric key pair.
     asym_key_struct asym_keys{};
-    // Depending on your implementation, you might call generate_asym_keypair(&asym_keys)
     if (generate_asym_keypair(&asym_keys) != SUCCESS) {
         std::cerr << "Failed to generate asymmetric key pair\n";
         return -1;
     }
+    std::cout << "PRIVATE KEY LENGTH: " <<asym_keys.priv_key_len << "\n";
 
-    // Step 3: Generate a random auth token and compute its hash.
+    priv_key_w_length priv_key_full{};
+    memcpy(priv_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
+    priv_key_full.priv_key_len = asym_keys.priv_key_len;
+    STATUS asym_priv_store_stat = store_user_private_key(1, &priv_key_full);
+
     token auth_token{};
     if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
         std::fprintf(stderr, "Auth token generation failed\n");
@@ -433,12 +439,21 @@ int main() {
     std::printf("Auth Token:\n");
     print_hex(auth_token, TOKEN_SIZE);
 
+    //compute hash of token, store it
     token_hash computed_hash{};
     compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
     std::printf("Computed Token Hash:\n");
     print_token_hash(computed_hash);
 
-    // Step 4: Encrypt the token hash with the symmetric key.
+
+    STATUS store_token_hash_stat = store_token_hash(1, computed_hash, TOKEN_SIZE);
+    std::cout << "Store token hash status: " << store_token_hash_stat << "\n";
+    if (store_token_hash_stat != SUCCESS) {
+        std::cout << "ERROR STORING HASH, EXITING\n";
+        return 1;
+    }
+
+    //encrypt hash with sym key
     int hash_len = HASH_SIZE;
     unsigned char sym_encrypted[256] = {0};
     int sym_encrypted_len = 0;
@@ -452,7 +467,7 @@ int main() {
     std::printf("Symmetric Encrypted Token Hash:\n");
     print_hex(sym_encrypted, sym_encrypted_len);
 
-    // Step 5: Encrypt the sym-encrypted hash using the public asymmetric key.
+    //encrypt sym-enc hash with pub asym key
     unsigned char asym_encrypted_hash[ASYM_SIZE] = {0};
     int asym_encrypted_hash_len = 0;
     if (encrypt_with_pub_key(asym_keys.pub_key, asym_keys.pub_key_len,
@@ -465,7 +480,7 @@ int main() {
     std::printf("Asymmetric Encrypted (wrapped token hash):\n");
     print_hex(asym_encrypted_hash, asym_encrypted_hash_len);
 
-    // Step 6: Encrypt the symmetric key and IV with the public key.
+    //encrypt sym key and iv with asym pub key
     unsigned char key_iv[KEY_SIZE + IV_SIZE] = {0};
     std::memcpy(key_iv, key, KEY_SIZE);
     std::memcpy(key_iv + KEY_SIZE, iv, IV_SIZE);
@@ -482,9 +497,6 @@ int main() {
     std::printf("Asymmetric Encrypted (symmetric key + IV):\n");
     print_hex(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
 
-    // Now simulate decryption...
-
-    // Step 7: Decrypt the symmetric key and IV using the private key.
     unsigned char decrypted_keyiv[KEY_SIZE + IV_SIZE] = {0};
     int decrypted_keyiv_len = 0;
     if (decrypt_with_private_key(asym_keys.priv_key, asym_keys.priv_key_len,
@@ -507,10 +519,26 @@ int main() {
     std::printf("Recovered IV:\n");
     print_hex(recovered_iv, IV_SIZE);
 
-    // Step 8: Decrypt the asymmetric-encrypted symmetric layer.
+
+    //get asym key back from db
+    asym_key_struct asym_keys_from_db{};
+    memcpy(asym_keys_from_db.pub_key, asym_keys.pub_key, asym_keys.pub_key_len);
+
+    priv_key_w_length private_key_from_db{};
+    STATUS get_priv_key_stat = get_user_private_key(1, &private_key_from_db);
+    if (get_priv_key_stat != SUCCESS) {
+        std::cout << "Error getting user private key: " << get_priv_key_stat << "\n";
+        return 1;
+    }
+
+    memcpy(asym_keys_from_db.priv_key, private_key_from_db.priv_key, asym_keys_from_db.priv_key_len);
+    asym_keys_from_db.priv_key_len = private_key_from_db.priv_key_len;
+    std::cout << "PRIVATE KEY:\n";
+    print_private_key(private_key_from_db);
+
     unsigned char decrypted_sym_encrypted[256] = {0};
     int decrypted_sym_encrypted_len = 0;
-    if (decrypt_with_private_key(asym_keys.priv_key, asym_keys.priv_key_len,
+    if (decrypt_with_private_key(asym_keys_from_db.priv_key, asym_keys_from_db.priv_key_len,
                                  asym_encrypted_hash, asym_encrypted_hash_len,
                                  decrypted_sym_encrypted, &decrypted_sym_encrypted_len) != SUCCESS)
     {
@@ -520,7 +548,6 @@ int main() {
     std::printf("Recovered Symmetric-Encrypted Token Hash:\n");
     print_hex(decrypted_sym_encrypted, decrypted_sym_encrypted_len);
 
-    // Step 9: Decrypt the symmetric layer to recover the original token hash.
     unsigned char final_decrypted_hash[HASH_SIZE] = {0};
     if (sym_decrypt(decrypted_sym_encrypted, &decrypted_sym_encrypted_len,
                     recovered_key, recovered_iv,
@@ -532,7 +559,6 @@ int main() {
     std::printf("Final Decrypted Token Hash:\n");
     print_token_hash(final_decrypted_hash);
 
-    // Step 10: Verify the token hash using constant-time comparison.
     if (constant_time_compare(final_decrypted_hash, computed_hash, HASH_SIZE) == SUCCESS) {
         std::printf("Token verification successful!\n");
     } else {
@@ -540,4 +566,59 @@ int main() {
     }
 
     return 0;
+}
+
+int fake_main() {
+    asym_key_struct keypair{};
+    if (generate_asym_keypair(&keypair) != SUCCESS) {
+        std::cerr << "Failed to generate asymmetric key pair." << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Asymmetric key pair generated." << std::endl;
+
+    priv_key_w_length priv_key_struct{};
+    std::memcpy(priv_key_struct.priv_key, keypair.priv_key, keypair.priv_key_len);
+    priv_key_struct.priv_key_len = keypair.priv_key_len;
+
+    std::cout << "Private key length: " << priv_key_struct.priv_key_len << std::endl;
+
+    if (store_user_private_key(1, &priv_key_struct) != SUCCESS) {
+        std::cerr << "Failed to store private key." << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Private key stored in the database." << std::endl;
+
+    const char *message = "Hello, World!";
+    int message_len = std::strlen(message);
+    unsigned char encrypted[ASYM_SIZE] = {0};
+    int encrypted_len = 0;
+    if (encrypt_with_pub_key(keypair.pub_key, keypair.pub_key_len,
+                             reinterpret_cast<const unsigned char*>(message), message_len,
+                             encrypted, &encrypted_len) != SUCCESS) {
+        std::cerr << "Encryption with public key failed." << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Message encrypted using the public key." << std::endl;
+
+    priv_key_w_length retrieved_priv_key{};
+    if (get_user_private_key(1, &retrieved_priv_key) != SUCCESS) {
+        std::cerr << "Failed to retrieve private key from the database." << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "Private key retrieved from the database." << std::endl;
+
+    unsigned char decrypted[ASYM_SIZE] = {0};
+    int decrypted_len = 0;
+    if (decrypt_with_private_key(retrieved_priv_key.priv_key, retrieved_priv_key.priv_key_len,
+                                encrypted, encrypted_len,
+                                decrypted, &decrypted_len) != SUCCESS) {
+        std::cerr << "Decryption with private key failed." << std::endl;
+        return EXIT_FAILURE;
+    }
+    if (decrypted_len < ASYM_SIZE) {
+        decrypted[decrypted_len] = '\0';
+    }
+    std::cout << "Decrypted message: " << decrypted << std::endl;
+
+    return EXIT_SUCCESS;
 }

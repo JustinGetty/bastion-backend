@@ -1,6 +1,7 @@
 #include "../Headers/conn_data_storage.h"
 
-ConnectionDataStorage::ConnectionDataStorage() : connection_data_storage() {}
+std::vector<ConnectionData *> ConnectionDataStorage::connection_data_storage;
+ConnectionDataStorage::ConnectionDataStorage() {}
 
 STATUS ConnectionDataStorage::insert_connection_data(ConnectionData *data)
 {

@@ -52,6 +52,11 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
                    const unsigned char *key, const unsigned char *iv,
                    unsigned char *ciphertext, int *ciphertext_len);
 
+
+// TESTSSS -------------------------------------------------------
+int test_as_main();
+int fake_main();
+
 #endif
 
 

@@ -43,6 +43,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     //send to mobile daemon here
     /*
      *SEND CONNECTION ID SO WHEN THE USER SENDS BACK POST WITH THEIR RESPONSE IT CAN BE FOUND IN CONN STORAGE
+     *
     std::cout << "\n------------------\n";
     std::cout << "Pretending to send request to mobile blah blah blah\n";
     std::cout << "\n------------------\n";
@@ -97,7 +98,8 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
     */
 
-
+    //int stat = test_as_main();
+    int stat_two = fake_main();
 
     //this breaks client connection - good thing
     std::cout << "Client connection broken, have a good day\n";

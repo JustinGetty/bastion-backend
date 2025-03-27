@@ -8,23 +8,7 @@
 #define THREAD_POOL_SIZE 10
 #define TASK_QUEUE_CAPACITY 10000
 
-typedef enum {
 
-} processing_type;
-
-
-typedef struct {
-	//already has query type
-	query_data queryData;
-	union {
-		/*
-		 *ADD OTHER TYPES HERE
-		 */
-		full_user_data user_data;
-	} processed_data;
-	bool is_ready;
-	STATUS status;
-} query_data_struct;
 
 typedef struct {
 	query_data_struct *queryDataStruct;

@@ -19,8 +19,9 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-// (Optional) A helper function to return a mime type for files.
-// Not used in this JSON-only version.
+/* DEFINITIONS FOR TESTING CRYPTO */
+//token_hash og_token_hash =
+
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -249,7 +250,7 @@ private:
             });
     }
 };
-
+/*
 int main()
 {
     try
@@ -284,3 +285,4 @@ int main()
     }
     return EXIT_SUCCESS;
 }
+*/

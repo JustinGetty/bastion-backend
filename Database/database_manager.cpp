@@ -290,23 +290,31 @@ while (true) {
                 /*
                  *STORE LENGTH OF KEY TO COMPARE WHEN GRABBED
                  */
-                while (sqlite3_step(stmt) == SQLITE_ROW) {
-                    const void* blob = sqlite3_column_blob(stmt, 0);
-                    int blob_size = sqlite3_column_bytes(stmt, 0);
-                    //ensure correct size here !!!!!! somehow
-                    if (temp_status == -1) {
-                        priv_key.priv_key_status = DATABASE_FAILURE;
-                    } else {
-                        memcpy(priv_key.priv_key, blob, blob_size);
-                        priv_key.priv_key_status = SUCCESS;
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        const void* blob = sqlite3_column_blob(stmt, 0);
+                        int blob_size = sqlite3_column_bytes(stmt, 0);
+                        int priv_key_length = sqlite3_column_int(stmt, 1);
+                        std::cout << "private key length: " << priv_key_length << std::endl;
+                        if (priv_key_length <= 0){ temp_status = -1;}
+                        //ensure correct size here !!!!!! somehow
+                        if (temp_status == -1) {
+                            priv_key.priv_key_status = DATABASE_FAILURE;
+                        } else {
+                            memcpy(priv_key.priv_key, blob, blob_size);
+                            priv_key.priv_key_status = SUCCESS;
+                            priv_key.priv_key_len = priv_key_length;
+                        }
                     }
-                }
-                //send(client_sock, &priv_key, sizeof(priv_key),0);
-                if (priv_key.priv_key_status == SUCCESS) {
-                    printf("Query executed successfully\n");
-                } else {
-                    printf("Query failed\n");
-                }
+                    inbound_data_struct->status = priv_key.priv_key_status;
+                    inbound_data_struct->processed_data.priv_key.priv_key_len = priv_key.priv_key_len;
+                    //wont work because length isnt yet known. need to store length in db for easiest usage
+                    memcpy(inbound_data_struct->processed_data.priv_key.priv_key, priv_key.priv_key, priv_key.priv_key_len);
+                    inbound_data_struct->is_ready = true;
+                    if (priv_key.priv_key_status == SUCCESS) {
+                        printf("Query executed successfully\n");
+                    } else {
+                        printf("Query failed\n");
+                    }
                 break;
             }
                 case GET_SYM_KEY:{
@@ -395,27 +403,30 @@ while (true) {
         if (inbound_data->type == 'p') {
             printf("Hit the post statement\n");
             int step_result = sqlite3_step(stmt);
+            STATUS update_status;
 
             if (step_result == SQLITE_DONE) {
                 // Success path - query executed successfully
                 if (temp_status == -1) {
                     // There was a binding error earlier
                     fprintf(stderr, "Binding failed: %s\n", sqlite3_errmsg(db));
-                    STATUS update_status = DATABASE_FAILURE;
+                    update_status = DATABASE_FAILURE;
                     //send(client_sock, &update_status, sizeof(STATUS), 0);
                     printf("Failed due to binding error\n");
                 } else {
                     printf("Update Successful\n");
-                    STATUS update_status = SUCCESS;
+                    update_status = SUCCESS;
                     //send(client_sock, &update_status, sizeof(STATUS), 0);
                 }
             } else {
                 // Failure path - query execution failed
                 fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
-                STATUS update_status = DATABASE_FAILURE;
+                update_status = DATABASE_FAILURE;
                 //send(client_sock, &update_status, sizeof(STATUS), 0);
                 printf("Failed due to execution error: %d\n", step_result);
             }
+            inbound_data_struct->is_ready = true;
+            inbound_data_struct->status = update_status;
         }
     }
     sqlite3_finalize(stmt);

@@ -293,29 +293,30 @@ STATUS post_full_user_data(full_user_data user_data) {
 }
 
 STATUS store_token_hash(const int user_id, const token_hash token_hash_, const size_t hash_len) {
-    int sock = connect_to_database_daemon();
-    if (sock < 0) {
-        return CONNECTION_TO_DB_FAILURE;
-    }
-
     query_param params[MAX_PARAMS];
     params[0] = create_param_hash_token(token_hash_);
     params[1] = create_param_int(user_id);
     query_data data = set_query_data('p', POST_AUTH_TOKEN, 2, params);
     strncpy(data.query, UPDATE_USER_AUTH_TOKEN_BY_ID, sizeof(data.query));
-    STATUS send_status = send_query(sock, data);
-    if (send_status != SUCCESS) {
-        return send_status;
+
+    //this can go into helper function
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    add_to_queue(queryDataPtr);
+
+    /* BLOCKING LOGIC, OPTIMIZE LATE TO ASYNC !!!*/
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    printf("Query Sent\n");
-    STATUS post_status = read_status(sock);
-    if (post_status != SUCCESS) {
-        printf("FAilure");
+    STATUS process_status = queryDataPtr->status;
+    std::cout << "Process status: " << process_status << "\n";
+    if (process_status != SUCCESS) {
+        return process_status;
     }
-    else
-        printf("SUCCESS\n");
-    close(sock);
-    return post_status;
+    std::cout << "Query processed\n";
+    return process_status;
 }
 STATUS get_token_hash(const int id, token_hash hash_out) {
     int sock = connect_to_database_daemon();
@@ -364,38 +365,41 @@ STATUS get_token_hash(const int id, token_hash hash_out) {
 }
 
 STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full) {
-    int sock = connect_to_database_daemon();
-    if (sock < 0) {
-        return CONNECTION_TO_DB_FAILURE;
-    }
     query_param params[MAX_PARAMS];
     params[0] = create_param_int(user_id);
 
     query_data data = set_query_data('g', GET_ASYM_PRIV_KEY, 1, params);
     strncpy(data.query, GET_USER_PRIVATE_KEY_BY_ID, sizeof(data.query));
 
-    STATUS send_status = send_query(sock, data);
-    if (send_status != SUCCESS) {
-        return send_status;
-    }
-    printf("Query sent\n");
 
-    priv_key_struct priv_key;
-    unsigned char *buffer = (unsigned char *)&priv_key;
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    add_to_queue(queryDataPtr);
 
-    size_t to_receive = sizeof(priv_key_struct);
-    int bytes_rec = receive_from_db(to_receive, buffer, sock);
-
-    if (bytes_rec != to_receive) {
-        fprintf(stderr, "ERROR RECEIVING");
-        return TOO_FEW_BYTES_RECEIVED;
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    if (priv_key.priv_key_status != SUCCESS) {
+    priv_key_w_length priv_key{};
+    memcpy(priv_key.priv_key, queryDataPtr->processed_data.priv_key.priv_key, queryDataPtr->processed_data.priv_key.priv_key_len);
+    priv_key.priv_key_len = queryDataPtr->processed_data.priv_key.priv_key_len;
+
+    printf("Private key: \n");
+    for (int i = 0; i < priv_key.priv_key_len; i++) {
+        printf("%02x", priv_key.priv_key[i]);
+    }
+    printf("\n");
+
+    STATUS status = queryDataPtr->status;
+    std::cout << "priv key status: " << status << "\n";
+
+    if (status != SUCCESS) {
         return DATABASE_FAILURE;
     }
 
-    if (priv_key.priv_key_status == SUCCESS) {
+    if (status == SUCCESS) {
         memcpy(priv_key_full, priv_key.priv_key, sizeof(priv_key.priv_key));
         priv_key_full->priv_key_len = priv_key.priv_key_len;
         size_t len = get_der_blob_total_length(priv_key.priv_key);
@@ -405,35 +409,35 @@ STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full)
             return DATABASE_FAILURE;
         }
     }
-    return priv_key.priv_key_status;
+    return status;
 }
+
 STATUS store_user_private_key(const int user_id, priv_key_w_length *priv_key_full) {
-    int sock = connect_to_database_daemon();
-    if (sock < 0) {
-        return CONNECTION_TO_DB_FAILURE;
-    }
     query_param params[MAX_PARAMS];
     params[0] = create_param_asym_key(*priv_key_full);
-    params[1] = create_param_int(user_id);
+    params[1] = create_param_int(priv_key_full->priv_key_len);
+    params[2] = create_param_int(user_id);
 
-    query_data data = set_query_data('p', POST_ASYM_PRIV_KEY, 2, params);
+    query_data data = set_query_data('p', POST_ASYM_PRIV_KEY, 3, params);
     strncpy(data.query, UPDATE_USER_PRIV_KEY_BY_ID, sizeof(data.query));
 
-    STATUS send_status = send_query(sock, data);
-    if (send_status != SUCCESS) {
-        return send_status;
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    add_to_queue(queryDataPtr);
+
+    /* BLOCKING LOGIC, OPTIMIZE LATE TO ASYNC !!!*/
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    printf("Query Sent\n");
-
-    STATUS post_status = read_status(sock);
-    if (post_status != SUCCESS) {
-        printf("Failure\n");
+    STATUS process_status = queryDataPtr->status;
+    std::cout << "Process status: " << process_status << "\n";
+    if (process_status != SUCCESS) {
+        return process_status;
     }
-    else printf("Success\n");
-
-    close(sock);
-    return post_status;
-
+    std::cout << "Query processed\n";
+    return process_status;
 }
 STATUS get_full_user_data(int user_id, full_user_data *user_data) {
     int sock = connect_to_database_daemon();
@@ -579,6 +583,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
          *fix this tomorrow
          *issue possibly in ConnectionData with std::string username
          *I switched to char[] to test
+         *NOTE this may work now I cant remember TEST AGAIN LATER!!!
          */
         //memcpy(user_data, &full_user_data, sizeof(full_user_data));
         user_data->user_status = full_user_data.user_status;
