@@ -4,9 +4,9 @@
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 #include <openssl/crypto.h>
-#include "cryptography.h"
+#include "../Headers/cryptography.h"
 #include <bastion_data.h>
-#include "databaseq.h"
+#include "../Headers/databaseq.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bn.h>
@@ -44,6 +44,7 @@ void compute_token_hash(const token token_, size_t token_size, token_hash token_
     SHA256(token_, token_size, token_hash_);
 }
 
+//STATUS constant_time_compare(const token_hash a, const token_hash *b, size_t len);
 STATUS constant_time_compare(const token_hash a, const token_hash b, size_t len) {
     if (CRYPTO_memcmp(a, b, len) == 0) {
         return SUCCESS;
@@ -395,125 +396,148 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
     return SUCCESS;
 }
 
-
-    /*
 int main() {
-
-    sym_key key;
-    sym_iv iv;
-    unsigned char plaintext[] = "ahhhhhh oh my god";
-    unsigned char ciphertext[256];
-    unsigned char decryptedtext[256];
-
-    int plaintext_len = strlen((char *)plaintext);
-    int ciphertext_len = 0, decryptedtext_len = 0;
+    // Step 1: Generate a symmetric key and IV.
+    sym_key key;       // defined as: unsigned char key[KEY_SIZE]
+    sym_iv iv;         // defined as: unsigned char iv[IV_SIZE]
 
     if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
-        fprintf(stderr, "Key generation failed\n");
+        std::fprintf(stderr, "Symmetric key generation failed\n");
         return -1;
     }
 
     if (RAND_bytes(iv, IV_SIZE) != 1) {
-        fprintf(stderr, "Error generating IV\n");
+        std::fprintf(stderr, "IV generation failed\n");
         return -1;
     }
 
-    sym_key_full key_full;
-    memcpy(&key_full.symmetric_key, key, KEY_SIZE);
-    memcpy(&key_full.symmetric_iv, iv, IV_SIZE);
-
-    STATUS store_status = store_user_sym_key(1, &key_full);
-    if (store_status != SUCCESS) {
-        printf("Error storing key\n");
-        return -1;
-    }
-    printf("KEYYY:\n");
+    std::printf("Symmetric Key:\n");
     print_hex(key, KEY_SIZE);
-    printf("IV:\n");
+    std::printf("IV:\n");
     print_hex(iv, IV_SIZE);
-    printf("Key stored :)\n");
 
-    if (sym_encrypt(plaintext, &plaintext_len, key, iv, ciphertext, &ciphertext_len) != SUCCESS) {
-        fprintf(stderr, "Encryption failed\n");
+    // Step 2: Generate an asymmetric key pair.
+    asym_key_struct asym_keys{};
+    // Depending on your implementation, you might call generate_asym_keypair(&asym_keys)
+    if (generate_asym_keypair(&asym_keys) != SUCCESS) {
+        std::cerr << "Failed to generate asymmetric key pair\n";
         return -1;
     }
 
-    printf("Ciphertext (hex): ");
-    for (int i = 0; i < ciphertext_len; i++) {
-        printf("%02x", ciphertext[i]);
-    }
-    printf("\n");
-
-    sym_key_full sym_key_from_db;
-    STATUS get_key_status = get_user_sym_key(1, &sym_key_from_db);
-    if (get_key_status != SUCCESS) {
-        fprintf(stderr, "AHH ERROR GETTING KEY");
+    // Step 3: Generate a random auth token and compute its hash.
+    token auth_token{};
+    if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
+        std::fprintf(stderr, "Auth token generation failed\n");
         return -1;
     }
+    std::printf("Auth Token:\n");
+    print_hex(auth_token, TOKEN_SIZE);
 
-    printf("KEYYY GOOOD\nSymmetric key: \n");
-    print_hex(sym_key_from_db.symmetric_key, KEY_SIZE);
-    printf("IV: \n");
-    print_hex(sym_key_from_db.symmetric_iv, IV_SIZE);
+    token_hash computed_hash{};
+    compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
+    std::printf("Computed Token Hash:\n");
+    print_token_hash(computed_hash);
 
-    decryptedtext_len = ciphertext_len;
-    if (sym_decrypt(ciphertext, &decryptedtext_len, sym_key_from_db.symmetric_key, sym_key_from_db.symmetric_iv, decryptedtext) != SUCCESS) {
-        fprintf(stderr, "Decryption failed\n");
+    // Step 4: Encrypt the token hash with the symmetric key.
+    int hash_len = HASH_SIZE;
+    unsigned char sym_encrypted[256] = {0};
+    int sym_encrypted_len = 0;
+    if (sym_encrypt(computed_hash, &hash_len,
+                    key, iv,
+                    sym_encrypted, &sym_encrypted_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Symmetric encryption failed\n");
         return -1;
     }
+    std::printf("Symmetric Encrypted Token Hash:\n");
+    print_hex(sym_encrypted, sym_encrypted_len);
 
-    decryptedtext[decryptedtext_len] = '\0';
-    printf("Decrypted text: %s\n", decryptedtext);
-
-    if (strcmp((char *)plaintext, (char *)decryptedtext) == 0) {
-        printf("Decryption successful! The decrypted message is the same as the original plaintext.\n");
-    } else {
-        printf("Decryption failed! The decrypted message doesn't match the original plaintext.\n");
-    }
-
-    return 0;
-
-    full_user_data *user_data;
-    STATUS ret_status = get_full_user_data(1, user_data);
-    if (ret_status == SUCCESS) {
-        printf("retrieval success\n");
-        printf("User ID: %d\n", user_data->user_id);
-        printf("Username: %s\n", user_data->username);
-        print_token_hash(user_data->enc_auth_token);
-        print_private_key(user_data->priv_key_w_len);
-    } else {
-        printf("Failure");
-    }
-
-    const char *message = "Hello world!";
-    int message_len = strlen(message);
-    unsigned char encrypted[ASYM_SIZE] = {0};
-    unsigned char decrypted[ASYM_SIZE] = {0};
-    int encrypted_len = 0;
-    int decrypted_len = 0;
-
+    // Step 5: Encrypt the sym-encrypted hash using the public asymmetric key.
+    unsigned char asym_encrypted_hash[ASYM_SIZE] = {0};
+    int asym_encrypted_hash_len = 0;
     if (encrypt_with_pub_key(asym_keys.pub_key, asym_keys.pub_key_len,
-                             (const unsigned char*)message, message_len,
-                             encrypted, &encrypted_len) != SUCCESS) {
-        fprintf(stderr, "Encryption failed\n");
+                             sym_encrypted, sym_encrypted_len,
+                             asym_encrypted_hash, &asym_encrypted_hash_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric encryption of token hash failed\n");
         return -1;
     }
-    printf("Encryption succeeded. Encrypted length: %d bytes\n", encrypted_len);
+    std::printf("Asymmetric Encrypted (wrapped token hash):\n");
+    print_hex(asym_encrypted_hash, asym_encrypted_hash_len);
 
-    printf("Encrypted text: ");
-    for (int i = 0; i < encrypted_len; i++) {
-        printf("%02x", encrypted[i]);
+    // Step 6: Encrypt the symmetric key and IV with the public key.
+    unsigned char key_iv[KEY_SIZE + IV_SIZE] = {0};
+    std::memcpy(key_iv, key, KEY_SIZE);
+    std::memcpy(key_iv + KEY_SIZE, iv, IV_SIZE);
+
+    unsigned char asym_encrypted_keyiv[ASYM_SIZE] = {0};
+    int asym_encrypted_keyiv_len = 0;
+    if (encrypt_with_pub_key(asym_keys.pub_key, asym_keys.pub_key_len,
+                             key_iv, KEY_SIZE + IV_SIZE,
+                             asym_encrypted_keyiv, &asym_encrypted_keyiv_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric encryption of symmetric key/IV failed\n");
+        return -1;
     }
-    printf("\n");
+    std::printf("Asymmetric Encrypted (symmetric key + IV):\n");
+    print_hex(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
 
+    // Now simulate decryption...
+
+    // Step 7: Decrypt the symmetric key and IV using the private key.
+    unsigned char decrypted_keyiv[KEY_SIZE + IV_SIZE] = {0};
+    int decrypted_keyiv_len = 0;
     if (decrypt_with_private_key(asym_keys.priv_key, asym_keys.priv_key_len,
-                                 encrypted, encrypted_len,
-                                 decrypted, &decrypted_len) != SUCCESS) {
-        fprintf(stderr, "Decryption failed\n");
+                                 asym_encrypted_keyiv, asym_encrypted_keyiv_len,
+                                 decrypted_keyiv, &decrypted_keyiv_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric decryption of key/IV failed\n");
         return -1;
     }
-    decrypted[decrypted_len] = '\0';
-    printf("Decrypted message: %s\n", decrypted);
+    if (decrypted_keyiv_len != (KEY_SIZE + IV_SIZE)) {
+        std::fprintf(stderr, "Decrypted key/IV length mismatch\n");
+        return -1;
+    }
+    unsigned char recovered_key[KEY_SIZE] = {0};
+    unsigned char recovered_iv[IV_SIZE] = {0};
+    std::memcpy(recovered_key, decrypted_keyiv, KEY_SIZE);
+    std::memcpy(recovered_iv, decrypted_keyiv + KEY_SIZE, IV_SIZE);
+    std::printf("Recovered Symmetric Key:\n");
+    print_hex(recovered_key, KEY_SIZE);
+    std::printf("Recovered IV:\n");
+    print_hex(recovered_iv, IV_SIZE);
+
+    // Step 8: Decrypt the asymmetric-encrypted symmetric layer.
+    unsigned char decrypted_sym_encrypted[256] = {0};
+    int decrypted_sym_encrypted_len = 0;
+    if (decrypt_with_private_key(asym_keys.priv_key, asym_keys.priv_key_len,
+                                 asym_encrypted_hash, asym_encrypted_hash_len,
+                                 decrypted_sym_encrypted, &decrypted_sym_encrypted_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric decryption of wrapped token hash failed\n");
+        return -1;
+    }
+    std::printf("Recovered Symmetric-Encrypted Token Hash:\n");
+    print_hex(decrypted_sym_encrypted, decrypted_sym_encrypted_len);
+
+    // Step 9: Decrypt the symmetric layer to recover the original token hash.
+    unsigned char final_decrypted_hash[HASH_SIZE] = {0};
+    if (sym_decrypt(decrypted_sym_encrypted, &decrypted_sym_encrypted_len,
+                    recovered_key, recovered_iv,
+                    final_decrypted_hash) != SUCCESS)
+    {
+        std::fprintf(stderr, "Symmetric decryption of token hash failed\n");
+        return -1;
+    }
+    std::printf("Final Decrypted Token Hash:\n");
+    print_token_hash(final_decrypted_hash);
+
+    // Step 10: Verify the token hash using constant-time comparison.
+    if (constant_time_compare(final_decrypted_hash, computed_hash, HASH_SIZE) == SUCCESS) {
+        std::printf("Token verification successful!\n");
+    } else {
+        std::printf("Token verification failed!\n");
+    }
+
     return 0;
 }
-*/

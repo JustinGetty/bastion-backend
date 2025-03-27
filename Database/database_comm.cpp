@@ -551,6 +551,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     queryData.queryData = data;
     queryData.is_ready = false;
     query_data_struct *queryDataPtr = &queryData;
+    //void add_to_queue(query_data_struct* queryData)
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
