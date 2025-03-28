@@ -38,6 +38,8 @@ add_executable(bastion_auth main.cpp
         Headers/parse_message_json.h
         async_http/mobile_api_handler.cpp
         Headers/mobile_api_handler.h
+        Headers/validation_work.cpp
+        Headers/validation_work.h
 )
 
 

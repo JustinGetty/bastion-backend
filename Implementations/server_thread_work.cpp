@@ -100,7 +100,8 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
     //int stat = test_as_main();
     //int stat_two = fake_main();
-    int stat_three = test_sym_encode_json();
+    //int stat_three = test_sym_encode_json();
+    //int stat_four = test_full_send();
 
     //this breaks client connection - good thing
     std::cout << "Client connection broken, have a good day\n";

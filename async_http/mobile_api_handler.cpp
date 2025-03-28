@@ -81,8 +81,7 @@ beast::string_view mime_type(beast::string_view path)
     return "application/text";
 }
 
-class http_worker
-{
+class http_worker {
 public:
     http_worker(http_worker const&) = delete;
     http_worker& operator=(http_worker const&) = delete;
@@ -200,14 +199,19 @@ private:
             MsgMethod msg_method;
             try {
                 msg_method = parse_method(received_json);
-                std::cout << "Method type: " << msg_method.type << "\n";
+                std::cout << "Method type: " << msg_method.type << std::endl;
                 for (const auto &kv : msg_method.keys)
-                    std::cout << kv.first << " : " << kv.second << "\n";
+                    std::cout << kv.first << " : " << kv.second << std::endl;
             } catch (const std::exception &ex) {
                 std::cerr << "Error: " << ex.what() << "\n";
             }
 
+            /*
+             *From here keys and data gets added to thread pool queue for processing
+             */
 
+
+            //send back status response to mobile
             send_json_response(received_json, http::status::ok);
         }
         else
@@ -287,8 +291,8 @@ private:
             });
     }
 };
-/*
-int main()
+
+void api_handler_setup()
 {
     try
     {
@@ -318,12 +322,12 @@ int main()
     catch (const std::exception& e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
+        return ;
     }
-    return EXIT_SUCCESS;
+    return;
 }
 
-
+/*
 unsigned char keyData[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
     size_t keyLength = sizeof(keyData);
 
@@ -348,5 +352,5 @@ unsigned char keyData[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
         printf("%02x", byte);
     }
     std::cout << std::endl;
+    */
 
-*/

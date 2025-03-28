@@ -710,4 +710,160 @@ int test_full_send() {
      * Decode it all and verify it works
      */
 
+
+
+    //Create auth token ----------------------------------------------------------------
+    token auth_token{};
+    if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
+        std::fprintf(stderr, "Auth token generation failed\n");
+        return -1;
+    }
+    std::printf("Auth Token:\n");
+    print_hex(auth_token, TOKEN_SIZE);
+
+    //compute hash of token ----------------------------------------------------------------
+    token_hash computed_hash{};
+    compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
+    std::printf("Computed Token Hash:\n");
+    print_token_hash(computed_hash);
+
+    //Store token hash ---------------------------------------------------------------------
+    STATUS store_token_hash_stat = store_token_hash(1, computed_hash, TOKEN_SIZE);
+    std::cout << "Store token hash status: " << store_token_hash_stat << "\n";
+    if (store_token_hash_stat != SUCCESS) {
+        std::cout << "ERROR STORING HASH, EXITING\n";
+        return 1;
+    }
+
+
+
+
+
+
+
+    //create asym keys ----------------------------------------------------------------------
+    asym_key_struct asym_keys{};
+    if (generate_asym_keypair(&asym_keys) != SUCCESS) {
+        std::cerr << "Failed to generate asymmetric key pair\n";
+        return -1;
+    }
+
+    std::cout << "PRIVATE KEY LENGTH: " <<asym_keys.priv_key_len << "\n";
+
+    //store private key ----------------------------------------------------------------------
+    priv_key_w_length priv_key_full{};
+    memcpy(priv_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
+    priv_key_full.priv_key_len = asym_keys.priv_key_len;
+    STATUS asym_priv_store_stat = store_user_private_key(1, &priv_key_full);
+
+    //store public key -----------------------------------------------------------------------
+    /*
+    std::ofstream pub_key_file = std::ofstream("Cryptography/asym_pub_key.bin", std::ios::binary);
+    pub_key_file.write(reinterpret_cast<const char*>(&asym_keys.pub_key), sizeof(asym_keys.pub_key));
+    */
+
+
+
+
+
+    //Generate sym key and iv ------------------------------------------------------------------
+
+    sym_key key;
+    sym_iv iv;
+
+    if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
+        std::fprintf(stderr, "Symmetric key generation failed\n");
+        return -1;
+    }
+
+    if (RAND_bytes(iv, IV_SIZE) != 1) {
+        std::fprintf(stderr, "IV generation failed\n");
+        return -1;
+    }
+
+    std::printf("Symmetric Key:\n");
+    print_hex(key, KEY_SIZE);
+    std::printf("IV:\n");
+    print_hex(iv, IV_SIZE);
+
+
+
+
+
+
+
+
+
+
+    //encrypt token hash with sym key
+    int hash_len = HASH_SIZE;
+    unsigned char sym_encrypted[256] = {0};
+    int sym_encrypted_len = 0;
+    if (sym_encrypt(computed_hash, &hash_len,
+                    key, iv,
+                    sym_encrypted, &sym_encrypted_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Symmetric encryption failed\n");
+        return -1;
+    }
+    std::printf("Symmetric Encrypted Token Hash:\n");
+    print_hex(sym_encrypted, sym_encrypted_len);
+
+
+
+
+
+
+
+
+    //encrypt sym-enc hash with pub asym key
+    unsigned char asym_encrypted_hash[ASYM_SIZE] = {0};
+    int asym_encrypted_hash_len = 0;
+    if (encrypt_with_pub_key(asym_keys.pub_key, asym_keys.pub_key_len,
+                             sym_encrypted, sym_encrypted_len,
+                             asym_encrypted_hash, &asym_encrypted_hash_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric encryption of token hash failed\n");
+        return -1;
+    }
+    std::printf("Asymmetric Encrypted (wrapped token hash):\n");
+    print_hex(asym_encrypted_hash, asym_encrypted_hash_len);
+
+
+
+
+
+
+    //encrypt sym key and iv with asym pub key
+    unsigned char key_iv[KEY_SIZE + IV_SIZE] = {0};
+    std::memcpy(key_iv, key, KEY_SIZE);
+    std::memcpy(key_iv + KEY_SIZE, iv, IV_SIZE);
+
+    unsigned char asym_encrypted_keyiv[ASYM_SIZE] = {0};
+    int asym_encrypted_keyiv_len = 0;
+    if (encrypt_with_pub_key(asym_keys.pub_key, asym_keys.pub_key_len,
+                             key_iv, KEY_SIZE + IV_SIZE,
+                             asym_encrypted_keyiv, &asym_encrypted_keyiv_len) != SUCCESS)
+    {
+        std::fprintf(stderr, "Asymmetric encryption of symmetric key/IV failed\n");
+        return -1;
+    }
+    std::printf("Asymmetric Encrypted (symmetric key + IV):\n");
+    print_hex(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
+
+
+
+
+
+
+
+    //encode both to strings
+    std::string encoded_key_iv = base64_encode(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
+    std::string encoded_token_hash = base64_encode(asym_encrypted_hash, hash_len);
+
+    std::cout << "Encoded key iv:\n" << encoded_key_iv << "\n";
+    std::cout << "Encoded token hash:\n" << encoded_token_hash << "\n";
+
+    return 0;
+
 }

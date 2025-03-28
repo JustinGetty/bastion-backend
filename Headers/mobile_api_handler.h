@@ -6,6 +6,5 @@
 #define MOBILE_API_HANDLER_H
 
 
-
-
+void api_handler_setup();
 #endif //MOBILE_API_HANDLER_H

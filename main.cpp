@@ -8,7 +8,7 @@
 #include <atomic>
 #include "Headers/database_head.h"
 #include "database_head.h"
-
+#include "Headers/mobile_api_handler.h"
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -129,6 +129,9 @@ int main()
     */
     ConnThreadPool local_thread_pool;
     g_connThreadPool = &local_thread_pool;
+
+    std::thread t(api_handler_setup);
+
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     setup_threads();
