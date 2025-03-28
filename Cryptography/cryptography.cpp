@@ -13,6 +13,12 @@
 #include <openssl/evp.h>
 #include <iostream>
 #include <fstream>
+#include <nlohmann/json.hpp>
+#include <string>
+#include <vector>
+#include <cstdio>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
 
 void print_token_hash(token_hash token_hash) {
     printf("Token Hash:\n");
@@ -21,8 +27,6 @@ void print_token_hash(token_hash token_hash) {
     }
     printf("\n");
 }
-
-
 
 void print_private_key(priv_key_w_length private_key) {
     printf("Private key: \n");
@@ -399,6 +403,39 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
 }
 
 
+std::string base64_encode(const unsigned char* buffer, size_t length) {
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+    // Create a base64 filter and a memory BIO
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    // Push the base64 filter onto the memory BIO
+    bio = BIO_push(b64, bio);
+    // Disable newlines in the encoded output
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, buffer, length);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    std::string encoded(bufferPtr->data, bufferPtr->length);
+    BIO_free_all(bio);
+    return encoded;
+}
+
+std::vector<unsigned char> base64_decode(const std::string &encoded) {
+    BIO *bio, *b64;
+    int decodeLen = encoded.size();
+    std::vector<unsigned char> decoded(decodeLen);
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_mem_buf(encoded.data(), encoded.size());
+    bio = BIO_push(b64, bio);
+    // Disable newlines in decoding
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    int length = BIO_read(bio, decoded.data(), decodeLen);
+    decoded.resize(length);
+    BIO_free_all(bio);
+    return decoded;
+}
+
 //this shit simulates main to test crypto functions
 int test_as_main() {
     sym_key key;
@@ -568,6 +605,7 @@ int test_as_main() {
     return 0;
 }
 
+
 int fake_main() {
     asym_key_struct keypair{};
     if (generate_asym_keypair(&keypair) != SUCCESS) {
@@ -621,4 +659,55 @@ int fake_main() {
     std::cout << "Decrypted message: " << decrypted << std::endl;
 
     return EXIT_SUCCESS;
+}
+
+int test_sym_encode_json() {
+    sym_key key;
+    sym_iv iv;
+
+    if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
+        std::fprintf(stderr, "Symmetric key generation failed\n");
+        return -1;
+    }
+
+    if (RAND_bytes(iv, IV_SIZE) != 1) {
+        std::fprintf(stderr, "IV generation failed\n");
+        return -1;
+    }
+
+    std::printf("Symmetric Key:\n");
+    print_hex(key, KEY_SIZE);
+    std::printf("IV:\n");
+    print_hex(iv, IV_SIZE);
+
+
+    std::string encoded_key = base64_encode(key, KEY_SIZE);
+    std::cout << "Encoded key:\n" << encoded_key << std::endl;
+    std::vector<unsigned char> decoded_key = base64_decode(encoded_key);
+    std::cout << "Decoded binary key:\n";
+    for (unsigned char byte : decoded_key) {
+        printf("%02x", byte);
+    }
+    std::cout << std::endl;
+    return 0;
+}
+
+int test_full_send() {
+    /*
+     *Here we need to do as follows:
+     * Create auth token
+     * Create auth token hash
+     * Store auth token hash
+     * Create asym keys, store the public one in a file and private one in the database
+     * Create sym key and store it in a file
+     * Encrypt auth token hash with sym key
+     * Encrypt sym-encrypted auth token with public key
+     * Encode this to a string
+     * Encrypt sym ket with public key
+     * Encode this to a string
+     * Put those encode in the bash test file
+     * Send that back as json
+     * Decode it all and verify it works
+     */
+
 }

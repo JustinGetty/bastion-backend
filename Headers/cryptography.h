@@ -52,10 +52,16 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
                    const unsigned char *key, const unsigned char *iv,
                    unsigned char *ciphertext, int *ciphertext_len);
 
+// GENERIC ----------------------------------------------------------
+std::string base64_encode(const unsigned char* buffer, size_t length);
+std::vector<unsigned char> base64_decode(const std::string &encoded);
+
 
 // TESTSSS -------------------------------------------------------
 int test_as_main();
 int fake_main();
+int test_sym_encode_json();
+int test_full_send();
 
 #endif
 

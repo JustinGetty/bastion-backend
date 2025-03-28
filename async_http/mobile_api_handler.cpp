@@ -1,6 +1,7 @@
 #include "../Headers/mobile_api_handler.h"
 #include "../Headers/conn_data_storage.h"
 #include "../Headers/parse_message_json.h"
+#include "../Headers/cryptography.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -13,6 +14,11 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <cstdio>
+#include <nlohmann/json.hpp>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/buffer.h>
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -21,7 +27,38 @@ using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 /* DEFINITIONS FOR TESTING CRYPTO */
 //token_hash og_token_hash =
+/*
+std::string base64_encode(const unsigned char* buffer, size_t length) {
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+    //no newlines in the encoded output
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    BIO_write(bio, buffer, length);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    std::string encoded(bufferPtr->data, bufferPtr->length);
+    BIO_free_all(bio);
+    return encoded;
+}
 
+std::vector<unsigned char> base64_decode(const std::string &encoded) {
+    BIO *bio, *b64;
+    int decodeLen = encoded.size();
+    std::vector<unsigned char> decoded(decodeLen);
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_mem_buf(encoded.data(), encoded.size());
+    bio = BIO_push(b64, bio);
+    //no newlines in decoding
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    int length = BIO_read(bio, decoded.data(), decodeLen);
+    decoded.resize(length);
+    BIO_free_all(bio);
+    return decoded;
+}
+*/
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -285,4 +322,31 @@ int main()
     }
     return EXIT_SUCCESS;
 }
+
+
+unsigned char keyData[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
+    size_t keyLength = sizeof(keyData);
+
+    // 1. Encode the binary key into a Base64 string.
+    std::string encodedKey = base64_encode(keyData, keyLength);
+    std::cout << "Encoded Key: " << encodedKey << std::endl;
+
+    // 2. Construct a JSON object containing the encoded key.
+    nlohmann::json j;
+    j["key"] = encodedKey;
+    std::string jsonString = j.dump();
+    std::cout << "JSON Payload: " << jsonString << std::endl;
+
+    // 3. Later, parse the JSON and decode the Base64 string back to binary.
+    nlohmann::json parsed = nlohmann::json::parse(jsonString);
+    std::string encodedKeyFromJson = parsed["key"];
+    std::vector<unsigned char> decodedKey = base64_decode(encodedKeyFromJson);
+
+    // 4. Print the decoded binary key in hexadecimal format.
+    std::cout << "Decoded Binary Key: ";
+    for (unsigned char byte : decodedKey) {
+        printf("%02x", byte);
+    }
+    std::cout << std::endl;
+
 */

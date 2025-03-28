@@ -13,9 +13,9 @@ add_library(bastion_data STATIC
         Implementations/conn_thread_pool.cpp
         Implementations/connection_data_queue.cpp
         Implementations/server_thread_work.cpp
-        Sources/cryptography.cpp
-        Implementations/database_comm.cpp
-        Implementations/database_manager.cpp
+        Cryptography/cryptography.cpp
+        Database/database_comm.cpp
+        Database/database_manager.cpp
         Implementations/conn_data_storage.cpp
 )
 
@@ -36,6 +36,8 @@ target_link_libraries(bastion_data PUBLIC
 add_executable(bastion_auth main.cpp
         Implementations/parse_message_json.cpp
         Headers/parse_message_json.h
+        async_http/mobile_api_handler.cpp
+        Headers/mobile_api_handler.h
 )
 
 

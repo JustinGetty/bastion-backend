@@ -307,7 +307,6 @@ while (true) {
                     }
                     inbound_data_struct->status = priv_key.priv_key_status;
                     inbound_data_struct->processed_data.priv_key.priv_key_len = priv_key.priv_key_len;
-                    //wont work because length isnt yet known. need to store length in db for easiest usage
                     memcpy(inbound_data_struct->processed_data.priv_key.priv_key, priv_key.priv_key, priv_key.priv_key_len);
                     inbound_data_struct->is_ready = true;
                     if (priv_key.priv_key_status == SUCCESS) {
