@@ -421,19 +421,38 @@ std::string base64_encode(const unsigned char* buffer, size_t length) {
     return encoded;
 }
 
-std::vector<unsigned char> base64_decode(const std::string &encoded) {
+unsigned char* base64_decode(const std::string &encoded, int &out_length) {
     BIO *bio, *b64;
     int decodeLen = encoded.size();
-    std::vector<unsigned char> decoded(decodeLen);
+    unsigned char* decoded = new unsigned char[decodeLen];
+
     b64 = BIO_new(BIO_f_base64());
     bio = BIO_new_mem_buf(encoded.data(), encoded.size());
     bio = BIO_push(b64, bio);
-    // Disable newlines in decoding
+
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-    int length = BIO_read(bio, decoded.data(), decodeLen);
-    decoded.resize(length);
+
+    int length = BIO_read(bio, decoded, decodeLen);
     BIO_free_all(bio);
+
+    out_length = length;
     return decoded;
+}
+
+bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t expected_size) {
+    int decodedLength = 0;
+    unsigned char* decoded = base64_decode(encoded, decodedLength);
+
+    if (decodedLength != static_cast<int>(expected_size)) {
+        std::cerr << "Error: Decoded length (" << decodedLength
+                  << ") does not match expected (" << expected_size << ")." << std::endl;
+        delete[] decoded;
+        return false;
+    }
+
+    std::memcpy(out, decoded, expected_size);
+    delete[] decoded;
+    return true;
 }
 
 //this shit simulates main to test crypto functions
@@ -683,12 +702,15 @@ int test_sym_encode_json() {
 
     std::string encoded_key = base64_encode(key, KEY_SIZE);
     std::cout << "Encoded key:\n" << encoded_key << std::endl;
+
+    /*
     std::vector<unsigned char> decoded_key = base64_decode(encoded_key);
     std::cout << "Decoded binary key:\n";
     for (unsigned char byte : decoded_key) {
         printf("%02x", byte);
     }
     std::cout << std::endl;
+    \*/
     return 0;
 }
 
@@ -865,5 +887,21 @@ int test_full_send() {
     std::cout << "Encoded token hash:\n" << encoded_token_hash << "\n";
 
     return 0;
+
+}
+
+void test_encode_decode() {
+    char token_hash_wrapped[] = "4fe2ca3bef2817a03bdf8847981f55ff7942812d61244bb929870d8d27a283aeb2e62ed76c779a946045bb921149bc33be4d7cb24993968cdad642a9e15f1c9227245ce928c36dcbc36a2d904285a5d32fe4c2cdc3c35826ff94dc8dce6b2a2d61b6a4fd622ea18d65470f921fadf3111be9201959cb28fd7d7a1972d0e21d5af9b4ebe86b7f33a5a5bb93c63bd0ba8f792472e9df91d51c39d4a5560c7679955a2c720aa5530666ada980d4a6645a01ab688991121671f1437068d3c884ba564fe2d6bf96b4ff12a8848103c3a0988afa10eb7240920c64208487f6d0c526e0190c5834f51ea604c52ce7977881e130d4769ff94b58bdf7c24f62b3903e7dc9";
+    std::string encoded_token_hash = base64_encode((const unsigned char*)token_hash_wrapped, strlen(token_hash_wrapped));
+
+    unsigned char out[512];
+    decode_fixed_length(encoded_token_hash, out, strlen(token_hash_wrapped));
+    std::cout << "moving to sym_key" << std::endl;
+
+    char sym_key_iv_wrapped[] = "7c6cdef23c45414676a6f1fbe23888713fde8fdea254964b7762ae046f14f3d468903e9f44693e0775d27941c65f9342e2d8c0b9201f7ea458748cf296becded12ddffda28b81b96fe14803ec8247b166a21d9dc412e5fe99d4253f3aa132a2c7b529658be3e1c1af8489471833a2db0beaaf974990754bb5b7c8197eb62147eea21678df7d2fd893d5602809594e41a347757c1f706ec74277da5df6614d3c00205ff7f52a9f96f5afcb62f9a582cb7afd8de968b2f2ff3bad220db2d25d728a18377c102e43cb21c059c21692274514e25d0e565adb71d367dcb6c5ac8dcdf3ac19916ff8d93775a2c2d3ba9ac8b369c885594c1228563a60746323a2570ee";
+    std::string encoded_sym_iv = base64_encode((const unsigned char*)sym_key_iv_wrapped, strlen(sym_key_iv_wrapped));
+    unsigned char sym_out[513];
+    decode_fixed_length(encoded_sym_iv, sym_out, strlen(sym_key_iv_wrapped));
+    std::cout << "Finished encoded/decode test" << std::endl;
 
 }

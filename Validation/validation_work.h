@@ -37,6 +37,9 @@ public:
         }
         printf("\n");
 
+        /*
+         *FUCKKK ISSUE HERE IS THAT WE NEED SIZE OF ASYM WRAPPED KEY/IV NOT THE SIZE OF KEY IV FUCKKKKKKK
+         */
         unsigned char key_iv[KEY_SIZE + IV_SIZE] = {0};
         decode_fixed_length(sym_key_iv_encoded, key_iv, KEY_SIZE + IV_SIZE);
         std::cout << "Sym key IV:" << std::endl;

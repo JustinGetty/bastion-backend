@@ -22,6 +22,7 @@ add_library(bastion_data STATIC
 # Specify include directories for the bastion_data library.
 target_include_directories(bastion_data PUBLIC
         ${PROJECT_SOURCE_DIR}/Headers
+        ${PROJECT_SOURCE_DIR}/Validation
         /usr/local/include
 )
 
@@ -32,14 +33,18 @@ target_link_libraries(bastion_data PUBLIC
         sqlite3
 )
 
-# Define the main executable.
 add_executable(bastion_auth main.cpp
         Implementations/parse_message_json.cpp
         Headers/parse_message_json.h
         async_http/mobile_api_handler.cpp
         Headers/mobile_api_handler.h
-        Headers/validation_work.cpp
+        Validation/validation_work.h
         Headers/validation_work.h
+        Headers/circular_queue.h
+        Headers/thread_pool.h
+        Implementations/global_thread_pool_tmp.cpp
+        Headers/global_thread_pool_tmp.h
+        Headers/idek_what_this_shits_for_anymore.h
 )
 
 
@@ -47,6 +52,7 @@ add_executable(bastion_auth main.cpp
 # Here we add both our project Headers and the uWebSockets include paths (as in your g++ command).
 target_include_directories(bastion_auth PRIVATE
         ${PROJECT_SOURCE_DIR}/Headers
+        ${PROJECT_SOURCE_DIR}/Validation
         /usr/local/include
         /infinite/Projects/NoPass/SourceFiles/uWebSockets/src
         /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src

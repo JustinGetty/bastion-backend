@@ -19,46 +19,22 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
+#include "../Headers/validation_work.h"
+#include "../Validation/validation_work.h"
+#include "idek_what_this_shits_for_anymore.h"
+#include "global_thread_pool_tmp.h"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-/* DEFINITIONS FOR TESTING CRYPTO */
-//token_hash og_token_hash =
-/*
-std::string base64_encode(const unsigned char* buffer, size_t length) {
-    BIO *bio, *b64;
-    BUF_MEM *bufferPtr;
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new(BIO_s_mem());
-    bio = BIO_push(b64, bio);
-    //no newlines in the encoded output
-    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-    BIO_write(bio, buffer, length);
-    BIO_flush(bio);
-    BIO_get_mem_ptr(bio, &bufferPtr);
-    std::string encoded(bufferPtr->data, bufferPtr->length);
-    BIO_free_all(bio);
-    return encoded;
-}
+/*TODO
+ *pickup here
+ *seperate thread work in different way, link files like usual
+ */
 
-std::vector<unsigned char> base64_decode(const std::string &encoded) {
-    BIO *bio, *b64;
-    int decodeLen = encoded.size();
-    std::vector<unsigned char> decoded(decodeLen);
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_new_mem_buf(encoded.data(), encoded.size());
-    bio = BIO_push(b64, bio);
-    //no newlines in decoding
-    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-    int length = BIO_read(bio, decoded.data(), decodeLen);
-    decoded.resize(length);
-    BIO_free_all(bio);
-    return decoded;
-}
-*/
+
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -179,6 +155,7 @@ private:
     // Process the HTTP request.
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
+
         //get requests
         if(req.method() == http::verb::get)
         {
@@ -209,6 +186,53 @@ private:
             /*
              *From here keys and data gets added to thread pool queue for processing
              */
+
+            auto temp_val = msg_method.keys.find("client_auth_token_enc");
+            std::string token_hash_encoded;
+            if (temp_val != msg_method.keys.end()) {
+                token_hash_encoded = temp_val->second;
+                std::cout << "Auth token: " << token_hash_encoded << std::endl;
+
+            } else {
+                std::cout << "Auth token not found" << std::endl;
+                return;
+            }
+
+            temp_val = msg_method.keys.find("sym_key_enc");
+            std::string sym_key_enc;
+            if (temp_val != msg_method.keys.end()) {
+                sym_key_enc = temp_val->second;
+                std::cout << "sym key: " << sym_key_enc << std::endl;
+
+            } else {
+                std::cout << "Sym key not found" << std::endl;
+                return;
+            }
+
+            temp_val = msg_method.keys.find("connection_id");
+            int connection_id;
+            if (temp_val != msg_method.keys.end()) {
+                connection_id = std::stoi(temp_val->second);
+                std::cout << "Connection ID: " << connection_id << std::endl;
+            } else {
+                std::cout << "Connection ID not found" << std::endl;
+                return;
+            }
+
+            //error handle here if theyre not found!!
+
+
+            //create validation work object and add it to the queue to be executed
+
+            //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+            //ID needs to be random or systematic idk
+            g_workQueue.push(new MyValidationWork(connection_id, 1, token_hash_encoded, sym_key_enc));
+
+
+            // Create a work item
+            //validation_work* work = new MyValidationWork(42);
+            // Push the work item into the queue
+            //workQueue.push(work);
 
 
             //send back status response to mobile
@@ -294,6 +318,8 @@ private:
 
 void api_handler_setup()
 {
+    getGlobalThreadPool();
+
     try
     {
         // Hardcoded server settings equivalent to:
