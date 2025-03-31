@@ -6,17 +6,21 @@
 #define VALIDATION_WORK_H
 
 
+void setup_work_threads();
 
 class validation_work {
-
 public:
+    virtual ~validation_work() {}
+    virtual void execute() = 0;
 
-
-
-private:
 
 
 };
+
+
+
+
+
 
 
 

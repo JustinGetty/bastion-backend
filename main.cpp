@@ -9,6 +9,7 @@
 #include "Headers/database_head.h"
 #include "database_head.h"
 #include "Headers/mobile_api_handler.h"
+#include "Headers/validation_work.h"
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -131,6 +132,9 @@ int main()
     g_connThreadPool = &local_thread_pool;
 
     std::thread t(api_handler_setup);
+    t.detach();
+
+
 
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

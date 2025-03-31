@@ -54,7 +54,8 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
 
 // GENERIC ----------------------------------------------------------
 std::string base64_encode(const unsigned char* buffer, size_t length);
-std::vector<unsigned char> base64_decode(const std::string &encoded);
+//std::vector<unsigned char> base64_decode(const std::string &encoded);
+bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t expected_size);
 
 
 // TESTSSS -------------------------------------------------------
