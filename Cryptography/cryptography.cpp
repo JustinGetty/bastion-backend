@@ -850,6 +850,7 @@ int test_full_send() {
     }
     std::printf("Asymmetric Encrypted (wrapped token hash):\n");
     print_hex(asym_encrypted_hash, asym_encrypted_hash_len);
+    std::cout << "Asym encrpy hash lenfth: " << asym_encrypted_hash_len << std::endl;
 
 
 
@@ -872,6 +873,7 @@ int test_full_send() {
     }
     std::printf("Asymmetric Encrypted (symmetric key + IV):\n");
     print_hex(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
+    std::cout <<"Asym enc length: " << asym_encrypted_keyiv_len << std::endl;
 
 
 
@@ -880,11 +882,26 @@ int test_full_send() {
 
 
     //encode both to strings
+    //OLD ERROR WAS IT WAS BEING ENCODED WITH WRONG LENGTH. NOW FIXED
     std::string encoded_key_iv = base64_encode(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
-    std::string encoded_token_hash = base64_encode(asym_encrypted_hash, hash_len);
+    std::string encoded_token_hash = base64_encode(asym_encrypted_hash, asym_encrypted_hash_len);
 
     std::cout << "Encoded key iv:\n" << encoded_key_iv << "\n";
     std::cout << "Encoded token hash:\n" << encoded_token_hash << "\n";
+
+
+    unsigned char decoded_token_hash[asym_encrypted_hash_len];
+    unsigned char decoded_key_iv[asym_encrypted_keyiv_len];
+    decode_fixed_length(encoded_token_hash, decoded_token_hash, asym_encrypted_hash_len);
+    decode_fixed_length(encoded_key_iv, decoded_key_iv, asym_encrypted_keyiv_len);
+
+    std::cout << "Decoded success" << std::endl;
+
+    std::cout << "Decoded token hash:" << std::endl;
+    print_hex(decoded_token_hash, asym_encrypted_hash_len);
+    std::cout << "Decoded key iv:" << std::endl;
+    print_hex(decoded_key_iv, asym_encrypted_keyiv_len);
+
 
     return 0;
 
@@ -903,5 +920,17 @@ void test_encode_decode() {
     unsigned char sym_out[513];
     decode_fixed_length(encoded_sym_iv, sym_out, strlen(sym_key_iv_wrapped));
     std::cout << "Finished encoded/decode test" << std::endl;
+
+}
+
+void test_decode() {
+    char encoded_token_hash[] = "PwXzx59yEJaF+MFgeAIHG6MLmUFweOUCx+ZXbcu6jbM=";
+    char encoded_sym_iv[] = "VYk94ll7mArMpSGFz1K6Ub5jduUujlk0mSqO2iQ4WPhj5hYdXAS87YQ6Ry+yd0v/Llpra9EBT2lx1+dS2XsPcTkWxWuZSZR1EplP7E8YjZ28gPfQs7nvpFvnntDK5FRB7yX8zL497ZCdhIC+qpqNtlZqArubPe6MJtZ1TGnUgk2liggU19Vqyf0jint9Ix4rxEQIBOjLUwWMOAxdLmD2100NOHncZZayprL/g2MSGp8CiDA3ZWTgR+rXN97r8oRGndlUUJ/ymR5S8yGl/WJsjbq5wNMlKy6kjIr9DcUkTjIUlVRXAvykaWXLy45pv9gaI7+/iFGxhb12mSdROTogVA==";
+
+    unsigned char token_hash_out[32];
+    unsigned char sym_iv_out[32];
+
+
+
 
 }
