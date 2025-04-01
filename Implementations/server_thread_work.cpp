@@ -43,7 +43,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     //send to mobile daemon here
     /*
      *SEND CONNECTION ID SO WHEN THE USER SENDS BACK POST WITH THEIR RESPONSE IT CAN BE FOUND IN CONN STORAGE
-     *
+     */
     std::cout << "\n------------------\n";
     std::cout << "Pretending to send request to mobile blah blah blah\n";
     std::cout << "\n------------------\n";
@@ -68,6 +68,9 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     std::cout << "Username in work thread as username ptr: " << *uname_ptr << "\n";
     std::cout << "\n------------------\n";
     std::cout << "Doing work!\n";
+
+
+    //SUPER IMPORTANT HERE, NEED THE PRIVATE KEY TO DECODE!!!
     STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
     std::cout << "Work status: " << user_data_status << "\n";
     std::cout << "\n------------------\n";
@@ -94,6 +97,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
     //works only for valid connections, should not be ran with stress test
     /*
+     *THIS LOGIC SHOULD BE IN MOBILE API RIGHT????!!!! YES DELETE FROM HERE LATER THIS WAS TESTS
     ConnectionData *data_from_storage = connection_storage.get_connection_data(data->connection_id);
     std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
     */
@@ -101,7 +105,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     //int stat = test_as_main();
     //int stat_two = fake_main();
     //int stat_three = test_sym_encode_json();
-    int stat_four = test_full_send();
+    //int stat_four = test_full_send();
     //test_encode_decode();
 
     //this breaks client connection - good thing

@@ -221,18 +221,12 @@ private:
 
             //error handle here if theyre not found!!
 
-
             //create validation work object and add it to the queue to be executed
+            //TODO need to get the connection data out of conn_data_queue that will have the asym key
 
             //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
             //ID needs to be random or systematic idk
             g_workQueue.push(new MyValidationWork(connection_id, 1, token_hash_encoded, sym_key_enc));
-
-
-            // Create a work item
-            //validation_work* work = new MyValidationWork(42);
-            // Push the work item into the queue
-            //workQueue.push(work);
 
 
             //send back status response to mobile
