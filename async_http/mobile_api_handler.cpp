@@ -29,12 +29,6 @@ namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
-/*TODO
- *pickup here
- *seperate thread work in different way, link files like usual
- */
-
-
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -221,12 +215,10 @@ private:
 
             //error handle here if theyre not found!!
 
-            //create validation work object and add it to the queue to be executed
-            //TODO need to get the connection data out of conn_data_queue that will have the asym key
 
             //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
             //ID needs to be random or systematic idk
-            g_workQueue.push(new MyValidationWork(connection_id, 1, token_hash_encoded, sym_key_enc));
+            g_workQueue.push(new MyValidationWork(1, 1, connection_id, token_hash_encoded, sym_key_enc));
 
 
             //send back status response to mobile

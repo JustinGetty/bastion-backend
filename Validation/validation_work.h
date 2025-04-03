@@ -20,11 +20,13 @@ public:
     MyValidationWork(
         int id,
         int user_id,
+        int connection_id,
         //make references
         const std::string token_hash_encoded,
         const std::string sym_key_iv_encoded)
         : id_(id),
           user_id_(user_id),
+            connection_id_(connection_id),
           token_hash_encoded(token_hash_encoded),
           sym_key_iv_encoded(sym_key_iv_encoded)
     {
@@ -51,9 +53,7 @@ public:
         195d74e1ab903a8f1496150397ba99890d5019fe477be2f909c611e405141203fbe4e267bf72e1817f32da9230c91ad1f1c906441990bee28b0a974bdd4f1dda7f4e9089ebcdfcc9e70295a99f7e0ce1e1a5761c72ea3945c30716afefe289fbf40cd004597c73c2e8eac61883a01b1c8d04a3866c6cdd5059e4d4c2c585c386a2d510d2c06157f42aeab30a2d1ea08d4a81b252bd76dff03d5c3d21435870feae5190151262e2d4ed30c9424c3050e4fdfc39c92867bdb1fa3958428bbcd355dee51826f1be719cd2bc794806eb67b0b6535787f874168e7bdcf969e5705b0e69f4400a716129665584c7aab87030c2341e6a4b8cd4953621fb8543bdcff81c
         */
 
-
-        //TODO pass in connection id so this isnt hard coded
-        ConnectionData *data_from_storage = cds.get_connection_data(1);
+        ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
         if (data_from_storage->user_data.fail_this == true) {
             data_from_storage->user_data.being_processed = false;
             data_from_storage->user_data.fail_this = false;
@@ -62,8 +62,6 @@ public:
         }
         std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
         std::cout << "Username from storage: " << data_from_storage->username << "\n";
-
-        //TODO PICKUP HERE - grab private key and decrypt and go nutty
 
         unsigned char decrypted_sym_iv[KEY_SIZE + IV_SIZE] = {0};
         int decrypted_sym_iv_len = 0;
@@ -78,7 +76,6 @@ public:
             std::fprintf(stderr, "Decrypted key/IV length mismatch\n");
         }
 
-        //TODO issue is trying to decrypt when it was encrypted with a different key
         unsigned char recovered_key[KEY_SIZE] = {0};
         unsigned char recovered_iv[IV_SIZE] = {0};
         std::memcpy(recovered_key, decrypted_sym_iv, KEY_SIZE);
@@ -117,6 +114,7 @@ public:
 
         compute_token_hash(final_decrypted_hash, TOKEN_SIZE, computed_hash);
 
+        //TODO need to read in the actual success or reject as well
         if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
             printf("Token verification succeeded.\n");
             //send this back to client
@@ -126,6 +124,9 @@ public:
 
         } else {
             printf("Token verification failed.\n");
+            uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
+            std::string failure_msg = R"({"status": "rejected"})";
+            ws->send(failure_msg, uWS::OpCode::TEXT);
         }
 
     }
@@ -135,6 +136,7 @@ private:
     int user_id_;
     const std::string token_hash_encoded;
     const std::string sym_key_iv_encoded;
+    int connection_id_;
 };
 
 //currently unused, delete is deprecated

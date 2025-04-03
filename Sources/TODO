@@ -7,4 +7,6 @@
 7. make it so you can have 2 accounts udner 1 bastion account, switch between user id forwarded
 8. Move shit to heap to avoid stack overflow
 9. Server side "keep signed in", if sign in request is from same ip and < 30 or 60 days, approve without mobile approval
-10. Everything goes int classes, espcially cryptography
+10. Everything goes int test, espcially cryptography
+11. Spam filter, dont even send requests from random ip's. Use cloudflare too. If sus, ping phone in app but dont send push. Only push as notif if legit. Mark as weird if weird
+12. Make sure to zero out any memory that previously held keys

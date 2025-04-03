@@ -21,6 +21,7 @@
  - adjust net.core.somaxconn for maximum connections
  - set fs.file-max for max open files
  - thread pool to handle connections
+ - new global vector to hold users being processed, if being processed, reject signin
 
  Avoid Threads Plan:
  - Client site to websocket connection, connection managed by uWebSockets
@@ -91,10 +92,16 @@ struct WebSocketBehavior
             std::cerr << "Caught unknown error" << "\n";
         }
 
+        /*
+         *Check is username exists in DB here, reject if not
+         */
+        /*
+         *Parse input for validity here, reject bad characters
+         */
+
         if (msg_method.type == "signin") {
            std::cout << "Signing in...\n";
            auto *connData = static_cast<ConnectionData*>(ws->getUserData());
-            //TODO need to find a way to monitor lifecycle of signin incase user tries signin again
             //zero out the user data incase client sends duplicate signins
             if (connData->user_data.being_processed != true) {
                 memset(connData->username, 0, sizeof(connData->username));

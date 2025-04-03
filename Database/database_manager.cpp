@@ -67,7 +67,6 @@ query_data *inbound_data;
 while (true) {
     restart:
     //what happens here when task_queue is full
-    //TODO make this grab query_data straight
     query_data_struct *inbound_data_struct = task_queue_pop(&queue);
     inbound_data = &inbound_data_struct->queryData;
 

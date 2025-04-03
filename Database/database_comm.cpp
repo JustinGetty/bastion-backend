@@ -576,16 +576,6 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     }
     if (full_user_data.user_status == SUCCESS) {
         printf("Yay Success\n");
-        //memcopy
-        //issue here is memcopying wit a c++ value
-        /*
-         *TODO
-         *fix this tomorrow
-         *issue possibly in ConnectionData with std::string username
-         *I switched to char[] to test
-         *NOTE this may work now I cant remember TEST AGAIN LATER!!!
-         */
-        //memcpy(user_data, &full_user_data, sizeof(full_user_data));
         user_data->user_status = full_user_data.user_status;
         strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
         user_data->user_id = full_user_data.user_id;
