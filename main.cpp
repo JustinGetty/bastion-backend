@@ -63,9 +63,8 @@ struct WebSocketBehavior
 {
     static void open(uWS::WebSocket<false, true, ConnectionData> *ws)
     {
-        // getUserData() returns empty memory space for particular conn data
-        // fix cast here
         auto *connData = ws->getUserData();
+        //passing increment amount (1) to the atomic global connection counter
         connData->connection_id = globalConnectionId.fetch_add(1);
         std::cout << "Client connected! UserData pointer: " << connData
                   << ", connection id: " << connData->connection_id << std::endl;
@@ -88,36 +87,51 @@ struct WebSocketBehavior
                 std::cout << kv.first << " : " << kv.second << "\n";
         } catch (const std::exception &ex) {
             std::cerr << "Error: " << ex.what() << "\n";
+        } catch (...) {
+            std::cerr << "Caught unknown error" << "\n";
         }
 
+        if (msg_method.type == "signin") {
+           std::cout << "Signing in...\n";
+           auto *connData = static_cast<ConnectionData*>(ws->getUserData());
+            //TODO need to find a way to monitor lifecycle of signin incase user tries signin again
+            //zero out the user data incase client sends duplicate signins
+            if (connData->user_data.being_processed != true) {
+                memset(connData->username, 0, sizeof(connData->username));
+                connData->user_data = full_user_data(); //default construct it = reset cleanly
+                strncpy(connData->username, msg_method.keys["username"].c_str(), sizeof(connData->username));
+                //connData->username = msg_method.keys["username"];
+                connData->ws = ws;
 
-        auto *connData = static_cast<ConnectionData*>(ws->getUserData());
-        strncpy(connData->username, msg_method.keys["username"].c_str(), sizeof(connData->username));
-        //connData->username = msg_method.keys["username"];
-        connData->ws = ws;
+                ConnectionData* copyData = new ConnectionData(*connData);
+                copyData->user_data.being_processed = true;
 
-        ConnectionData* copyData = new ConnectionData(*connData);
-        g_connThreadPool->enqueueConnection(copyData);
+                g_connThreadPool->enqueueConnection(copyData);
+               std::cout << "Enqueued connection (id: " << connData->connection_id << ")" << "\n";
+            } else if (connData->user_data.being_processed == true) {
+               //reject sign in attempt, tell current attempt to fail, tell client to retry
+                //every step in the process should check the "fail_this" flag to fail it and reject, then tell client
+                //they can try again
+                connData->user_data.fail_this = true;
+                auto* ws = connData->ws;
+                std::string wait_msg = R"({"status": "wait"})";
+                ws->send(wait_msg, uWS::OpCode::TEXT);
+            }
 
-
-        std::cout << "Enqueued connection (id: " << connData->connection_id << ")" << "\n";
-
-//        ConnectionData *connData = (ConnectionData *)ws->getUserData();
-
-
-        //ws->send(message, opCode);
-
-        // if message recieved == sign in, add to threadpool queue
-
-
-        //g_connThreadPool->enqueueConnection(connData);
-        std::cout << "Enqueued connection" << "\n";
+       }
+        if (msg_method.type == "signup") {
+           std::cout << "User requests signup\n";
+        }
+        if (msg_method.type != "signin" || msg_method.type != "signup") {
+           std::cout << "Unknown message type, rejecting message.";
+        }
 
     }
 
     static void close(uWS::WebSocket<false, true, ConnectionData> *ws, int code, std::string_view message)
     {
-        std::cout << "Client disconnected!" << std::endl;
+        auto *connData = ws->getUserData();
+        std::cout << "Client " << connData->connection_id  << " disconnected!" << std::endl;
     }
 };
 
@@ -129,6 +143,7 @@ int main()
     create thread pool to do the work for each connection
     i.e get data, handle data, etc.
     */
+
     ConnThreadPool local_thread_pool;
     g_connThreadPool = &local_thread_pool;
 

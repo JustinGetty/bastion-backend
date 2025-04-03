@@ -54,6 +54,12 @@ public:
 
         //TODO pass in connection id so this isnt hard coded
         ConnectionData *data_from_storage = cds.get_connection_data(1);
+        if (data_from_storage->user_data.fail_this == true) {
+            data_from_storage->user_data.being_processed = false;
+            data_from_storage->user_data.fail_this = false;
+            std::cout << "Aborting signin\n";
+            return;
+        }
         std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
         std::cout << "Username from storage: " << data_from_storage->username << "\n";
 
@@ -115,7 +121,8 @@ public:
             printf("Token verification succeeded.\n");
             //send this back to client
             uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-            ws->send("test, verification succeeded", uWS::OpCode::TEXT);
+            std::string success_msg = R"({"status": "approved"})";
+            ws->send(success_msg, uWS::OpCode::TEXT);
 
         } else {
             printf("Token verification failed.\n");

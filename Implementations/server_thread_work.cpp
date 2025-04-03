@@ -30,88 +30,73 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
 
 //SERVER WORK GOES HERE
 void processConnectionData(std::unique_ptr<ConnectionData> data) {
-    /*
-    Steps:
-    1. Send mobile verification request
-    2. Get data from DB
-    3. Add to connection storage to wait
-    4. Mobile sends POST request with approval,
-        endpoint grabs username, looks up data in storage, pulls it
-        processes it, sends it to client
-    */
-
-    //send to mobile daemon here
-    /*
-     *SEND CONNECTION ID SO WHEN THE USER SENDS BACK POST WITH THEIR RESPONSE IT CAN BE FOUND IN CONN STORAGE
-     */
-    std::cout << "\n------------------\n";
-    std::cout << "Pretending to send request to mobile blah blah blah\n";
-    std::cout << "\n------------------\n";
+    // Check that we received valid data.
+    std::cout << "[THREAD] Processing" << std::this_thread::get_id() << "\n";
     if (!data) {
-        std::cout << "No data to proccess\n";
-    }
-
-    full_user_data local_data;
-    //TODO remove hardcoding
-    bastion_username username;
-    if (!data) {
-        std::cout << "No data to process\n";
+        std::cerr << "[ERROR] processConnectionData: Received null ConnectionData pointer." << std::endl;
         return;
     }
 
+    // If the previous attempt already flagged failure, reset flags and exit.
+    if (data->user_data.fail_this) {
+        std::cerr << "[WARN] processConnectionData: User data flagged as failed for connection id: "
+                  << data->connection_id << ". Aborting processing." << std::endl;
+        data->user_data.being_processed = false;
+        data->user_data.fail_this = false;
+        return;
+    }
+
+    std::cout << "\n------------------\n"
+              << "[INFO] Initiating mobile verification request for connection id: "
+              << data->connection_id << "\n------------------" << std::endl;
+
+    // Prepare the username string (initialize and ensure null-termination).
+    bastion_username username = {0};
     std::strncpy(username, data->username, MAX_USERNAME_LENGTH - 1);
-    //TODO why is this being hit twice in some cases?
-    std::cout << "Username in work thread: " << data->username << "\n";
     username[MAX_USERNAME_LENGTH - 1] = '\0';
-    std::cout << "Username in work thread as username: " << username << "\n";
-    bastion_username* uname_ptr = &username;
-    std::cout << "Username in work thread as username ptr: " << *uname_ptr << "\n";
-    std::cout << "\n------------------\n";
-    std::cout << "Doing work!\n";
 
+    if (std::strlen(username) == 0) {
+        std::cerr << "[ERROR] processConnectionData: Empty username for connection id: "
+                  << data->connection_id << ". Aborting processing." << std::endl;
+        return;
+    }
+    std::cout << "[DEBUG] Username from connection data: " << username << std::endl;
+    std::cout << "[INFO] Processing connection data in thread: "
+              << std::this_thread::get_id() << std::endl;
 
-    //SUPER IMPORTANT HERE, NEED THE PRIVATE KEY TO DECODE!!!
-    STATUS user_data_status = get_full_user_data_by_uname(uname_ptr, &local_data);
-    std::cout << "Work status: " << user_data_status << "\n";
-    std::cout << "\n------------------\n";
+    // Retrieve full user data from the database.
+    full_user_data local_data = {};
+    STATUS user_data_status = get_full_user_data_by_uname(&username, &local_data);
+    std::cout << "[INFO] Database lookup status for username (" << username
+              << "): " << user_data_status << std::endl;
 
     if (user_data_status != SUCCESS) {
-        std::cerr << "Error: " << user_data_status << "\n";
-    }
-    if (user_data_status == SUCCESS) {
-        std::cout << "Got user id: " << local_data.user_id << " from DB!\n";
-        std::cout << "thread id: " << std::this_thread::get_id() << "\n";
-        std::cout << "Processing connection data with id: " << data->connection_id << "\n";
-        std::cout << "Username: " << local_data.username << "\n";
-        std::cout << "Private key: " << std::endl;
+        std::cerr << "[ERROR] Failed to retrieve full user data for username ("
+                  << username << "). STATUS: " << user_data_status << std::endl;
+        return;
+    } else {
+        std::cout << "[INFO] Retrieved full user data for username (" << username
+                  << ") with user id: " << local_data.user_id << std::endl;
+        std::cout << "[DEBUG] Private key (hex): " << std::endl;
         print_hex(local_data.priv_key_w_len.priv_key, local_data.priv_key_w_len.priv_key_len);
-        std::cout << "Auth token: " << std::endl;
+        std::cout << "[DEBUG] Encrypted auth token (hex): " << std::endl;
         print_hex(local_data.enc_auth_token, sizeof(local_data.enc_auth_token) / sizeof(local_data.enc_auth_token[0]));
     }
 
+    // Update the connection data with the retrieved user data.
     data->user_data = local_data;
 
-    //get unique ptrrr
+    // Try to insert the connection data into the global storage.
     ConnectionData *raw_conn_data_ptr = data.get();
-    //add to storage queue
     if (connection_storage.insert_connection_data(raw_conn_data_ptr) != SUCCESS) {
-        std::cout << "could not insert connection data ahhh\n";
+        std::cerr << "[ERROR] Failed to insert connection data into storage for connection id: "
+                  << data->connection_id << std::endl;
         return;
+    } else {
+        std::cout << "[INFO] Successfully inserted connection data into storage for connection id: "
+                  << data->connection_id << std::endl;
     }
 
-    //works only for valid connections, should not be ran with stress test
-    /*
-     *THIS LOGIC SHOULD BE IN MOBILE API RIGHT????!!!! YES DELETE FROM HERE LATER THIS WAS TESTS
-    ConnectionData *data_from_storage = connection_storage.get_connection_data(data->connection_id);
-    std::cout << "Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
-    */
-
-    //int stat = test_as_main();
-    //int stat_two = fake_main();
-    //int stat_three = test_sym_encode_json();
-    //int stat_four = test_full_send();
-    //test_encode_decode();
-
-    //this breaks client connection - good thing
-    std::cout << "Client connection broken, have a good day\n";
+    std::cout << "[INFO] Finished processing connection data for connection id: "
+              << data->connection_id << std::endl;
 }
