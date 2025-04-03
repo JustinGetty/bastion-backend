@@ -59,6 +59,68 @@ public:
 
         //TODO PICKUP HERE - grab private key and decrypt and go nutty
 
+        unsigned char decrypted_sym_iv[KEY_SIZE + IV_SIZE] = {0};
+        int decrypted_sym_iv_len = 0;
+        if (decrypt_with_private_key(data_from_storage->user_data.priv_key_w_len.priv_key, data_from_storage->user_data.priv_key_w_len.priv_key_len,
+                                    decoded_key_iv, std::size(decoded_key_iv),
+                                    decrypted_sym_iv, &decrypted_sym_iv_len) != SUCCESS)
+
+        {
+            std::fprintf(stderr, "Asymmetric decryption of key/IV failed\n");
+        }
+        if (decrypted_sym_iv_len != (KEY_SIZE + IV_SIZE)) {
+            std::fprintf(stderr, "Decrypted key/IV length mismatch\n");
+        }
+
+        //TODO issue is trying to decrypt when it was encrypted with a different key
+        unsigned char recovered_key[KEY_SIZE] = {0};
+        unsigned char recovered_iv[IV_SIZE] = {0};
+        std::memcpy(recovered_key, decrypted_sym_iv, KEY_SIZE);
+        std::memcpy(recovered_iv, decrypted_sym_iv + KEY_SIZE, IV_SIZE);
+        std::printf("Recovered Symmetric Key:\n");
+        print_hex(recovered_key, KEY_SIZE);
+        std::printf("Recovered IV:\n");
+        print_hex(recovered_iv, IV_SIZE);
+
+        unsigned char decrypted_sym_encrypted[256] = {0};
+        int decrypted_sym_encrypted_len = 0;
+        if (decrypt_with_private_key(data_from_storage->user_data.priv_key_w_len.priv_key, data_from_storage->user_data.priv_key_w_len.priv_key_len,
+                                     decoded_token_hash, std::size(decoded_token_hash),
+                                     decrypted_sym_encrypted, &decrypted_sym_encrypted_len) != SUCCESS)
+        {
+            std::fprintf(stderr, "Asymmetric decryption of wrapped token hash failed\n");
+        }
+        std::printf("Recovered Symmetric-Encrypted Token:\n");
+        print_hex(decrypted_sym_encrypted, decrypted_sym_encrypted_len);
+
+        unsigned char final_decrypted_hash[TOKEN_SIZE] = {0};
+        if (sym_decrypt(decrypted_sym_encrypted, &decrypted_sym_encrypted_len,
+                        recovered_key, recovered_iv,
+                        final_decrypted_hash) != SUCCESS)
+        {
+            std::fprintf(stderr, "Symmetric decryption of token failed\n");
+        }
+        std::printf("Final Decrypted Token:\n");
+
+        //this for some reason matches what is in DB, somehow either im sending the hash from the mobile user or the DB is storing the raw token.
+        //kinda works tho
+        //fixed, just need to regen keys
+        print_hex(final_decrypted_hash, TOKEN_SIZE);
+
+        token_hash computed_hash;
+
+        compute_token_hash(final_decrypted_hash, TOKEN_SIZE, computed_hash);
+
+        if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
+            printf("Token verification succeeded.\n");
+            //send this back to client
+            uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
+            ws->send("test, verification succeeded", uWS::OpCode::TEXT);
+
+        } else {
+            printf("Token verification failed.\n");
+        }
+
     }
 
 private:

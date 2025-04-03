@@ -83,6 +83,10 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         std::cout << "thread id: " << std::this_thread::get_id() << "\n";
         std::cout << "Processing connection data with id: " << data->connection_id << "\n";
         std::cout << "Username: " << local_data.username << "\n";
+        std::cout << "Private key: " << std::endl;
+        print_hex(local_data.priv_key_w_len.priv_key, local_data.priv_key_w_len.priv_key_len);
+        std::cout << "Auth token: " << std::endl;
+        print_hex(local_data.enc_auth_token, sizeof(local_data.enc_auth_token) / sizeof(local_data.enc_auth_token[0]));
     }
 
     data->user_data = local_data;

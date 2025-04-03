@@ -589,11 +589,10 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         user_data->user_status = full_user_data.user_status;
         strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
         user_data->user_id = full_user_data.user_id;
-        size_t len_of_key = get_der_blob_total_length(user_data->priv_key_w_len.priv_key);
-        if (len_of_key <= 0) {
-            return CRYPTO_FAILURE;
-        }
-        user_data->priv_key_w_len.priv_key_len = len_of_key;
+        memcpy(user_data->priv_key_w_len.priv_key, full_user_data.priv_key_w_len.priv_key, sizeof(user_data->priv_key_w_len.priv_key));
+        user_data->priv_key_w_len.priv_key_len = full_user_data.priv_key_w_len.priv_key_len;
+        memcpy(user_data->enc_auth_token, full_user_data.enc_auth_token, std::size(user_data->enc_auth_token));
+
     }
     return user_data->user_status;
 }

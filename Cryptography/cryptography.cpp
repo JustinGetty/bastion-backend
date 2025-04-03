@@ -740,13 +740,13 @@ int test_full_send() {
         std::fprintf(stderr, "Auth token generation failed\n");
         return -1;
     }
-    std::printf("Auth Token:\n");
+    std::printf("Auth Token Step 1. This gets sent from mobile as is:\n");
     print_hex(auth_token, TOKEN_SIZE);
 
     //compute hash of token ----------------------------------------------------------------
     token_hash computed_hash{};
     compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
-    std::printf("Computed Token Hash:\n");
+    std::printf("Computed Token Hash. This gets stored in DB:\n");
     print_token_hash(computed_hash);
 
     //Store token hash ---------------------------------------------------------------------
@@ -756,10 +756,6 @@ int test_full_send() {
         std::cout << "ERROR STORING HASH, EXITING\n";
         return 1;
     }
-
-
-
-
 
 
 
@@ -785,9 +781,6 @@ int test_full_send() {
     */
 
 
-
-
-
     //Generate sym key and iv ------------------------------------------------------------------
 
     sym_key key;
@@ -810,18 +803,11 @@ int test_full_send() {
 
 
 
-
-
-
-
-
-
-
-    //encrypt token hash with sym key
-    int hash_len = HASH_SIZE;
+    //encrypt token with sym key
+    int auth_token_size = std::size(auth_token);
     unsigned char sym_encrypted[256] = {0};
     int sym_encrypted_len = 0;
-    if (sym_encrypt(computed_hash, &hash_len,
+    if (sym_encrypt(auth_token, &auth_token_size,
                     key, iv,
                     sym_encrypted, &sym_encrypted_len) != SUCCESS)
     {
@@ -830,12 +816,6 @@ int test_full_send() {
     }
     std::printf("Symmetric Encrypted Token Hash:\n");
     print_hex(sym_encrypted, sym_encrypted_len);
-
-
-
-
-
-
 
 
     //encrypt sym-enc hash with pub asym key
@@ -850,9 +830,7 @@ int test_full_send() {
     }
     std::printf("Asymmetric Encrypted (wrapped token hash):\n");
     print_hex(asym_encrypted_hash, asym_encrypted_hash_len);
-    std::cout << "Asym encrpy hash lenfth: " << asym_encrypted_hash_len << std::endl;
-
-
+    std::cout << "Asym encrpyted hash length: " << asym_encrypted_hash_len << std::endl;
 
 
 
@@ -876,18 +854,13 @@ int test_full_send() {
     std::cout <<"Asym enc length: " << asym_encrypted_keyiv_len << std::endl;
 
 
-
-
-
-
-
     //encode both to strings
     //OLD ERROR WAS IT WAS BEING ENCODED WITH WRONG LENGTH. NOW FIXED
     std::string encoded_key_iv = base64_encode(asym_encrypted_keyiv, asym_encrypted_keyiv_len);
     std::string encoded_token_hash = base64_encode(asym_encrypted_hash, asym_encrypted_hash_len);
 
-    std::cout << "Encoded key iv:\n" << encoded_key_iv << "\n";
-    std::cout << "Encoded token hash:\n" << encoded_token_hash << "\n";
+    std::cout << "Encoded key iv. This will get sent back by the user:\n" << encoded_key_iv << "\n";
+    std::cout << "Encoded token. this will be sent back by the user:\n" << encoded_token_hash << "\n";
 
 
     unsigned char decoded_token_hash[asym_encrypted_hash_len];
@@ -930,7 +903,5 @@ void test_decode() {
     unsigned char token_hash_out[32];
     unsigned char sym_iv_out[32];
 
-
-
-
 }
+

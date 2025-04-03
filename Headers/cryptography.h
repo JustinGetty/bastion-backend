@@ -64,6 +64,7 @@ int fake_main();
 int test_sym_encode_json();
 int test_full_send();
 void test_encode_decode();
+void simulate_cryptography();
 
 #endif
 

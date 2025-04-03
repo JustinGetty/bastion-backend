@@ -345,7 +345,6 @@ while (true) {
                     full_user_data user_data;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
                         std::cout << "GETTING SQLITE_ROW" << std::endl;
-                        //"SELECT user_id, username, CAST(strftime('%%s', timestamp) AS INTEGER), auth_token, asym_priv_key FROM user WHERE user_id = ?"
                         user_data.user_id = sqlite3_column_int(stmt, 0);
                         const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
                         if (raw_username != NULL) {
@@ -365,8 +364,11 @@ while (true) {
                             memcpy(user_data.enc_auth_token, raw_auth, sizeof(user_data.enc_auth_token));
                         }
                         const unsigned char* raw_asym_key = (const unsigned char*)sqlite3_column_blob(stmt, 4);
+                        const int asym_key_len = sqlite3_column_int(stmt, 5);
+                        std::cout << "asym key length: " << asym_key_len << std::endl;
                         if (raw_asym_key != NULL) {
                             memcpy(user_data.priv_key_w_len.priv_key, raw_asym_key, sizeof(user_data.priv_key_w_len.priv_key));
+                            user_data.priv_key_w_len.priv_key_len = asym_key_len;
                         }
                         //add sym key here
                         if (temp_status == -1) {
