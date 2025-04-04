@@ -3,9 +3,6 @@
 #include <sqlite3.h>
 
 task_queue_t queue;
-int global_count = 0;
-//NEVER ADD POINTERS TO THIS
-
 
 void task_queue_init(task_queue_t *q) {
     q->front = 0;
@@ -32,7 +29,7 @@ void task_queue_push(task_queue_t *q, query_data_struct* queryData) {
 
 void add_to_queue(query_data_struct* queryData) {
     task_queue_push(&queue, queryData);
-    std::cout << "Pushed to queue!\n";
+    std::cout << "[INFO] Pushed task to queue to be processed in database.\n";
 }
 
 query_data_struct* task_queue_pop(task_queue_t *q) {
@@ -54,12 +51,12 @@ void *worker_thread(void *arg) {
 //going to have server_worker_thread push to the queue a QueryData or ConnectionData or something
 sqlite3 *db;
 if (sqlite3_open(DATABASE, &db) != SQLITE_OK) {
-    fprintf(stderr, "Thread %lu: Cannot open database: %s\n",
+    fprintf(stderr, "[THREAD] ID %lu: Cannot open database: %s\n",
             pthread_self(), sqlite3_errmsg(db));
     pthread_exit(nullptr);
 }
 
-printf("Thread %lu: Opening database %s\n", pthread_self(), DATABASE);
+printf("[THREAD] ID %lu: Opening database %s\n", pthread_self(), DATABASE);
 //lets get this closer to actual max query size
 //also free this after use lmao???
 query_data *inbound_data;
@@ -70,22 +67,17 @@ while (true) {
     query_data_struct *inbound_data_struct = task_queue_pop(&queue);
     inbound_data = &inbound_data_struct->queryData;
 
-    global_count += 1;
-    std::cout << "-----------------\n";
-    std::cout << "Count: " << global_count << "\n";
-    std::cout << "-----------------\n";
     int temp_status = -2;
 
     // At this point, inbound_data is fully read.
 
-    printf("thread %lu received query: %s\n", pthread_self(), inbound_data->query);
+    printf("[INFO] Thread %lu received query: %s\n", pthread_self(), inbound_data->query);
 
     sqlite3_stmt *stmt;
     const char *query = inbound_data->query;
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
-        //hitting this
         temp_status = -1;
-        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        std::cerr << "[ERROR] Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
 
     }
     else {
@@ -94,83 +86,74 @@ while (true) {
             query_param param = inbound_data->params[i];
             switch (param.type) {
                 case PARAM_INT:
-                    printf("Binding INT\n");
-                    printf("Int to bind: %d\n", param.data.int_val);
                     if (sqlite3_bind_int(stmt, index, param.data.int_val) != SQLITE_OK) {
-                        //FUCKKKK THERES AN ERROR AHHHHHHHHHH
-                        printf("Int bind error");
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_INT\n";
                         temp_status = -1;
                 }
                 break;
 
                 case PARAM_FLOAT:
-                    printf("Binding FLOAT\n");
-                    printf("Float to bind: %f\n", param.data.float_val);
                     if (sqlite3_bind_double(stmt, index, param.data.float_val) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_FLOAT.\n";
                         temp_status = -1;
                 }
                 break;
 
                 case PARAM_TEXT:
-                    printf("Binding TEXT\n");
-                    printf("Text to bind: %s\n", param.data.text_val);
                     if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_TEXT.\n";
                         temp_status = -1;
                     }
                 break;
 
                 case PARAM_TOKEN_HASH:
-                    printf("Binding TOKEN_HASH\n");
                     for (int i = 0; i < HASH_SIZE; i++) {
                         printf("%02x", param.data.token_val_hash[i]);
                     }
                     printf("\n");
                     if (sqlite3_bind_blob(stmt, index, param.data.token_val_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_TOKEN_HASH.\n";
                         temp_status = -1;
                     }
                 break;
 
                 case PARAM_ASM_KEY:
-                    printf("Binding ASM_KEY\n");
-                    printf("Private key: ");
                     for (int i = 0; i < param.data.priv_key_w_len.priv_key_len; i++) {
                         printf("%02x", param.data.priv_key_w_len.priv_key[i]);
                     }
                     printf("\n");
 
                     if (sqlite3_bind_blob(stmt, index, param.data.priv_key_w_len.priv_key, param.data.priv_key_w_len.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_ASYM_KEY.\n";
                         temp_status = -1;
                     }
                 break;
 
                 case PARAM_SYM_KEY:
-                    printf("Binding SYM_KEY\n");
-                    printf("Sym key: ");
                     for (int i = 0; i < KEY_SIZE; i++) {
                         printf("%02x", param.data.sym_key_val[i]);
                     }
 
                     if (sqlite3_bind_blob(stmt, index, param.data.sym_key_val, KEY_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_SYM_KEY.\n";
                         temp_status = -1;
                     }
                     break;
 
                 case PARAM_SYM_IV:
-                    printf("Binding SYM_IV\n");
-                    printf("\nIV:\n");
                     for (int i = 0; i < IV_SIZE; i++) {
                         printf("%02x", param.data.sym_iv_val[i]);
                     }
                     printf("\n");
                     if (sqlite3_bind_blob(stmt, index, param.data.sym_iv_val, IV_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_SYM_IV.\n";
                         temp_status = -1;
                     }
                     break;
 
                 case PARAM_USERNAME:
-                    printf("Binding TEXT\n");
-                    printf("Text to bind: %s\n", param.data.text_val);
                     if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_USERNAME.\n";
                         temp_status = -1;
                     }
                     break;
@@ -188,42 +171,6 @@ while (true) {
         //get requests
         if (inbound_data->type == 'g') {
             switch (inbound_data->real_type) {
-                case GET_BASIC_USER_BY_ID: {
-                    user_data_basic user = {0};
-                    while (sqlite3_step(stmt) == SQLITE_ROW) {
-                        user.user_id = sqlite3_column_int(stmt, 0);
-                        const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
-                        if (raw_username != NULL) {
-                            /*
-                            strncpy(user.username, (const char*)raw_username, 49);
-                            user.username[49] = '\0';
-                            */
-                            strncpy(user.username, (const char*)raw_username, MAX_USERNAME_LENGTH - 1);
-                            user.username[MAX_USERNAME_LENGTH - 1] = '\0';
-
-                        } else {
-                            user.username[0] = '\0';
-                        }
-                        user.timestamp = sqlite3_column_int(stmt, 2);
-                        if (temp_status == -2) {
-                            user.status = 0;
-                        }
-                        else {
-                            user.status = temp_status;
-                        }
-                        //error handle this as well
-                        //TODO somehow send back idk
-                        //ok grab pointer, update by reference, then signal when done somehow?
-                        //FIX HERE::
-                        inbound_data_struct->is_ready = true;
-
-                        printf("Query executed successfully\n");
-                        printf("User ID: %d\n", user.user_id);
-                        printf("Username: %s\n", user.username);
-                        printf("Timestamp: %d\n", user.timestamp);
-                    }
-                    break;
-                }
                 case GET_FULL_USER_BY_ID: {
                     full_user_data user_data;
                 while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -342,10 +289,8 @@ while (true) {
             }
 
                 case GET_FULL_USER_BY_UNAME: {
-                    std::cout << "GET_FULL_USER_BY_UNAME" << std::endl;
                     full_user_data user_data;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
-                        std::cout << "GETTING SQLITE_ROW" << std::endl;
                         user_data.user_id = sqlite3_column_int(stmt, 0);
                         const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
                         if (raw_username != NULL) {
@@ -355,7 +300,6 @@ while (true) {
                             */
                             strncpy(user_data.username, (const char*)raw_username, MAX_USERNAME_LENGTH - 1);
                             user_data.username[MAX_USERNAME_LENGTH - 1] = '\0';
-                            std::cout << "USERAME HERE: " << user_data.username << std::endl;
                         } else {
                             user_data.username[0] = '\0';
                         }
@@ -366,7 +310,6 @@ while (true) {
                         }
                         const unsigned char* raw_asym_key = (const unsigned char*)sqlite3_column_blob(stmt, 4);
                         const int asym_key_len = sqlite3_column_int(stmt, 5);
-                        std::cout << "asym key length: " << asym_key_len << std::endl;
                         if (raw_asym_key != NULL) {
                             memcpy(user_data.priv_key_w_len.priv_key, raw_asym_key, sizeof(user_data.priv_key_w_len.priv_key));
                             user_data.priv_key_w_len.priv_key_len = asym_key_len;
@@ -386,13 +329,11 @@ while (true) {
 
 
 
-                        printf("Data retreived:\n");
-                        printf("User ID: %d\n", user_data.user_id);
-                        printf("Username: %s\n", user_data.username);
-                        printf("User creation time: %d\n", user_data.user_creation_time);
-                        std::cout << "Before while loop" << std::endl;
+                        printf("[DEBUG] Data retrieved:\n");
+                        printf("[DEBUG] User ID: %d\n", user_data.user_id);
+                        printf("[DEBUG] Username: %s\n", user_data.username);
+                        printf("[DEBUG] User creation time: %d\n", user_data.user_creation_time);
                     }
-                    std::cout << "At end of while loop" << std::endl;
 
                     break;
                 }
@@ -403,6 +344,7 @@ while (true) {
                     int result = sqlite3_step(stmt);
                     exists_data = (result == SQLITE_ROW);
                     if (temp_status == -1) {
+                        std::cout << "[ERROR] Failed to verify username in database.\n";
                         inbound_data_struct->status = DATABASE_FAILURE;
                     }
                     else {
@@ -410,16 +352,14 @@ while (true) {
                     }
                     inbound_data_struct->processed_data.username_exists = exists_data;
                     inbound_data_struct->is_ready = true;
-                    std::cout << "Username exists: " << exists_data << "\n";
                 }
 
                 default:
-                    printf("Error\n");
+                    std::cout << "[ERROR] Error in GET query.\n";
                 break;
             }
         }
         if (inbound_data->type == 'p') {
-            printf("Hit the post statement\n");
             int step_result = sqlite3_step(stmt);
             STATUS update_status;
 
@@ -427,21 +367,18 @@ while (true) {
                 // Success path - query executed successfully
                 if (temp_status == -1) {
                     // There was a binding error earlier
-                    fprintf(stderr, "Binding failed: %s\n", sqlite3_errmsg(db));
+                    fprintf(stderr, "[ERROR] Binding failed: %s.\n", sqlite3_errmsg(db));
                     update_status = DATABASE_FAILURE;
-                    //send(client_sock, &update_status, sizeof(STATUS), 0);
-                    printf("Failed due to binding error\n");
                 } else {
-                    printf("Update Successful\n");
+                    printf("[INFO] Update Successful.\n");
                     update_status = SUCCESS;
-                    //send(client_sock, &update_status, sizeof(STATUS), 0);
                 }
             } else {
                 // Failure path - query execution failed
-                fprintf(stderr, "Execution failed: %s\n", sqlite3_errmsg(db));
+                fprintf(stderr, "[ERROR] Execution failed: %s.\n", sqlite3_errmsg(db));
                 update_status = DATABASE_FAILURE;
                 //send(client_sock, &update_status, sizeof(STATUS), 0);
-                printf("Failed due to execution error: %d\n", step_result);
+                printf("[ERROR] Failed due to execution error: %d.\n", step_result);
             }
             inbound_data_struct->is_ready = true;
             inbound_data_struct->status = update_status;
@@ -466,11 +403,11 @@ void setup_threads() {
     pthread_t threads[THREAD_POOL_SIZE];
     for (int i = 0; i < THREAD_POOL_SIZE; i++) {
         if (pthread_create(&threads[i], nullptr, worker_thread, nullptr) != 0) {
-            perror("pthread_create");
+            perror("[ERROR] pthread_create");
             exit(EXIT_FAILURE);
         }
     }
-    printf("Thread pool of %d worker threads created.\n", THREAD_POOL_SIZE);
+    printf("[INFO] Thread pool of %d worker threads created.\n", THREAD_POOL_SIZE);
 
     //task_queue_push(&queue, client_sock);
     return;

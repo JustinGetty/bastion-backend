@@ -164,17 +164,15 @@ private:
         else if(req.method() == http::verb::post)
         {
             std::string received_json = req.body();
-            std::cout << "Data Received: " << received_json << std::endl;
-            //std::string response_json = "{\"received\": " + received_json + "}";
 
             MsgMethod msg_method;
             try {
                 msg_method = parse_method(received_json);
-                std::cout << "Method type: " << msg_method.type << std::endl;
+                std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
                 for (const auto &kv : msg_method.keys)
-                    std::cout << kv.first << " : " << kv.second << std::endl;
+                    std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
             } catch (const std::exception &ex) {
-                std::cerr << "Error: " << ex.what() << "\n";
+                std::cerr << "[ERROR] Error: " << ex.what() << "\n";
             }
 
             /*
@@ -185,10 +183,8 @@ private:
             std::string token_hash_encoded;
             if (temp_val != msg_method.keys.end()) {
                 token_hash_encoded = temp_val->second;
-                std::cout << "Auth token: " << token_hash_encoded << std::endl;
 
             } else {
-                std::cout << "Auth token not found" << std::endl;
                 return;
             }
 
@@ -196,10 +192,9 @@ private:
             std::string sym_key_enc;
             if (temp_val != msg_method.keys.end()) {
                 sym_key_enc = temp_val->second;
-                std::cout << "sym key: " << sym_key_enc << std::endl;
 
             } else {
-                std::cout << "Sym key not found" << std::endl;
+                std::cout << "[ERROR] Sym key not found" << std::endl;
                 return;
             }
 
@@ -207,9 +202,9 @@ private:
             int connection_id;
             if (temp_val != msg_method.keys.end()) {
                 connection_id = std::stoi(temp_val->second);
-                std::cout << "Connection ID: " << connection_id << std::endl;
+                std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
             } else {
-                std::cout << "Connection ID not found" << std::endl;
+                std::cout << "[ERROR] Connection ID not found" << std::endl;
                 return;
             }
 
@@ -333,7 +328,7 @@ void api_handler_setup()
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "[ERROR] " << e.what() << std::endl;
         return ;
     }
     return;

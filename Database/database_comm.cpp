@@ -542,14 +542,11 @@ STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key) {
 
 int num = 0;
 STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data) {
-    std::cout << "Num : " << num << std::endl;
-    num += 1;
     query_param params[MAX_PARAMS];
     params[0] = create_param_username(uname);
     query_data data{};
     data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
     strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
-    std::cout << "Username being sent: " << data.params[0].data.text_val << "\n";
 
     query_data_struct queryData{};
     queryData.queryData = data;
@@ -566,16 +563,13 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     if (process_status != SUCCESS) {
         return process_status;
     }
-    printf("Query sent\n");
 
     //if queryDataPtr->querydata->realtype  == blah blah blah TODO
     full_user_data full_user_data = queryDataPtr->processed_data.user_data;
     if (full_user_data.user_status != SUCCESS) {
-        printf("Error2\n");
         return DATABASE_FAILURE;
     }
     if (full_user_data.user_status == SUCCESS) {
-        printf("Yay Success\n");
         user_data->user_status = full_user_data.user_status;
         strncpy(user_data->username, full_user_data.username, sizeof(user_data->username));
         user_data->user_id = full_user_data.user_id;
@@ -610,7 +604,6 @@ STATUS check_username_exists(bastion_username *username, bool *output) {
     if (process_status != SUCCESS) {
         return process_status;
     }
-    printf("Query sent\n");
 
     *output = queryDataPtr->processed_data.username_exists;
     return queryDataPtr->status;

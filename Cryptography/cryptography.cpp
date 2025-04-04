@@ -21,24 +21,24 @@
 #include <openssl/buffer.h>
 
 void print_token_hash(token_hash token_hash) {
-    printf("Token Hash:\n");
+    printf("[INFO] Token Hash:\n[DATA] ");
     for (int i = 0; i < HASH_SIZE; i++) {
         printf("%02x", token_hash[i]);
     }
-    printf("\n");
+    printf(".\n");
 }
 
 void print_private_key(priv_key_w_length private_key) {
-    printf("Private key: \n");
+    printf("[INFO] Private key: \n[DATA] ");
     for (int i = 0; i < private_key.priv_key_len; i++) {
         printf("%02x", private_key.priv_key[i]);
     }
-    printf("\n");
+    printf(".\n");
 }
 
 STATUS generate_token(token token_, size_t token_size) {
     if (RAND_bytes(token_, token_size) != 1) {
-        fprintf(stderr, "Error generating random token.\n");
+        fprintf(stderr, "[ERROR] Error generating random token.\n");
         return CRYPTO_FAILURE;
     }
 
@@ -70,18 +70,18 @@ STATUS verify_token(int id, const token received_token) {
 
     //need to implement get_token_hash
     if (get_token_hash(id, stored_hash) != SUCCESS) {
-        fprintf(stderr, "Failed to retrieve stored token hash for id %d.\n", id);
+        fprintf(stderr, "[ERROR] Failed to retrieve stored token hash for id %d.\n", id);
         return CRYPTO_FAILURE;
     }
 
     compute_token_hash(received_token, TOKEN_SIZE, computed_hash);
 
     if (constant_time_compare(stored_hash, computed_hash, HASH_SIZE) == SUCCESS) {
-        printf("Token verification succeeded.\n");
+        printf("[INFO] Token verification succeeded.\n");
         return SUCCESS;
     }
 
-    printf("Token verification failed.\n");
+    printf("[INFO] Token verification failed.\n");
     return VERIFICATION_FAILURE;
 }
 
@@ -105,17 +105,17 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
 
     ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
     if (!ctx) {
-        fprintf(stderr, "Error creating EVP_PKEY_CTX\n");
+        fprintf(stderr, "[ERROR] Error creating EVP_PKEY_CTX\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_keygen_init(ctx) <= 0) {
-        fprintf(stderr, "Error initializing keygen\n");
+        fprintf(stderr, "[ERROR] Error initializing keygen\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, bits) <= 0) {
-        fprintf(stderr, "Error setting RSA keygen bits\n");
+        fprintf(stderr, "[ERROR] Error setting RSA keygen bits\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
@@ -123,18 +123,18 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
     // Create and initialize the public exponent.
     bn_e = BN_new();
     if (!bn_e) {
-        fprintf(stderr, "Error allocating BIGNUM for exponent\n");
+        fprintf(stderr, "[ERROR] Error allocating BIGNUM for exponent\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (BN_set_word(bn_e, e) != 1) {
-        fprintf(stderr, "Error setting BIGNUM word for exponent\n");
+        fprintf(stderr, "[ERROR] Error setting BIGNUM word for exponent\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     // In OpenSSL 3.0, EVP_PKEY_CTX_set_rsa_keygen_pubexp takes ownership of bn_e.
     if (EVP_PKEY_CTX_set_rsa_keygen_pubexp(ctx, bn_e) <= 0) {
-        fprintf(stderr, "Error setting RSA public exponent\n");
+        fprintf(stderr, "[ERROR] Error setting RSA public exponent\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
@@ -143,7 +143,7 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
     bn_e = nullptr;
 
     if (EVP_PKEY_keygen(ctx, &pkey) <= 0) {
-        fprintf(stderr, "Error generating RSA keypair\n");
+        fprintf(stderr, "[ERROR] Error generating RSA keypair\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
@@ -153,7 +153,7 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
         unsigned char *tmp_priv = nullptr;
         priv_len = i2d_PrivateKey(pkey, &tmp_priv);
         if (priv_len < 0 || priv_len > ASYM_SIZE) {
-            fprintf(stderr, "Error encoding private key or buffer is too small\n");
+            fprintf(stderr, "[ERROR] Error encoding private key or buffer is too small\n");
             OPENSSL_free(tmp_priv);
             status = CRYPTO_FAILURE;
             goto cleanup;
@@ -167,7 +167,7 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
         unsigned char *tmp_pub = nullptr;
         pub_len = i2d_PUBKEY(pkey, &tmp_pub);
         if (pub_len < 0 || pub_len > ASYM_SIZE) {
-            fprintf(stderr, "Error encoding public key or buffer is too small\n");
+            fprintf(stderr, "[ERROR] Error encoding public key or buffer is too small\n");
             OPENSSL_free(tmp_pub);
             status = CRYPTO_FAILURE;
             goto cleanup;
@@ -176,9 +176,6 @@ STATUS generate_asym_keypair(asym_key_struct *key_structure) {
         key_structure->pub_key_len = pub_len;
         OPENSSL_free(tmp_pub);
     }
-
-    printf("Private key DER length: %d bytes\n", priv_len);
-    printf("Public key DER length: %d bytes\n", pub_len);
 
 cleanup:
     // Only free bn_e if it still exists.
@@ -204,39 +201,39 @@ STATUS encrypt_with_pub_key(const unsigned char *pub_blob, int pub_blob_len,
 
     pkey = d2i_PUBKEY_ex(nullptr, &p, pub_blob_len, nullptr, nullptr);
     if (!pkey) {
-        fprintf(stderr, "Error decoding public key DER\n");
+        fprintf(stderr, "[ERROR] Error decoding public key DER\n");
         return CRYPTO_FAILURE;
     }
 
     ctx = EVP_PKEY_CTX_new(pkey, nullptr);
     if (!ctx) {
-        fprintf(stderr, "Error creating context for encryption\n");
+        fprintf(stderr, "[ERROR] Error creating context for encryption\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_encrypt_init(ctx) <= 0) {
-        fprintf(stderr, "Error initializing encryption\n");
+        fprintf(stderr, "[ERROR] Error initializing encryption\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0) {
-        fprintf(stderr, "Error setting RSA padding\n");
+        fprintf(stderr, "[ERROR] Error setting RSA padding\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     // Determine the required buffer length for encryption.
     if (EVP_PKEY_encrypt(ctx, nullptr, &outlen, message, message_len) <= 0) {
-        fprintf(stderr, "Error determining encrypted length\n");
+        fprintf(stderr, "[ERROR] Error determining encrypted length\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (outlen > (size_t)ASYM_SIZE) {
-        fprintf(stderr, "Encrypted data length exceeds buffer size\n");
+        fprintf(stderr, "[ERROR] Encrypted data length exceeds buffer size\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_encrypt(ctx, encrypted, &outlen, message, message_len) <= 0) {
-        fprintf(stderr, "Error encrypting message\n");
+        fprintf(stderr, "[ERROR] Error encrypting message\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
@@ -264,39 +261,39 @@ STATUS decrypt_with_private_key(const unsigned char *priv_blob, int priv_blob_le
 
     pkey = d2i_PrivateKey_ex(EVP_PKEY_RSA, nullptr, &p, priv_blob_len, nullptr, nullptr);
     if (!pkey) {
-        fprintf(stderr, "Error decoding private key DER\n");
+        fprintf(stderr, "[ERROR] Error decoding private key DER\n");
         return CRYPTO_FAILURE;
     }
 
     ctx = EVP_PKEY_CTX_new(pkey, nullptr);
     if (!ctx) {
-        fprintf(stderr, "Error creating context for decryption\n");
+        fprintf(stderr, "[ERROR] Error creating context for decryption\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_decrypt_init(ctx) <= 0) {
-        fprintf(stderr, "Error initializing decryption\n");
+        fprintf(stderr, "[ERROR] Error initializing decryption\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0) {
-        fprintf(stderr, "Error setting RSA padding\n");
+        fprintf(stderr, "[ERROR] Error setting RSA padding\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     // Determine the required buffer length for decryption.
     if (EVP_PKEY_decrypt(ctx, nullptr, &outlen, encrypted, encrypted_len) <= 0) {
-        fprintf(stderr, "Error determining decrypted length\n");
+        fprintf(stderr, "[ERROR] Error determining decrypted length\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (outlen > (size_t)ASYM_SIZE) {
-        fprintf(stderr, "Decrypted data length exceeds buffer size\n");
+        fprintf(stderr, "[ERROR] Decrypted data length exceeds buffer size\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
     if (EVP_PKEY_decrypt(ctx, decrypted, &outlen, encrypted, encrypted_len) <= 0) {
-        fprintf(stderr, "Error decrypting message\n");
+        fprintf(stderr, "[ERROR] Error decrypting message\n");
         status = CRYPTO_FAILURE;
         goto cleanup;
     }
@@ -321,7 +318,7 @@ STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int enc
 
 STATUS generate_symmetric_key(unsigned char *key, size_t key_size) {
     if (RAND_bytes(key, key_size) != 1) {
-        fprintf(stderr, "Error generating symmetric key\n");
+        fprintf(stderr, "[ERROR] Error generating symmetric key\n");
         return SYM_KEY_GEN_FAILURE;
     }
     return SUCCESS;
@@ -335,25 +332,25 @@ STATUS sym_decrypt(const unsigned char *ciphertext, int *ciphertext_len,
     int len, plaintext_len = 0;
 
     if (!(ctx = EVP_CIPHER_CTX_new())) {
-        fprintf(stderr, "Error creating EVP_CIPHER_CTX\n");
+        fprintf(stderr, "[ERROR] Error creating EVP_CIPHER_CTX\n");
         return SYM_DECRYPT_FAILURE;
     }
 
     if (EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) != 1) {
-        fprintf(stderr, "Error initializing decryption\n");
+        fprintf(stderr, "[ERROR] Error initializing decryption\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_DECRYPT_FAILURE;
     }
 
     if (EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, *ciphertext_len) != 1) {
-        fprintf(stderr, "Error during decryption\n");
+        fprintf(stderr, "[ERROR] Error during decryption\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_DECRYPT_FAILURE;
     }
     plaintext_len = len;
 
     if (EVP_DecryptFinal_ex(ctx, plaintext + len, &len) != 1) {
-        fprintf(stderr, "Error during final decryption (possibly padding issue)\n");
+        fprintf(stderr, "[ERROR] Error during final decryption (possibly padding issue)\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_DECRYPT_FAILURE;
     }
@@ -374,25 +371,25 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
     int len;
 
     if (!(ctx = EVP_CIPHER_CTX_new())) {
-        fprintf(stderr, "Error creating EVP_CIPHER_CTX\n");
+        fprintf(stderr, "[ERROR] Error creating EVP_CIPHER_CTX\n");
         return SYM_ENCRYPT_FAILURE;
     }
 
     if (EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv) != 1) {
-        fprintf(stderr, "Error initializing encryption\n");
+        fprintf(stderr, "[ERROR] Error initializing encryption\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_ENCRYPT_FAILURE;
     }
 
     if (EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, *plaintext_len) != 1) {
-        fprintf(stderr, "Error during encryption\n");
+        fprintf(stderr, "[ERROR] Error during encryption\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_ENCRYPT_FAILURE;
     }
     *ciphertext_len = len;
 
     if (EVP_EncryptFinal_ex(ctx, ciphertext + len, &len) != 1) {
-        fprintf(stderr, "Error during final encryption\n");
+        fprintf(stderr, "[ERROR] Error during final encryption\n");
         EVP_CIPHER_CTX_free(ctx);
         return SYM_ENCRYPT_FAILURE;
     }
@@ -444,7 +441,7 @@ bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t 
     unsigned char* decoded = base64_decode(encoded, decodedLength);
 
     if (decodedLength != static_cast<int>(expected_size)) {
-        std::cerr << "Error: Decoded length (" << decodedLength
+        std::cerr << "[ERROR] Decoded length (" << decodedLength
                   << ") does not match expected (" << expected_size << ")." << std::endl;
         delete[] decoded;
         return false;
@@ -461,26 +458,20 @@ int test_as_main() {
     sym_iv iv;
 
     if (generate_symmetric_key(key, KEY_SIZE) != SUCCESS) {
-        std::fprintf(stderr, "Symmetric key generation failed\n");
+        std::fprintf(stderr, "[ERROR] Symmetric key generation failed.\n");
         return -1;
     }
 
     if (RAND_bytes(iv, IV_SIZE) != 1) {
-        std::fprintf(stderr, "IV generation failed\n");
+        std::fprintf(stderr, "[ERROR] IV generation failed.\n");
         return -1;
     }
-
-    std::printf("Symmetric Key:\n");
-    print_hex(key, KEY_SIZE);
-    std::printf("IV:\n");
-    print_hex(iv, IV_SIZE);
 
     asym_key_struct asym_keys{};
     if (generate_asym_keypair(&asym_keys) != SUCCESS) {
-        std::cerr << "Failed to generate asymmetric key pair\n";
+        std::cerr << "[ERROR] Failed to generate asymmetric key pair\n";
         return -1;
     }
-    std::cout << "PRIVATE KEY LENGTH: " <<asym_keys.priv_key_len << "\n";
 
     priv_key_w_length priv_key_full{};
     memcpy(priv_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
@@ -489,23 +480,17 @@ int test_as_main() {
 
     token auth_token{};
     if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
-        std::fprintf(stderr, "Auth token generation failed\n");
+        std::fprintf(stderr, "[ERROR] Auth token generation failed\n");
         return -1;
     }
-    std::printf("Auth Token:\n");
-    print_hex(auth_token, TOKEN_SIZE);
 
     //compute hash of token, store it
     token_hash computed_hash{};
     compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
-    std::printf("Computed Token Hash:\n");
-    print_token_hash(computed_hash);
-
 
     STATUS store_token_hash_stat = store_token_hash(1, computed_hash, TOKEN_SIZE);
-    std::cout << "Store token hash status: " << store_token_hash_stat << "\n";
     if (store_token_hash_stat != SUCCESS) {
-        std::cout << "ERROR STORING HASH, EXITING\n";
+        std::cout << "[ERROR] ERROR STORING HASH, EXITING\n";
         return 1;
     }
 

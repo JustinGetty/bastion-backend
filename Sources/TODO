@@ -10,3 +10,4 @@
 10. Everything goes int test, espcially cryptography
 11. Spam filter, dont even send requests from random ip's. Use cloudflare too. If sus, ping phone in app but dont send push. Only push as notif if legit. Mark as weird if weird
 12. Make sure to zero out any memory that previously held keys
+13. Add threadsafe logger or mutex at least

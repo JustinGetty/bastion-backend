@@ -19,7 +19,6 @@ public:
                     validation_work* work = nullptr;
                     if (queue_.try_pop(work)) {
                         if (work != nullptr) {
-                            std::cout << "Executing work" << std::endl;
                             work->execute();
                             delete work;
                         }
