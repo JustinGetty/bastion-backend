@@ -121,6 +121,7 @@ public:
             uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
             std::string success_msg = R"({"status": "approved"})";
             ws->send(success_msg, uWS::OpCode::TEXT);
+            return;
 
         } else {
             printf("Token verification failed.\n");

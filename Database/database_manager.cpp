@@ -83,8 +83,10 @@ while (true) {
     sqlite3_stmt *stmt;
     const char *query = inbound_data->query;
     if (sqlite3_prepare_v2(db, query, -1, &stmt, NULL) != SQLITE_OK) {
-
+        //hitting this
         temp_status = -1;
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+
     }
     else {
         for (int i = 0; i < inbound_data->num_params; i++) {
@@ -393,6 +395,22 @@ while (true) {
                     std::cout << "At end of while loop" << std::endl;
 
                     break;
+                }
+
+                case GET_USERNAME_EXISTS: {
+
+                    bool exists_data;
+                    int result = sqlite3_step(stmt);
+                    exists_data = (result == SQLITE_ROW);
+                    if (temp_status == -1) {
+                        inbound_data_struct->status = DATABASE_FAILURE;
+                    }
+                    else {
+                        inbound_data_struct->status = SUCCESS;
+                    }
+                    inbound_data_struct->processed_data.username_exists = exists_data;
+                    inbound_data_struct->is_ready = true;
+                    std::cout << "Username exists: " << exists_data << "\n";
                 }
 
                 default:

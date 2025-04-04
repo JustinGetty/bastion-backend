@@ -587,6 +587,35 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     return user_data->user_status;
 }
 
+STATUS check_username_exists(bastion_username *username, bool *output) {
+
+    query_param query_params[MAX_PARAMS];
+    query_params[0] = create_param_username(username);
+    query_data data = set_query_data('g', GET_USERNAME_EXISTS, 1, query_params);
+    strncpy(data.query, CHECK_IF_USERNAME_EXISTS, sizeof(data.query));
+
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    //void add_to_queue(query_data_struct* queryData)
+    add_to_queue(queryDataPtr);
+
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    STATUS process_status = queryDataPtr->status;
+    if (process_status != SUCCESS) {
+        return process_status;
+    }
+    printf("Query sent\n");
+
+    *output = queryDataPtr->processed_data.username_exists;
+    return queryDataPtr->status;
+}
+
 //should only exist for the purpose of testing, DEF remove in prod!!!
 /*
 int main()

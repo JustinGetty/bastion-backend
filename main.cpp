@@ -10,6 +10,11 @@
 #include "database_head.h"
 #include "Headers/mobile_api_handler.h"
 #include "Headers/validation_work.h"
+#include "Headers/databaseq.h"
+#include <algorithm>
+#include <cctype>
+#include <cstring>
+#include <string>
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -60,6 +65,40 @@ PROBLEMMMMMMMMM
 ConnThreadPool* g_connThreadPool = nullptr;
 std::atomic<int> globalConnectionId{1};
 
+bool isValidUsername(const std::string& username) {
+    if (username.empty()) {
+        std::cerr << "Username is empty." << std::endl;
+        return false;
+    }
+    if (username.size() >= MAX_USERNAME_LENGTH) {
+        std::cerr << "Username is too long. Maximum allowed is " << (MAX_USERNAME_LENGTH - 1) << " characters." << std::endl;
+        return false;
+    }
+    for (unsigned char c : username) {
+        if (!std::isalpha(c)) {
+            std::cerr << "Invalid character in username: '" << c << "'. Only letters are allowed." << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+STATUS processUsername(const std::string& inputUsername) {
+    bastion_username user_username{};
+
+    if (!isValidUsername(inputUsername)) {
+        std::cerr << "Username validation failed." << std::endl;
+        return USERNAME_VERIFICATION_FAILED;
+    }
+
+    size_t copyLength = std::min(inputUsername.size(), static_cast<std::string::size_type>(MAX_USERNAME_LENGTH - 1));
+    std::memcpy(user_username, inputUsername.c_str(), copyLength);
+    user_username[copyLength] = '\0';
+
+    std::cout << "Username accepted: " << user_username << std::endl;
+    return SUCCESS;
+}
+
 struct WebSocketBehavior
 {
     static void open(uWS::WebSocket<false, true, ConnectionData> *ws)
@@ -92,12 +131,42 @@ struct WebSocketBehavior
             std::cerr << "Caught unknown error" << "\n";
         }
 
-        /*
-         *Check is username exists in DB here, reject if not
-         */
+
         /*
          *Parse input for validity here, reject bad characters
          */
+        bastion_username user_username{};
+        bastion_username *user_username_ptr = &user_username;
+        memcpy(user_username, msg_method.keys["username"].c_str(), std::size(user_username));
+        //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
+        STATUS username_verif_status = processUsername(user_username);
+
+        if (username_verif_status != SUCCESS) {
+            std::cout << "[INFO] Username contains invalid characters.\n";
+            std::string username_verif_ret = R"({"status":"invalid_char"})";
+            ws->send(username_verif_ret, uWS::OpCode::TEXT);
+            return;
+        }
+
+        /*
+         *Check is username exists in DB here, reject if not
+         */
+        bool username_exists;
+        bool *username_exists_ptr = &username_exists;
+        STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+        if (username_exists_status != SUCCESS) {
+            std::cout << "[ERROR] Error checking username.\n";
+            std::string user_exists_error = R"({"status": "db_error"})";
+            ws->send(user_exists_error, uWS::OpCode::TEXT);
+            return;
+        }
+
+        if (*username_exists_ptr == false) {
+            std::cout << "[INFO] Username does not exist.\n";
+            std::string user_exist_false = R"({"status": "user_no_exist"})";
+            ws->send(user_exist_false, uWS::OpCode::TEXT);
+            return;
+        }
 
         if (msg_method.type == "signin") {
            std::cout << "Signing in...\n";
@@ -115,6 +184,7 @@ struct WebSocketBehavior
 
                 g_connThreadPool->enqueueConnection(copyData);
                std::cout << "Enqueued connection (id: " << connData->connection_id << ")" << "\n";
+                return;
             } else if (connData->user_data.being_processed == true) {
                //reject sign in attempt, tell current attempt to fail, tell client to retry
                 //every step in the process should check the "fail_this" flag to fail it and reject, then tell client
@@ -123,14 +193,17 @@ struct WebSocketBehavior
                 auto* ws = connData->ws;
                 std::string wait_msg = R"({"status": "wait"})";
                 ws->send(wait_msg, uWS::OpCode::TEXT);
+                return;
             }
 
        }
         if (msg_method.type == "signup") {
            std::cout << "User requests signup\n";
+            return;
         }
         if (msg_method.type != "signin" || msg_method.type != "signup") {
            std::cout << "Unknown message type, rejecting message.";
+            return;
         }
 
     }

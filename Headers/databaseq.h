@@ -23,6 +23,7 @@ STATUS store_user_private_key(const int user_id, priv_key_w_length *priv_key_ful
 STATUS get_user_sym_key(const int user_id, sym_key_full *sym_key);
 STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key);
 void print_hex(unsigned char *data, int length);
+STATUS check_username_exists(bastion_username *username, bool *output);
 
 
 #endif
