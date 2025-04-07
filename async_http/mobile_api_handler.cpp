@@ -23,6 +23,7 @@
 #include "../Validation/validation_work.h"
 #include "idek_what_this_shits_for_anymore.h"
 #include "global_thread_pool_tmp.h"
+#include "validate_username.h"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
@@ -153,18 +154,86 @@ private:
         //get requests
         if(req.method() == http::verb::get)
         {
+            std::string target = std::string(req.target());
             //likely never using get, since apple notif will be post to apple ANS server and then post back here
-            send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
+            if (target == "/") {
+                send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
+            }
+
         }
         //post requests
         /*
          *READ BACK THE users's sign in details and keys
          *notif to user sent in different thread with APPLE/ANDROID notif services
          */
-        else if(req.method() == http::verb::post)
-        {
-            std::string received_json = req.body();
+        else if(req.method() == http::verb::post) {
+            std::string target = std::string(req.target());
+            std::cout << "[INFO] Target: " << target << "\n";
 
+            if (target == "/") {
+                std::cout << "[INFO] Processing root target\n";
+                std::string received_json = req.body();
+
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                }
+
+                /*
+                 *From here keys and data gets added to thread pool queue for processing
+                 */
+
+                auto temp_val = msg_method.keys.find("client_auth_token_enc");
+                std::string token_hash_encoded;
+                if (temp_val != msg_method.keys.end()) {
+                    token_hash_encoded = temp_val->second;
+
+                } else {
+                    return;
+                }
+
+                temp_val = msg_method.keys.find("sym_key_enc");
+                std::string sym_key_enc;
+                if (temp_val != msg_method.keys.end()) {
+                    sym_key_enc = temp_val->second;
+
+                } else {
+                    std::cout << "[ERROR] Sym key not found" << std::endl;
+                    return;
+                }
+
+                temp_val = msg_method.keys.find("connection_id");
+                int connection_id;
+                if (temp_val != msg_method.keys.end()) {
+                    connection_id = std::stoi(temp_val->second);
+                    std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
+                } else {
+                    std::cout << "[ERROR] Connection ID not found" << std::endl;
+                    return;
+                }
+
+                //error handle here if theyre not found!!
+
+
+                //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+                //ID needs to be random or systematic idk
+                g_workQueue.push(new MyValidationWork(1, 1, connection_id, token_hash_encoded, sym_key_enc));
+
+
+                //send back status response to mobile
+                send_json_response(received_json, http::status::ok);
+
+            }
+
+
+        if (target == "/validate_username") {
+            std::string received_json = req.body();
+            std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
             MsgMethod msg_method;
             try {
                 msg_method = parse_method(received_json);
@@ -173,60 +242,71 @@ private:
                     std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
             } catch (const std::exception &ex) {
                 std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                std::string resp = R"({"status":"error"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
+
+            std::string username = msg_method.keys["username"].c_str();
+
+            std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
+            for (unsigned char c : username) {
+                printf("%02x ", c);
+            }
+            std::cout << "\n";
+
+            bastion_username user_username{};
+            bastion_username *user_username_ptr = &user_username;
+            //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
+            if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
+                std::cout << "[INFO] Username valid.\n";
+            } else {
+                std::cout << "[INFO] Username contains invalid characters.\n";
+                std::string resp = R"({"status":"invalid_char"})";
+                send_json_response(resp, http::status::ok);
+                return;
             }
 
             /*
-             *From here keys and data gets added to thread pool queue for processing
+             *Check is username exists in DB here, reject if not
+             */
+            bool username_exists;
+            bool *username_exists_ptr = &username_exists;
+            STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+            if (username_exists_status != SUCCESS) {
+                std::cout << "[ERROR] Error checking username.\n";
+                std::string resp = R"({"status": "db_error"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
+
+            if (*username_exists_ptr == true) {
+                std::cout << "[INFO] Username already in use.\n";
+                std::string resp = R"({"status": "user_already_exists"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
+            std::cout << "[INFO] Username valid.\n";
+            std::string resp = R"({"status": "valid"})";
+            send_json_response(resp, http::status::ok);
+
+            //if it's valid might as well send all the shit here
+            /*
+             *generate keys, encode them, send them
              */
 
-            auto temp_val = msg_method.keys.find("client_auth_token_enc");
-            std::string token_hash_encoded;
-            if (temp_val != msg_method.keys.end()) {
-                token_hash_encoded = temp_val->second;
 
-            } else {
-                return;
-            }
-
-            temp_val = msg_method.keys.find("sym_key_enc");
-            std::string sym_key_enc;
-            if (temp_val != msg_method.keys.end()) {
-                sym_key_enc = temp_val->second;
-
-            } else {
-                std::cout << "[ERROR] Sym key not found" << std::endl;
-                return;
-            }
-
-            temp_val = msg_method.keys.find("connection_id");
-            int connection_id;
-            if (temp_val != msg_method.keys.end()) {
-                connection_id = std::stoi(temp_val->second);
-                std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-            } else {
-                std::cout << "[ERROR] Connection ID not found" << std::endl;
-                return;
-            }
-
-            //error handle here if theyre not found!!
-
-
-            //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-            //ID needs to be random or systematic idk
-            g_workQueue.push(new MyValidationWork(1, 1, connection_id, token_hash_encoded, sym_key_enc));
-
-
-            //send back status response to mobile
-            send_json_response(received_json, http::status::ok);
         }
+    }
+
+
         else
         {
             send_bad_response(
                 http::status::bad_request,
                 "Invalid request-method '" + std::string(req.method_string()) + "'\r\n");
         }
-    }
-
+}
     // Send a generic bad response.
     void send_bad_response(http::status status, std::string const& error)
     {
@@ -333,31 +413,3 @@ void api_handler_setup()
     }
     return;
 }
-
-/*
-unsigned char keyData[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
-    size_t keyLength = sizeof(keyData);
-
-    // 1. Encode the binary key into a Base64 string.
-    std::string encodedKey = base64_encode(keyData, keyLength);
-    std::cout << "Encoded Key: " << encodedKey << std::endl;
-
-    // 2. Construct a JSON object containing the encoded key.
-    nlohmann::json j;
-    j["key"] = encodedKey;
-    std::string jsonString = j.dump();
-    std::cout << "JSON Payload: " << jsonString << std::endl;
-
-    // 3. Later, parse the JSON and decode the Base64 string back to binary.
-    nlohmann::json parsed = nlohmann::json::parse(jsonString);
-    std::string encodedKeyFromJson = parsed["key"];
-    std::vector<unsigned char> decodedKey = base64_decode(encodedKeyFromJson);
-
-    // 4. Print the decoded binary key in hexadecimal format.
-    std::cout << "Decoded Binary Key: ";
-    for (unsigned char byte : decodedKey) {
-        printf("%02x", byte);
-    }
-    std::cout << std::endl;
-    */
-

@@ -45,6 +45,10 @@ add_executable(bastion_auth main.cpp
         Implementations/global_thread_pool_tmp.cpp
         Headers/global_thread_pool_tmp.h
         Headers/idek_what_this_shits_for_anymore.h
+        Implementations/validate_username.cpp
+        Headers/validate_username.h
+        User/UserCreation.cpp
+        User/UserCreation.h
 )
 
 

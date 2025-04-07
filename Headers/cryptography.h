@@ -22,7 +22,7 @@ STATUS verify_token(int id, const token received_token);
 void print_token_hash(token_hash token_hash);
 
 // ASYMMETRIC KEYS ---------------------------------------------------
-STATUS generate_asym_keypair(asym_key_struct key_structure);
+STATUS generate_asym_keypair(asym_key_struct *key_structure);
 
 STATUS encrypt_with_pub_key(const unsigned char *pub_blob, int pub_blob_len,
                 const unsigned char *message, int message_len,

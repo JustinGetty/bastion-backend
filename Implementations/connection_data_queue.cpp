@@ -34,7 +34,6 @@ bool ConnectionQueue::isEmpty()
 
 int ConnectionQueue::enqueue(std::unique_ptr<ConnectionData> insert_data)
 {
-	printf("Here is the queue\n");
 	std::lock_guard<std::mutex> lock(conn_mutex);
 
 	if (isFull())
