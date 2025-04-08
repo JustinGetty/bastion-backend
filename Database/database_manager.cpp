@@ -380,8 +380,8 @@ while (true) {
                 //send(client_sock, &update_status, sizeof(STATUS), 0);
                 printf("[ERROR] Failed due to execution error: %d.\n", step_result);
             }
-            inbound_data_struct->is_ready = true;
             inbound_data_struct->status = update_status;
+            inbound_data_struct->is_ready = true;
         }
     }
     sqlite3_finalize(stmt);

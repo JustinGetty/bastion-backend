@@ -48,7 +48,7 @@ add_executable(bastion_auth main.cpp
         Implementations/validate_username.cpp
         Headers/validate_username.h
         User/UserCreation.cpp
-        User/UserCreation.h
+        Headers/UserCreation.h
 )
 
 

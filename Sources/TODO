@@ -12,3 +12,4 @@
 12. Make sure to zero out any memory that previously held keys
 13. Add threadsafe logger or mutex at least
 14. Fix load issues
+15. Give user choice of more secure or less secure recovery

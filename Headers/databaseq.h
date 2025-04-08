@@ -24,6 +24,7 @@ STATUS get_user_sym_key(const int user_id, sym_key_full *sym_key);
 STATUS store_user_sym_key(const int user_id, const sym_key_full *sym_key);
 void print_hex(unsigned char *data, int length);
 STATUS check_username_exists(bastion_username *username, bool *output);
+STATUS add_new_user_to_db(new_user_struct *user_data);
 
 
 #endif

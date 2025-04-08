@@ -609,6 +609,27 @@ STATUS check_username_exists(bastion_username *username, bool *output) {
     return queryDataPtr->status;
 }
 
+STATUS add_new_user_to_db(new_user_struct *user_data) {
+    query_param query_params[MAX_PARAMS];
+    query_params[0] = create_param_username(&user_data->new_username);
+    query_params[1] = create_param_hash_token(user_data->new_token_hash);
+    query_params[2] = create_param_asym_key(user_data->new_priv_key);
+    query_params[3] = create_param_int(user_data->new_priv_key.priv_key_len);
+
+    query_data data = set_query_data('p', INSERT_NEW_USER, 3, query_params);
+    strncpy(data.query, CREATE_USER_QUERY, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return queryData.status;
+}
+
 //should only exist for the purpose of testing, DEF remove in prod!!!
 /*
 int main()

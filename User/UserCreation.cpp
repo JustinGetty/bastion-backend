@@ -2,32 +2,23 @@
 // Created by root on 4/7/25.
 //
 
-#include "UserCreation.h"
+#include "../Headers/UserCreation.h"
 #include <bastion_data.h>
 #include "cryptography.h"
 #include "databaseq.h"
 #include <openssl/rand.h>
+#include <iostream>
+#include <string>
+#include <sstream>
 
 STATUS create_new_user(bastion_username username, new_user_outbound_data* user_data) {
 
     /*
      *Here we need to do as follows:
-     * Create auth token
-     * Create auth token hash
-     * Store auth token hash
-     * Create asym keys, store the public one in a file and private one in the database
-     * Create sym key and store it in a file
-     * Encrypt auth token hash with sym key
-     * Encrypt sym-encrypted auth token with public key
-     * Encode this to a string
-     * Encrypt sym ket with public key
-     * Encode this to a string
-     * Put those encode in the bash test file
-     * Send that back as json
-     * Decode it all and verify it works
      */
 
 
+    //need to create new user in DB
 
     //Create auth token ----------------------------------------------------------------
     token auth_token{};
@@ -36,19 +27,13 @@ STATUS create_new_user(bastion_username username, new_user_outbound_data* user_d
         return AUTH_TOKEN_GEN_FAILURE;
     }
     std::cout << "[INFO] New auth token generated.\n";
+    print_hex(auth_token, TOKEN_SIZE);
 
     //compute hash of token ----------------------------------------------------------------
     token_hash computed_hash{};
     compute_token_hash(auth_token, TOKEN_SIZE, computed_hash);
     std::printf("[INFO] Computed Token Hash.\n");
 
-    //Store token hash ---------------------------------------------------------------------
-    STATUS store_token_hash_stat = store_token_hash(1, computed_hash, TOKEN_SIZE);
-    std::cout << "[INFO] Store token hash status: " << store_token_hash_stat << "\n";
-    if (store_token_hash_stat != SUCCESS) {
-        std::cout << "[ERROR] ERROR STORING HASH, EXITING\n";
-        return DATABASE_FAILURE;
-    }
 
     //create asym keys ----------------------------------------------------------------------
     asym_key_struct asym_keys{};
@@ -57,17 +42,12 @@ STATUS create_new_user(bastion_username username, new_user_outbound_data* user_d
         return ASYM_KEY_GEN_FAILURE;
     }
     std::cout << "[INFO] Generated asymmetric key pair.\n";
+    print_hex(asym_keys.pub_key, asym_keys.pub_key_len);
 
     //store private key ----------------------------------------------------------------------
     priv_key_w_length priv_key_full{};
     memcpy(priv_key_full.priv_key, asym_keys.priv_key, asym_keys.priv_key_len);
     priv_key_full.priv_key_len = asym_keys.priv_key_len;
-    STATUS asym_priv_store_stat = store_user_private_key(1, &priv_key_full);
-    if (asym_priv_store_stat != SUCCESS) {
-        std::cerr << "[ERROR] Failed to store private key.\n";
-        return DATABASE_FAILURE;
-    }
-    std::cout << "[INFO] Stored private key in database.\n";
 
 
     //Generate sym key and iv ------------------------------------------------------------------
@@ -76,16 +56,34 @@ STATUS create_new_user(bastion_username username, new_user_outbound_data* user_d
         std::fprintf(stderr, "[ERROR] Symmetric key generation failed\n");
         return SYM_KEY_GEN_FAILURE;
     }
-
+    std::cout << "[DEBUG] Sym key: \n";
+    print_hex(key, KEY_SIZE);
     if (RAND_bytes(iv, IV_SIZE) != 1) {
         std::fprintf(stderr, "[ERROR] IV generation failed\n");
         return SYM_KEY_GEN_FAILURE;
     }
+    std::cout << "[DEBUG] Sym iv: \n";
+    print_hex(iv, IV_SIZE);
+
     std::cout << "[INFO] Generated symmetric key.\n";
 
 
     /* TODO here need to test encrypt something with key then decrypt to ensure it works before going to PROD */
     /* later setup to send tokens over with data enc*/
+
+    //TODO DO NOT GO TO PROD WITH THIS PLEASEEEEEEEE
+    username[MAX_USERNAME_LENGTH - 1] = '\0';
+    new_user_struct new_user_data{};
+    memcpy(new_user_data.new_username, username, sizeof(username));
+    memcpy(new_user_data.new_token_hash, computed_hash, HASH_SIZE);
+    memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
+    new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
+    STATUS ins_to_db_stat = add_new_user_to_db(&new_user_data);
+    if (ins_to_db_stat != SUCCESS) {
+        std::cerr << "[ERROR] Failed to insert new user in database\n";
+        return DATABASE_FAILURE;
+    }
+    std::cout << "[INFO] Added new user to database.\n";
 
     memcpy(user_data->new_username, username, sizeof(username));
     memcpy(user_data->new_raw_token, auth_token, sizeof(auth_token));
@@ -94,10 +92,30 @@ STATUS create_new_user(bastion_username username, new_user_outbound_data* user_d
     memcpy(user_data->new_sym_key.symmetric_iv, iv, sizeof(iv));
     memcpy(user_data->new_sym_key.symmetric_key, key, sizeof(key));
 
+
     return SUCCESS;
 }
 
 STATUS process_new_user_to_send(new_user_outbound_data* user_data, std::string* user_data_json) {
 
+    std::string encoded_token = base64_encode(user_data->new_raw_token, TOKEN_SIZE);
+    std::string username_temp= user_data->new_username;
+    std::string encoded_username = base64_encode((const unsigned char *)user_data->new_username, username_temp.length());
+    std::string encoded_pub_key = base64_encode(user_data->new_pub_key.pub_key, user_data->new_pub_key.pub_key_len);
+    std::string encoded_sym_key = base64_encode(user_data->new_sym_key.symmetric_key, KEY_SIZE);
+    std::string encoded_sym_iv = base64_encode(user_data->new_sym_key.symmetric_iv, IV_SIZE);
+
+    //std::string resp = R"({"status": "valid"})";
+    std::ostringstream oss;
+    oss << "{\"status\": \"valid\", "
+            << "\"token\": \"" << encoded_token << "\", "
+            << "\"username\": \"" << encoded_username << "\", "
+            << "\"pub_key\": \"" << encoded_pub_key << "\", "
+            << "\"sym_key\": \"" << encoded_sym_key << "\", "
+            << "\"sym_iv\": \"" << encoded_sym_iv << "\"}";
+    std::string jsonString = oss.str();
+
+    *user_data_json = oss.str();
+    std::cout << "[INFO] Data being sent: " << *user_data_json << "\n";
     return SUCCESS;
 }

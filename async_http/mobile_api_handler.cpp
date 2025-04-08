@@ -1,7 +1,8 @@
-#include "../Headers/mobile_api_handler.h"
-#include "../Headers/conn_data_storage.h"
-#include "../Headers/parse_message_json.h"
-#include "../Headers/cryptography.h"
+#include "mobile_api_handler.h"
+#include "conn_data_storage.h"
+#include "parse_message_json.h"
+#include "cryptography.h"
+#include "UserCreation.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -286,16 +287,30 @@ private:
                 send_json_response(resp, http::status::ok);
                 return;
             }
-            std::cout << "[INFO] Username valid.\n";
-            std::string resp = R"({"status": "valid"})";
-            send_json_response(resp, http::status::ok);
+
+
 
             //if it's valid might as well send all the shit here
             /*
              *generate keys, encode them, send them
              */
+            new_user_outbound_data outbound_data{};
+            STATUS create_new_user_stat = create_new_user(user_username, &outbound_data);
+            if (create_new_user_stat != SUCCESS) {
+                std::cerr << "[ERROR] Failed to create new user.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+            }
+            std::string outbound_response;
+            STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
+            if (parse_status != SUCCESS) {
+                std::cerr << "[ERROR] Failed to parse data to json.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+            }
 
-
+            std::cout << "[INFO] Username valid, user added.\n";
+            send_json_response(outbound_response, http::status::ok);
         }
     }
 
