@@ -7,7 +7,8 @@
 #include <iostream>
 #include <bastion_data.h>
 
-STATUS create_new_user(bastion_username username, new_user_outbound_data* user_data);
+STATUS create_new_user_unsec(bastion_username username, new_user_outbound_data* user_data);
+STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* user_data);
 STATUS process_new_user_to_send(new_user_outbound_data* user_data, std::string* user_data_json);
 
 

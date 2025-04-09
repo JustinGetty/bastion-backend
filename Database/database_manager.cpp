@@ -141,10 +141,6 @@ while (true) {
                     break;
 
                 case PARAM_SYM_IV:
-                    for (int i = 0; i < IV_SIZE; i++) {
-                        printf("%02x", param.data.sym_iv_val[i]);
-                    }
-                    printf("\n");
                     if (sqlite3_bind_blob(stmt, index, param.data.sym_iv_val, IV_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
                         std::cout << "[ERROR] Failed to bind blob of type PARAM_SYM_IV.\n";
                         temp_status = -1;
@@ -157,6 +153,13 @@ while (true) {
                         temp_status = -1;
                     }
                     break;
+
+                case PARAM_TOKEN_ENC:
+                    if (sqlite3_bind_blob(stmt, index, param.data.encrypted_raw_token, 64, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_TOKEN_ENC.\n";
+                        temp_status = -1;
+                    }
+                break;
 
                 default:
                     //ahhhh more errors to fix

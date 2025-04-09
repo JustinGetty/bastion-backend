@@ -3,6 +3,7 @@
 #include "parse_message_json.h"
 #include "cryptography.h"
 #include "UserCreation.h"
+#include "SeedCipher.h"
 
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -155,11 +156,128 @@ private:
         //get requests
         if(req.method() == http::verb::get)
         {
-            std::string target = std::string(req.target());
+            std::string targetStr = std::string(req.target());
+            // Split into the path and query parts
+            size_t pos = targetStr.find('?');
+            std::string path = (pos != std::string::npos) ? targetStr.substr(0, pos) : targetStr;
+            std::string query = (pos != std::string::npos) ? targetStr.substr(pos + 1) : "";
             //likely never using get, since apple notif will be post to apple ANS server and then post back here
-            if (target == "/") {
+            if (path == "/") {
                 send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
             }
+
+
+
+
+
+
+
+
+
+            if (path == "/secure_key") {
+                std::string username;
+                std::istringstream queryStream(query);
+                std::string token;
+                while (std::getline(queryStream, token, '&')) {
+                    size_t eqPos = token.find('=');
+                    if (eqPos != std::string::npos) {
+                        std::string key = token.substr(0, eqPos);
+                        std::string value = token.substr(eqPos + 1);
+                        if (key == "username") {
+                            username = value;  // You now have the username
+                            break;  // Stop once we've found it.
+                        }
+                    }
+                }
+
+                // Optionally, perform URL decoding on username here if needed.
+                // For example: username = url_decode(username);
+
+                //FIX TODO
+                if (username.empty()) {
+                    std::cerr << "[ERROR] Username not provided in query" << std::endl;
+                    send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
+                    return;
+                }
+                bastion_username temp_username{};
+                memcpy(temp_username, username.c_str(), username.length());
+
+                new_user_outbound_data outbound_data{};
+                STATUS create_new_user_stat = create_new_user_sec(temp_username, &outbound_data);
+                if (create_new_user_stat != SUCCESS) {
+                    std::cerr << "[ERROR] Failed to create new user.\n";
+                    std::string resp = R"({"status": "server_failure"})";
+                    send_json_response(resp, http::status::ok);
+                }
+                std::string outbound_response;
+                outbound_data.secure_type = true;
+                STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
+                if (parse_status != SUCCESS) {
+                    std::cerr << "[ERROR] Failed to parse data to json.\n";
+                    std::string resp = R"({"status": "server_failure"})";
+                    send_json_response(resp, http::status::ok);
+                }
+
+                std::cout << "[INFO] Username valid, user added.\n";
+                send_json_response(outbound_response, http::status::ok);
+            }
+
+
+
+        if (path == "/reg_keys") {
+
+            std::string username;
+            std::istringstream queryStream(query);
+            std::string token;
+            while (std::getline(queryStream, token, '&')) {
+                size_t eqPos = token.find('=');
+                if (eqPos != std::string::npos) {
+                    std::string key = token.substr(0, eqPos);
+                    std::string value = token.substr(eqPos + 1);
+                    if (key == "username") {
+                        username = value;  // You now have the username
+                        break;  // Stop once we've found it.
+                    }
+                }
+            }
+
+            // Optionally, perform URL decoding on username here if needed.
+            // For example: username = url_decode(username);
+
+            //FIX TODO
+            if (username.empty()) {
+                std::cerr << "[ERROR] Username not provided in query" << std::endl;
+                send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
+                return;
+            }
+            bastion_username temp_username{};
+            memcpy(temp_username, username.c_str(), username.length());
+
+            new_user_outbound_data outbound_data{};
+            STATUS create_new_user_stat = create_new_user_unsec(temp_username, &outbound_data);
+            if (create_new_user_stat != SUCCESS) {
+                std::cerr << "[ERROR] Failed to create new user.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+            }
+            std::string outbound_response;
+            outbound_data.secure_type = false;
+            STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
+            if (parse_status != SUCCESS) {
+                std::cerr << "[ERROR] Failed to parse data to json.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+            }
+
+            std::cout << "[INFO] Username valid, user added.\n";
+            send_json_response(outbound_response, http::status::ok);
+        }
+
+
+
+
+
+
 
         }
         //post requests
@@ -171,9 +289,9 @@ private:
             std::string target = std::string(req.target());
             std::cout << "[INFO] Target: " << target << "\n";
 
-            if (target == "/") {
+            if (target == "/reg_signin") {
                 std::cout << "[INFO] Processing root target\n";
-                std::string received_json = req.body();
+                const std::string received_json = req.body();
 
                 MsgMethod msg_method;
                 try {
@@ -223,12 +341,24 @@ private:
 
                 //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
                 //ID needs to be random or systematic idk
-                g_workQueue.push(new MyValidationWork(1, 1, connection_id, token_hash_encoded, sym_key_enc));
+                //TODO add type here so SEC can be validated without major rewrite
+                g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
 
 
                 //send back status response to mobile
                 send_json_response(received_json, http::status::ok);
 
+            }
+
+            if (target == "/secure_signin") {
+
+                /*
+                 *To validate the sign in when using seed phrase encrypytion, same as before parse keys pass to valid queue, flag will handle switch
+                 *Only take in key we will store the auth token with the iv to make retrieval easier.
+                 */
+
+
+                //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
             }
 
 
@@ -288,29 +418,11 @@ private:
                 return;
             }
 
+            std::cout << "[INFO] Username is valid.\n";
+            std::string resp = R"({"status": "valid"})";
+            send_json_response(resp, http::status::ok);
 
 
-            //if it's valid might as well send all the shit here
-            /*
-             *generate keys, encode them, send them
-             */
-            new_user_outbound_data outbound_data{};
-            STATUS create_new_user_stat = create_new_user(user_username, &outbound_data);
-            if (create_new_user_stat != SUCCESS) {
-                std::cerr << "[ERROR] Failed to create new user.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-            }
-            std::string outbound_response;
-            STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
-            if (parse_status != SUCCESS) {
-                std::cerr << "[ERROR] Failed to parse data to json.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-            }
-
-            std::cout << "[INFO] Username valid, user added.\n";
-            send_json_response(outbound_response, http::status::ok);
         }
     }
 

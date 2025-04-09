@@ -104,6 +104,13 @@ query_param create_param_username(bastion_username *username) {
     return param;
 }
 
+query_param create_param_token_enc(token_sec *token_enc_sec) {
+    query_param param;
+    param.type = PARAM_TOKEN_ENC;
+    memcpy(&param.data.encrypted_raw_token, *token_enc_sec, sizeof(*token_enc_sec));
+    return param;
+}
+
 STATUS send_query(int sock, query_data data) {
     size_t total_sent = 0;
     size_t to_send = sizeof(query_data);
@@ -617,7 +624,7 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
     query_params[3] = create_param_int(user_data->new_priv_key.priv_key_len);
 
     query_data data = set_query_data('p', INSERT_NEW_USER, 3, query_params);
-    strncpy(data.query, CREATE_USER_QUERY, sizeof(data.query));
+    strncpy(data.query, CREATE_USER_QUERY_REG, sizeof(data.query));
 
     query_data_struct queryData{};
     queryData.queryData = data;
@@ -630,21 +637,25 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
     return queryData.status;
 }
 
-//should only exist for the purpose of testing, DEF remove in prod!!!
-/*
-int main()
 
-{
-    token_hash out_token_hash;
-    STATUS get_status = get_token_hash(1, out_token_hash, TOKEN_SIZE);
-    if (get_status != SUCCESS) {
-        printf("Failure");
-        return -1;
+STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
+    query_param query_params[MAX_PARAMS];
+    query_params[0] = create_param_username(&user_data->new_username);
+    query_params[1] = create_param_hash_token(user_data->new_token_hash);
+    query_params[2] = create_param_token_enc(&user_data->new_token_hash_encrypted);
+    query_params[3] = create_param_asym_key(user_data->new_priv_key);
+    query_params[4] = create_param_int(user_data->new_priv_key.priv_key_len);
+
+    query_data data = set_query_data('p', INSERT_NEW_USER_SEC, 4, query_params);
+    strncpy(data.query, CREATE_USER_QUERY_SEC, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-    for (int i = 0; i < HASH_SIZE; i++) {
-        printf("%02x", out_token_hash[i]);
-    }
-    printf("\n");
-    return 0;
+
+    return queryData.status;
 }
-*/
