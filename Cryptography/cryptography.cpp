@@ -452,6 +452,49 @@ bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t 
     return true;
 }
 
+
+
+/* compute seed phrase hash ------------------- */
+
+void compute_seed_phrase_hash(std::string seed_phrase, size_t seed_phrase_size, seed_phrase_hash seed_phrase_hash_) {
+    SHA256((const unsigned char*)seed_phrase.c_str(), seed_phrase_size, seed_phrase_hash_);
+}
+
+//STATUS constant_time_compare(const token_hash a, const token_hash *b, size_t len);
+STATUS constant_time_compare_seed_phrase(const seed_phrase_hash a, const seed_phrase_hash b, size_t len) {
+    if (CRYPTO_memcmp(a, b, len) == 0) {
+        return SUCCESS;
+    }
+    return CRYPTO_FAILURE;
+}
+
+/* Verifies a token by:
+   1. Retrieving the stored token hash (from a database)
+   2. Computing the hash of the received token
+   3. Comparing the two hashes in constant time.
+   Both the stored and received tokens use fixed-width arrays.
+   */
+STATUS verify_seed_phrase(bastion_username username, const std::string received_seed_phrase) {
+    seed_phrase_hash stored_hash;
+    seed_phrase_hash computed_hash;
+
+    //need to implement get_token_hash
+    if (get_seed_phrase_hash(username, &stored_hash) != SUCCESS) {
+        fprintf(stderr, "[ERROR] Failed to retrieve stored token hash for username %d.\n", username);
+        return CRYPTO_FAILURE;
+    }
+
+    compute_seed_phrase_hash(received_seed_phrase, 64, computed_hash);
+
+    if (constant_time_compare(stored_hash, computed_hash, HASH_SIZE) == SUCCESS) {
+        printf("[INFO] Token verification succeeded.\n");
+        return SUCCESS;
+    }
+
+    printf("[INFO] Token verification failed.\n");
+    return VERIFICATION_FAILURE;
+}
+
 //this shit simulates main to test crypto functions
 int test_as_main() {
     sym_key key;

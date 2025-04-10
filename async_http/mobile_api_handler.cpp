@@ -149,6 +149,24 @@ private:
             });
     }
 
+
+
+    // Simple helper to parse a parameter from a query string
+    std::string parse_query_parameter(const std::string &query, const std::string &param) {
+        std::istringstream ss(query);
+        std::string token;
+        while (std::getline(ss, token, '&')) {
+            size_t eqPos = token.find('=');
+            if (eqPos != std::string::npos) {
+                std::string key = token.substr(0, eqPos);
+                std::string value = token.substr(eqPos + 1);
+                if (key == param)
+                    return value;
+            }
+        }
+        return "";
+    }
+
     // Process the HTTP request.
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
@@ -165,6 +183,19 @@ private:
             if (path == "/") {
                 send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
             }
+            else if (path == "/email_verif") {
+                // GET /email_verif?email=xxx
+                std::string email = parse_query_parameter(query, "email");
+                if (email.empty()) {
+                    std::cerr << "[ERROR] Email not provided in query" << std::endl;
+                    send_json_response("{\"status\":\"email_missing\"}", http::status::bad_request);
+                    return;
+                }
+                // Here, you would normally call your email verification service.
+                // For illustration, we simulate a successful request.
+                std::cout << "[INFO] Email verification requested for: " << email << std::endl;
+                send_json_response("{\"status\":\"email_sent\"}", http::status::ok);
+            }
 
 
 
@@ -172,8 +203,10 @@ private:
 
 
 
-
-
+            /*
+            * Secure key endpoint, this will ...
+            *
+             */
             if (path == "/secure_key") {
                 std::string username;
                 std::istringstream queryStream(query);
@@ -225,7 +258,7 @@ private:
 
 
         if (path == "/reg_keys") {
-
+            std::cout << "[INFO] Getting regular keys.\n";
             std::string username;
             std::istringstream queryStream(query);
             std::string token;
@@ -279,7 +312,92 @@ private:
 
 
 
+
+
+
+
+
+            if (path == "/rec_by_seed") {
+
+                std::string username;
+                std::istringstream queryStream(query);
+                std::string token;
+                while (std::getline(queryStream, token, '&')) {
+                    size_t eqPos = token.find('=');
+                    if (eqPos != std::string::npos) {
+                        std::string key = token.substr(0, eqPos);
+                        std::string value = token.substr(eqPos + 1);
+                        if (key == "username") {
+                            username = value;  // You now have the username
+                            break;  // Stop once we've found it.
+                        }
+                    }
+                }
+
+                // Optionally, perform URL decoding on username here if needed.
+                // For example: username = url_decode(username);
+
+                //FIX TODO
+                if (username.empty()) {
+                    std::cerr << "[ERROR] Username not provided in query" << std::endl;
+                    send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
+                    return;
+                }
+                bastion_username temp_username{};
+                memcpy(temp_username, username.c_str(), username.length());
+
+                new_user_outbound_data outbound_data{};
+                STATUS recover_user_stat = recover_user_sec(temp_username, &outbound_data);
+                if (create_new_user_stat != SUCCESS) {
+                    std::cerr << "[ERROR] Failed to create new user.\n";
+                    std::string resp = R"({"status": "server_failure"})";
+                    send_json_response(resp, http::status::ok);
+                }
+                std::string outbound_response;
+                outbound_data.secure_type = true;
+                STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
+                if (parse_status != SUCCESS) {
+                    std::cerr << "[ERROR] Failed to parse data to json.\n";
+                    std::string resp = R"({"status": "server_failure"})";
+                    send_json_response(resp, http::status::ok);
+                }
+
+                std::cout << "[INFO] Username valid, user added.\n";
+                send_json_response(outbound_response, http::status::ok);
+
+
+
+
+
+
+
         }
+
+
+
+
+
+
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         //post requests
         /*
          *READ BACK THE users's sign in details and keys
@@ -361,8 +479,9 @@ private:
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
             }
 
-
+        //TODO check both tables for the username not just user
         if (target == "/validate_username") {
+
             std::string received_json = req.body();
             std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
             MsgMethod msg_method;

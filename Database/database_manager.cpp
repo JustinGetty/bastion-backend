@@ -161,6 +161,14 @@ while (true) {
                     }
                 break;
 
+                case PARAM_SEED_PHRASE_HASH:
+                    if (sqlite3_bind_blob(stmt, index, param.data.seed_phrase_hash_, 64, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_SEED_PHRASE_HASH.\n";
+                        temp_status = -1;
+                    }
+
+                break;
+
                 default:
                     //ahhhh more errors to fix
                         //#hope for good user input!
@@ -174,9 +182,11 @@ while (true) {
         //get requests
         if (inbound_data->type == 'g') {
             switch (inbound_data->real_type) {
+
+
                 case GET_FULL_USER_BY_ID: {
                     full_user_data user_data;
-                while (sqlite3_step(stmt) == SQLITE_ROW) {
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
                     //"SELECT user_id, username, CAST(strftime('%%s', timestamp) AS INTEGER), auth_token, asym_priv_key FROM user WHERE user_id = ?"
                     user_data.user_id = sqlite3_column_int(stmt, 0);
                     const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
@@ -217,6 +227,8 @@ while (true) {
                 }
                 break;
             }
+
+
                 case GET_AUTH_TOKEN: {
                     hash_token_struct hash_token;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -355,7 +367,29 @@ while (true) {
                     }
                     inbound_data_struct->processed_data.username_exists = exists_data;
                     inbound_data_struct->is_ready = true;
+                break;
                 }
+
+
+
+                case GET_SEED_PHRASE_HASH: {
+                    //TODO these while loops are bound to cause an error if index is not unique, FIXXX
+                    const unsigned char* raw_seed_phrase_hash{};
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        raw_seed_phrase_hash = (const unsigned char*)sqlite3_column_blob(stmt, 1);
+                    }
+                    if (temp_status == -1){
+                        inbound_data_struct->status = DATABASE_FAILURE;
+                    } else {
+                        memcpy(inbound_data_struct->processed_data.hash_of_seed_phrase, raw_seed_phrase_hash, sizeof(inbound_data_struct->processed_data.hash_of_seed_phrase));
+                        inbound_data_struct->status = SUCCESS;
+                        std::cout << "[INFO] Successfully retrieved hashed seed phrase\n.";
+                    }
+                    inbound_data_struct->is_ready = true;
+                break;
+                }
+
+
 
                 default:
                     std::cout << "[ERROR] Error in GET query.\n";

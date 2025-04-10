@@ -11,6 +11,8 @@
 #include <errno.h>
 #include "../Headers/database_head.h"
 
+//TODO get requests should not use such large data type, SPECIALIZE!!!
+
 
 void print_hex(unsigned char *data, int length) {
     for (int i = 0; i < length; i++) {
@@ -110,6 +112,13 @@ query_param create_param_token_enc(token_sec *token_enc_sec) {
     memcpy(&param.data.encrypted_raw_token, *token_enc_sec, sizeof(*token_enc_sec));
     return param;
 }
+query_param create_param_seed_phrase_hash(seed_phrase_hash seed_phrase_hash_) {
+    query_param param;
+    param.type = PARAM_SEED_PHRASE_HASH;
+    memcpy(&param.data.seed_phrase_hash_, seed_phrase_hash_, sizeof(seed_phrase_hash_));
+    return param;
+}
+
 
 STATUS send_query(int sock, query_data data) {
     size_t total_sent = 0;
@@ -639,14 +648,15 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
 
 
 STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
-    query_param query_params[MAX_PARAMS];
+    query_param query_params[6];
     query_params[0] = create_param_username(&user_data->new_username);
     query_params[1] = create_param_hash_token(user_data->new_token_hash);
     query_params[2] = create_param_token_enc(&user_data->new_token_hash_encrypted);
     query_params[3] = create_param_asym_key(user_data->new_priv_key);
     query_params[4] = create_param_int(user_data->new_priv_key.priv_key_len);
+    query_params[5] = create_param_seed_phrase_hash(user_data->seed_phrase);
 
-    query_data data = set_query_data('p', INSERT_NEW_USER_SEC, 4, query_params);
+    query_data data = set_query_data('p', INSERT_NEW_USER_SEC, 5, query_params);
     strncpy(data.query, CREATE_USER_QUERY_SEC, sizeof(data.query));
 
     query_data_struct queryData{};
@@ -658,4 +668,38 @@ STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
     }
 
     return queryData.status;
+}
+
+STATUS get_seed_phrase_hash(bastion_username *username, seed_phrase_hash *seed_phrase) {
+    query_param query_params[1];
+    query_params[0] = create_param_username(username);
+
+    query_data data = set_query_data('g', GET_SEED_PHRASE_HASH, 1, query_params);
+    strncpy(data.query, GET_SEED_PHRASE_HASH_QUERY, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    //void add_to_queue(query_data_struct* queryData)
+    add_to_queue(queryDataPtr);
+
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    STATUS process_status = queryDataPtr->status;
+    if (process_status != SUCCESS) {
+        return process_status;
+    }
+
+    //if queryDataPtr->querydata->realtype  == blah blah blah TODO
+    if (queryDataPtr->status != SUCCESS) {
+        return DATABASE_FAILURE;
+    }
+    if (queryDataPtr->status == SUCCESS) {
+        memcpy(*seed_phrase, queryDataPtr->processed_data.hash_of_seed_phrase, sizeof(*seed_phrase));
+    }
+
+    return SUCCESS;
 }

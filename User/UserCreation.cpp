@@ -152,6 +152,12 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
     std::printf("[INFO] Computed Token Hash.\n");
 
 
+    //compute hash of seed phrase -----------------------------------------------------------
+    seed_phrase_hash seed_phrase{};
+    compute_seed_phrase_hash(user_data->seed_phrase, std::size(user_data->seed_phrase), seed_phrase);
+    std::printf("[INFO] Computed Seed Phrase Hash.\n");
+
+
     //create asym keys ----------------------------------------------------------------------
     asym_key_struct asym_keys{};
     if (generate_asym_keypair(&asym_keys) != SUCCESS) {
@@ -182,6 +188,7 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
     memcpy(new_user_data.new_token_hash_encrypted, raw_token_encrypted, 64);
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
+    memcpy(new_user_data.seed_phrase, seed_phrase, 64);
     STATUS ins_to_db_stat = add_new_sec_user_to_db(&new_user_data);
     if (ins_to_db_stat != SUCCESS) {
         std::cerr << "[ERROR] Failed to insert new user in database\n";
@@ -242,9 +249,7 @@ STATUS process_new_user_to_send(new_user_outbound_data* user_data, std::string* 
                 << "\"token\": \"" << encoded_token << "\", "
                 << "\"username\": \"" << encoded_username << "\", "
                 << "\"pub_key\": \"" << encoded_pub_key << "\", "
-                << "\"sym_key\": \"" << encoded_sym_key << "\", "
-                << "\"seed_phrase\": \"" << user_data->seed_phrase << "\", "
-                << "\"sym_iv\": \"" << encoded_sym_iv << "\"}";
+                << "\"seed_phrase\": \"" << user_data->seed_phrase << "\"}";
         std::string jsonString = oss.str();
 
         *user_data_json = oss.str();
