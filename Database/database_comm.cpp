@@ -650,8 +650,9 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
 STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
     query_param query_params[6];
     query_params[0] = create_param_username(&user_data->new_username);
+    //
     query_params[1] = create_param_hash_token(user_data->new_token_hash);
-    query_params[2] = create_param_token_enc(&user_data->new_token_hash_encrypted);
+    query_params[2] = create_param_token_enc(&user_data->new_token_encrypted);
     query_params[3] = create_param_asym_key(user_data->new_priv_key);
     query_params[4] = create_param_int(user_data->new_priv_key.priv_key_len);
     query_params[5] = create_param_seed_phrase_hash(user_data->seed_phrase);
@@ -702,4 +703,58 @@ STATUS get_seed_phrase_hash(bastion_username *username, seed_phrase_hash *seed_p
     }
 
     return SUCCESS;
+}
+
+
+STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc) {
+    query_param query_params[1];
+    query_params[0] = create_param_username(username);
+    query_data data = set_query_data('g', GET_RAW_TOKEN_ENCRYPTED, 1, query_params);
+    strncpy(data.query, GET_ENC_AUTH_TOKEN_BY_USERNAME_QUERY, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    add_to_queue(queryDataPtr);
+
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    STATUS process_status = queryDataPtr->status;
+    if (process_status != SUCCESS) {
+        return process_status;
+    }
+
+    //if queryDataPtr->querydata->realtype  == blah blah blah TODO
+    if (queryDataPtr->status != SUCCESS) {
+        return DATABASE_FAILURE;
+    }
+    if (queryDataPtr->status == SUCCESS) {
+        memcpy(*token_enc, queryDataPtr->processed_data.encrypted_raw_token, sizeof(queryDataPtr->processed_data.encrypted_raw_token));
+    }
+
+    return SUCCESS;
+}
+
+
+STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_length priv_key) {
+    query_param query_params[3];
+    query_params[0] = create_param_asym_key(priv_key);
+    query_params[1] = create_param_int(priv_key.priv_key_len);
+    query_params[2] = create_param_username(username);
+
+    query_data data = set_query_data('p', UPDATE_PRIV_KEY_BY_USERNAME, 3, query_params);
+    strncpy(data.query, UPDATE_USER_PRIV_KEY_BY_USERNAME, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    return queryData.status;
 }

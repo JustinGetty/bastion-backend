@@ -185,7 +185,7 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
     memcpy(new_user_data.new_username, username, MAX_USERNAME_LENGTH);
     memcpy(new_user_data.new_token_hash, computed_hash, HASH_SIZE);
     //fix
-    memcpy(new_user_data.new_token_hash_encrypted, raw_token_encrypted, 64);
+    memcpy(new_user_data.new_token_encrypted, raw_token_encrypted, 64);
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
     memcpy(new_user_data.seed_phrase, seed_phrase, 64);
@@ -212,7 +212,6 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
 
 
 STATUS process_new_user_to_send(new_user_outbound_data* user_data, std::string* user_data_json) {
-
     std::string encoded_token = base64_encode(user_data->new_raw_token, TOKEN_SIZE);
     std::string username_temp= user_data->new_username;
     std::string encoded_username = base64_encode((const unsigned char *)user_data->new_username, username_temp.length());
