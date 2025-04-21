@@ -147,44 +147,44 @@ struct WebSocketBehavior
         /*
          *Parse input for validity here, reject bad characters
          */
-        std::string rawUsername = parsed_message.keys["username"];
-        std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
-        for (unsigned char c : rawUsername) {
-            printf("%02x ", c);
-        }
-        std::cout << std::endl;
+            std::string rawUsername = parsed_message.keys["username"];
+            std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
+            for (unsigned char c : rawUsername) {
+                printf("%02x ", c);
+            }
+            std::cout << std::endl;
 
-        bastion_username user_username{};
-        bastion_username *user_username_ptr = &user_username;
-        //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
-        if (setUsername(parsed_message.keys["username"].c_str(), user_username)) {
-            std::cout << "[INFO] Username valid.\n";
-        } else {
-            std::cout << "[INFO] Username contains invalid characters.\n";
-            std::string username_verif_ret = R"({"status":"invalid_char"})";
-            ws->send(username_verif_ret, uWS::OpCode::TEXT);
-            return;
-        }
+            bastion_username user_username{};
+            bastion_username *user_username_ptr = &user_username;
+            //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
+            if (setUsername(parsed_message.keys["username"].c_str(), user_username)) {
+                std::cout << "[INFO] Username valid.\n";
+            } else {
+                std::cout << "[INFO] Username contains invalid characters.\n";
+                std::string username_verif_ret = R"({"status":"invalid_char"})";
+                ws->send(username_verif_ret, uWS::OpCode::TEXT);
+                return;
+            }
 
-        /*
-         *Check is username exists in DB here, reject if not
-         */
-        bool username_exists;
-        bool *username_exists_ptr = &username_exists;
-        STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
-        if (username_exists_status != SUCCESS) {
-            std::cout << "[ERROR] Error checking username.\n";
-            std::string user_exists_error = R"({"status": "db_error"})";
-            ws->send(user_exists_error, uWS::OpCode::TEXT);
-            return;
-        }
+            /*
+             *Check is username exists in DB here, reject if not
+             */
+            bool username_exists;
+            bool *username_exists_ptr = &username_exists;
+            STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+            if (username_exists_status != SUCCESS) {
+                std::cout << "[ERROR] Error checking username.\n";
+                std::string user_exists_error = R"({"status": "db_error"})";
+                ws->send(user_exists_error, uWS::OpCode::TEXT);
+                return;
+            }
 
-        if (*username_exists_ptr == false) {
-            std::cout << "[INFO] Username does not exist.\n";
-            std::string user_exist_false = R"({"status": "user_no_exist"})";
-            ws->send(user_exist_false, uWS::OpCode::TEXT);
-            return;
-        }
+            if (*username_exists_ptr == false) {
+                std::cout << "[INFO] Username does not exist.\n";
+                std::string user_exist_false = R"({"status": "user_no_exist"})";
+                ws->send(user_exist_false, uWS::OpCode::TEXT);
+                return;
+            }
 
            std::cout << "[INFO] Signing in...\n";
            auto *connData = static_cast<ConnectionData*>(ws->getUserData());
@@ -195,9 +195,12 @@ struct WebSocketBehavior
                 strncpy(connData->username, parsed_message.keys["username"].c_str(), sizeof(connData->username));
                 //connData->username = msg_method.keys["username"];
                 connData->ws = ws;
-
-
-
+                connData->transaction_id = generate_transaction_id();
+                connData->base_64_sha_256_enc_challenge_hash = parsed_message.keys["code_challenge"];
+                connData->challenge_method = parsed_message.keys["code_challenge_method"];
+                connData->state = parsed_message.keys["state"];
+                connData->spa_id = parsed_message.keys["client_id"];
+                connData->site_id = verify_spa_and_get_site_id();
 
 
                 ConnectionData* copyData = new ConnectionData(*connData);

@@ -80,6 +80,8 @@ add_executable(bastion_auth main.cpp
         Headers/UserRecovery.h
         User/EmailRecovery.cpp
         Headers/EmailRecovery.h
+        MainEventLoop/main_helpers.cpp
+        Headers/main_helpers.h
 )
 
 
