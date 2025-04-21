@@ -115,7 +115,9 @@ query_param create_param_token_enc(token_sec *token_enc_sec) {
 query_param create_param_seed_phrase_hash(seed_phrase_hash seed_phrase_hash_) {
     query_param param;
     param.type = PARAM_SEED_PHRASE_HASH;
-    memcpy(&param.data.seed_phrase_hash_, seed_phrase_hash_, sizeof(seed_phrase_hash_));
+    memcpy(&param.data.seed_phrase_hash_, seed_phrase_hash_, 32);
+    std::cout << "DEBUGGINGGGG AGG" << std::endl;
+    print_hex(param.data.seed_phrase_hash_, 32);
     return param;
 }
 
@@ -655,9 +657,11 @@ STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
     query_params[2] = create_param_token_enc(&user_data->new_token_encrypted);
     query_params[3] = create_param_asym_key(user_data->new_priv_key);
     query_params[4] = create_param_int(user_data->new_priv_key.priv_key_len);
+    std::cout << "debgug in add new enfakjenfknafknafnafknfek ------\n";
+    print_hex(user_data->seed_phrase, 32);
     query_params[5] = create_param_seed_phrase_hash(user_data->seed_phrase);
 
-    query_data data = set_query_data('p', INSERT_NEW_USER_SEC, 5, query_params);
+    query_data data = set_query_data('p', INSERT_NEW_USER_SEC, 6, query_params);
     strncpy(data.query, CREATE_USER_QUERY_SEC, sizeof(data.query));
 
     query_data_struct queryData{};

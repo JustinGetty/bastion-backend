@@ -4,7 +4,6 @@
 #include "cryptography.h"
 #include "UserCreation.h"
 #include "SeedCipher.h"
-
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
@@ -26,11 +25,15 @@
 #include "idek_what_this_shits_for_anymore.h"
 #include "global_thread_pool_tmp.h"
 #include "validate_username.h"
+#include "UserRecovery.h"
+#include "EmailRecovery.h"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+
+extern EmailRecovery email_recovery_obj();
 
 beast::string_view mime_type(beast::string_view path)
 {
@@ -127,7 +130,6 @@ private:
             });
     }
 
-    // Read an HTTP request from the socket.
     void read_request()
     {
         parser_.emplace(
@@ -151,7 +153,6 @@ private:
 
 
 
-    // Simple helper to parse a parameter from a query string
     std::string parse_query_parameter(const std::string &query, const std::string &param) {
         std::istringstream ss(query);
         std::string token;
@@ -167,7 +168,6 @@ private:
         return "";
     }
 
-    // Process the HTTP request.
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
 
@@ -183,6 +183,8 @@ private:
             if (path == "/") {
                 send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
             }
+
+            //TODO make more comprehensive
             else if (path == "/email_verif") {
                 // GET /email_verif?email=xxx
                 std::string email = parse_query_parameter(query, "email");
@@ -191,8 +193,6 @@ private:
                     send_json_response("{\"status\":\"email_missing\"}", http::status::bad_request);
                     return;
                 }
-                // Here, you would normally call your email verification service.
-                // For illustration, we simulate a successful request.
                 std::cout << "[INFO] Email verification requested for: " << email << std::endl;
                 send_json_response("{\"status\":\"email_sent\"}", http::status::ok);
             }
@@ -223,8 +223,6 @@ private:
                     }
                 }
 
-                // Optionally, perform URL decoding on username here if needed.
-                // For example: username = url_decode(username);
 
                 //FIX TODO
                 if (username.empty()) {
@@ -274,8 +272,6 @@ private:
                 }
             }
 
-            // Optionally, perform URL decoding on username here if needed.
-            // For example: username = url_decode(username);
 
             //FIX TODO
             if (username.empty()) {
@@ -307,6 +303,26 @@ private:
         }
 
 
+        /* TODO
+         * Recover by email flow:
+         * Get username
+         * Pull email
+         * Send code
+         * Have user enter code, send to db
+         * Codes match? Good
+         * Codes dont? Bad
+         *
+         * NOTES:
+         * Do not implement email server yet,
+         * wait for other server to be built and reuse
+         * For now pretend
+         *
+         * STRAT:
+         * Post request for recovery
+         * generates code server side and stores in hash table
+         * emails code to user and asks user for code on phone
+         * user puts in code which sends a get request with the code asking for new info
+         */
 
 
 
@@ -315,60 +331,75 @@ private:
 
 
 
+            /*
+             * print("Mock GET: /recover_account_by_seed?username=\(username)&seed=\(seedPhrase)")
+             */
 
-
-            if (path == "/rec_by_seed") {
-
-                std::string username;
-                std::istringstream queryStream(query);
-                std::string token;
-                while (std::getline(queryStream, token, '&')) {
-                    size_t eqPos = token.find('=');
-                    if (eqPos != std::string::npos) {
-                        std::string key = token.substr(0, eqPos);
-                        std::string value = token.substr(eqPos + 1);
-                        if (key == "username") {
-                            username = value;  // You now have the username
-                            break;  // Stop once we've found it.
+        if (path == "/rec_by_seed") {
+            std::string username;
+            std::string seed;
+            std::istringstream queryStream(query);
+            std::string token;
+            while (std::getline(queryStream, token, '&')) {
+                size_t eqPos = token.find('=');
+                if (eqPos != std::string::npos) {
+                    std::string key = token.substr(0, eqPos);
+                    std::string value = token.substr(eqPos + 1);
+                    // Inline URL-decode the value
+                    std::string decoded;
+                    for (size_t i = 0; i < value.size(); i++) {
+                        if (value[i] == '%' && i + 2 < value.size()) {
+                            std::string hexStr = value.substr(i + 1, 2);
+                            char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
+                            decoded.push_back(ch);
+                            i += 2;
+                        } else if (value[i] == '+') {
+                            decoded.push_back(' ');
+                        } else {
+                            decoded.push_back(value[i]);
                         }
                     }
+                    if (key == "username") {
+                        username = decoded;
+                    } else if (key == "seed") {
+                        seed = decoded;
+                    }
                 }
-
-                // Optionally, perform URL decoding on username here if needed.
-                // For example: username = url_decode(username);
-
-                //FIX TODO
-                if (username.empty()) {
-                    std::cerr << "[ERROR] Username not provided in query" << std::endl;
-                    send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
-                    return;
-                }
-                bastion_username temp_username{};
-                memcpy(temp_username, username.c_str(), username.length());
-
-                new_user_outbound_data outbound_data{};
-                STATUS recover_user_stat = recover_user_sec(temp_username, &outbound_data);
-                if (create_new_user_stat != SUCCESS) {
-                    std::cerr << "[ERROR] Failed to create new user.\n";
-                    std::string resp = R"({"status": "server_failure"})";
-                    send_json_response(resp, http::status::ok);
-                }
-                std::string outbound_response;
-                outbound_data.secure_type = true;
-                STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
-                if (parse_status != SUCCESS) {
-                    std::cerr << "[ERROR] Failed to parse data to json.\n";
-                    std::string resp = R"({"status": "server_failure"})";
-                    send_json_response(resp, http::status::ok);
-                }
-
-                std::cout << "[INFO] Username valid, user added.\n";
-                send_json_response(outbound_response, http::status::ok);
+            }
+            std::cout << "[INFO] Recovery by seed: username = " << username
+                      << ", seed = " << seed << std::endl;
 
 
+            // perform URL decoding on username here if needed.
 
+            //FIX TODO
+            if (username.empty()) {
+                std::cerr << "[ERROR] Username not provided in query" << std::endl;
+                send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
+                return;
+            }
+            bastion_username temp_username{};
+            memcpy(temp_username, username.c_str(), username.length());
 
+            recovered_sec_user_outbound_data outbound_data{};
+            STATUS recover_user_stat = recover_user_by_seed_phrase(temp_username, seed, &outbound_data);
+            if (recover_user_stat != SUCCESS) {
+                std::cerr << "[ERROR] Failed to create new user.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
+            std::string outbound_response;
+            STATUS parse_status = process_sec_recover_to_send(&outbound_data, &outbound_response);
+            if (parse_status != SUCCESS) {
+                std::cerr << "[ERROR] Failed to parse data to json.\n";
+                std::string resp = R"({"status": "server_failure"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
 
+            std::cout << "[INFO] Username valid, user added.\n";
+            send_json_response(outbound_response, http::status::ok);
 
 
         }
@@ -376,11 +407,51 @@ private:
 
 
 
+        if (path == "/rec_by_code") {
+            /* Requires username and code from email
+             * Process:
+             * verify code
+             * if verifies, recover by email
+             * process to json
+             * send back user data
+             */
 
-
-
+            std::string username;
+            std::string code_string;
+            std::istringstream queryStream(query);
+            std::string token;
+            while (std::getline(queryStream, token, '&')) {
+                size_t eqPos = token.find('=');
+                if (eqPos != std::string::npos) {
+                    std::string key = token.substr(0, eqPos);
+                    std::string value = token.substr(eqPos + 1);
+                    // Inline URL-decode the value
+                    std::string decoded;
+                    for (size_t i = 0; i < value.size(); i++) {
+                        if (value[i] == '%' && i + 2 < value.size()) {
+                            std::string hexStr = value.substr(i + 1, 2);
+                            char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
+                            decoded.push_back(ch);
+                            i += 2;
+                        } else if (value[i] == '+') {
+                            decoded.push_back(' ');
+                        } else {
+                            decoded.push_back(value[i]);
+                        }
+                    }
+                    if (key == "username") {
+                        username = decoded;
+                        //TODO fix this will break
+                    } else if (key == "code") {
+                        code_string = decoded;
+                    }
+                }
+            }
 
         }
+
+
+    } //end get requests
 
 
 
@@ -419,6 +490,7 @@ private:
                         std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
                 } catch (const std::exception &ex) {
                     std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    return;
                 }
 
                 /*
@@ -473,10 +545,18 @@ private:
                 /*
                  *To validate the sign in when using seed phrase encrypytion, same as before parse keys pass to valid queue, flag will handle switch
                  *Only take in key we will store the auth token with the iv to make retrieval easier.
+                 * Need to add flag on mobile of user type
                  */
+
+                //need actual data
 
 
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
+            }
+
+            if (target == "/get_recovery_code") {
+                //"get" just means send to user email, this should be sent with username, lookup email
+                //get code, add to map, wait send to email
             }
 
         //TODO check both tables for the username not just user
@@ -540,6 +620,7 @@ private:
             std::cout << "[INFO] Username is valid.\n";
             std::string resp = R"({"status": "valid"})";
             send_json_response(resp, http::status::ok);
+
 
 
         }

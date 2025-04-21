@@ -456,7 +456,7 @@ bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t 
 
 /* compute seed phrase hash ------------------- */
 
-void compute_seed_phrase_hash(std::string seed_phrase, size_t seed_phrase_size, seed_phrase_hash seed_phrase_hash_) {
+void compute_seed_phrase_hash(std::string seed_phrase, int seed_phrase_size, seed_phrase_hash seed_phrase_hash_) {
     SHA256((const unsigned char*)seed_phrase.c_str(), seed_phrase_size, seed_phrase_hash_);
 }
 
@@ -477,14 +477,22 @@ STATUS constant_time_compare_seed_phrase(const seed_phrase_hash a, const seed_ph
 STATUS verify_seed_phrase(bastion_username username, const std::string received_seed_phrase) {
     seed_phrase_hash stored_hash;
     seed_phrase_hash computed_hash;
-
+    bastion_username uname_local{};
+    memcpy(uname_local, username, sizeof(username));
     //need to implement get_token_hash
-    if (get_seed_phrase_hash(username, &stored_hash) != SUCCESS) {
+    if (get_seed_phrase_hash(&uname_local, &stored_hash) != SUCCESS) {
         fprintf(stderr, "[ERROR] Failed to retrieve stored token hash for username %d.\n", username);
         return CRYPTO_FAILURE;
     }
 
-    compute_seed_phrase_hash(received_seed_phrase, 64, computed_hash);
+    //ERROR HERE DEBUGGING
+    std::cout << "[DEBUG] Stored hash:\n";
+    print_hex(stored_hash, std::size(stored_hash));
+    int seed_phrase_length = received_seed_phrase.size();
+    compute_seed_phrase_hash(received_seed_phrase, seed_phrase_length, computed_hash);
+    std::cout << "[DEBUG] Computed hash:\n";
+    print_hex(computed_hash, std::size(computed_hash));
+
 
     if (constant_time_compare(stored_hash, computed_hash, HASH_SIZE) == SUCCESS) {
         printf("[INFO] Token verification succeeded.\n");

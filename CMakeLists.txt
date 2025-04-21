@@ -78,6 +78,8 @@ add_executable(bastion_auth main.cpp
         Headers/SeedCipher.h
         User/UserRecovery.cpp
         Headers/UserRecovery.h
+        User/EmailRecovery.cpp
+        Headers/EmailRecovery.h
 )
 
 

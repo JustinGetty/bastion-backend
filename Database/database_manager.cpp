@@ -162,7 +162,7 @@ while (true) {
                 break;
 
                 case PARAM_SEED_PHRASE_HASH:
-                    if (sqlite3_bind_blob(stmt, index, param.data.seed_phrase_hash_, 64, SQLITE_TRANSIENT) != SQLITE_OK) {
+                    if (sqlite3_bind_blob(stmt, index, param.data.seed_phrase_hash_, 32, SQLITE_TRANSIENT) != SQLITE_OK) {
                         std::cout << "[ERROR] Failed to bind blob of type PARAM_SEED_PHRASE_HASH.\n";
                         temp_status = -1;
                     }
@@ -374,18 +374,37 @@ while (true) {
 
                 case GET_SEED_PHRASE_HASH: {
                     //TODO these while loops are bound to cause an error if index is not unique, FIXXX
-                    const unsigned char* raw_seed_phrase_hash{};
+
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
-                        raw_seed_phrase_hash = (const unsigned char*)sqlite3_column_blob(stmt, 1);
+                        const unsigned char* raw_seed_phrase_hash = (const unsigned char*)sqlite3_column_blob(stmt, 0);
+
+                        if (temp_status == -1){
+                            inbound_data_struct->status = DATABASE_FAILURE;
+                        } else {
+
+                            memcpy(inbound_data_struct->processed_data.hash_of_seed_phrase, raw_seed_phrase_hash, sizeof(inbound_data_struct->processed_data.hash_of_seed_phrase));
+                            inbound_data_struct->status = SUCCESS;
+                            std::cout << "[INFO] Successfully retrieved hashed seed phrase\n.";
+                        }
+                        inbound_data_struct->is_ready = true;
+                    }
+                break;
+                }
+                case GET_RAW_TOKEN_ENCRYPTED: {
+
+                    const unsigned char* raw_token_enc{};
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        raw_token_enc = (const unsigned char*)sqlite3_column_blob(stmt, 0);
                     }
                     if (temp_status == -1){
                         inbound_data_struct->status = DATABASE_FAILURE;
                     } else {
-                        memcpy(inbound_data_struct->processed_data.hash_of_seed_phrase, raw_seed_phrase_hash, sizeof(inbound_data_struct->processed_data.hash_of_seed_phrase));
+                        memcpy(inbound_data_struct->processed_data.encrypted_raw_token, raw_token_enc, sizeof(inbound_data_struct->processed_data.encrypted_raw_token));
                         inbound_data_struct->status = SUCCESS;
                         std::cout << "[INFO] Successfully retrieved hashed seed phrase\n.";
                     }
                     inbound_data_struct->is_ready = true;
+
                 break;
                 }
 

@@ -154,8 +154,10 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
 
     //compute hash of seed phrase -----------------------------------------------------------
     seed_phrase_hash seed_phrase{};
-    compute_seed_phrase_hash(user_data->seed_phrase, std::size(user_data->seed_phrase), seed_phrase);
+    int seed_phrase_length = seed.size();
+    compute_seed_phrase_hash(seed, seed_phrase_length, seed_phrase);
     std::printf("[INFO] Computed Seed Phrase Hash.\n");
+    print_hex(seed_phrase, std::size(seed_phrase));
 
 
     //create asym keys ----------------------------------------------------------------------

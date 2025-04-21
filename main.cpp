@@ -84,7 +84,8 @@ struct WebSocketBehavior
         /*
          *Need meta data structure for messages (sign in vs create account)
          */
-
+        std::cout << "[INFO] Client message received: " << message << std::endl;
+        /*
         MsgMethod msg_method;
         try {
             msg_method = parse_method(message);
@@ -96,13 +97,57 @@ struct WebSocketBehavior
         } catch (...) {
             std::cerr << "[ERROR] Caught unknown error" << "\n";
         }
+        */
+        inbound_msg parsed_message{};
+        STATUS parse_status = parse_inbound_msg(message, &parsed_message);
+        if (parse_status != SUCCESS) {
+            std::cerr << "[Error] Failed to parse inbound message.\n";
+            return;
+        }
+        std::cout << "[INFO] Client message parsed:\n";
+        std::cout << "[Data] Action: " << parsed_message.action << "\n";
+        for (const auto& [key, value] : parsed_message.keys) {
+            std::cout << "[Data] Key: " << key << " Value: " << value << "\n";
+        }
+
+        /* SIGNIN
+         * Shit we should get from client:
+         *
+         */
 
 
-        if (msg_method.type == "signin") {
+        /*
+        {
+        * ROUTE
+          "action": "start_signin",
+        * Single Page App id (site id or domain + page)
+          "client_id": "your-spa-id",
+        * Username to be validated
+          "username": "test",
+        * This will be stored, server will later ask for raw version, re-hash, and check it matches
+          "code_challenge": "YQGUMX2wDOj_FWCObHGbgVXtV9gnFjSHQDLzgGdS2Rk",
+        * Re-hash the challenge code
+          "code_challenge_method": "S256",
+        * This gets sent back to client unchanged to match against client version
+          "state": "88c7096b3943c7a685e55a491abb61e3"
+        }
+
+        FLOW:
+        1. Browser sends username, SPA, action, code challenge, challenge method, and state
+        2. Server stores all the above, generates transaction id, and begins validation with mobile app
+        3. Server sends browser message with the state and transaction id "signin_started"
+        4. Server asks for the original code challenge
+        5. Server re-hashes code and checks it matches
+        6. Server sends browser the approval
+
+
+        */
+
+        if (parsed_message.action == "start_signin") {
         /*
          *Parse input for validity here, reject bad characters
          */
-        std::string rawUsername = msg_method.keys["username"];
+        std::string rawUsername = parsed_message.keys["username"];
         std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
         for (unsigned char c : rawUsername) {
             printf("%02x ", c);
@@ -112,7 +157,7 @@ struct WebSocketBehavior
         bastion_username user_username{};
         bastion_username *user_username_ptr = &user_username;
         //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
-        if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
+        if (setUsername(parsed_message.keys["username"].c_str(), user_username)) {
             std::cout << "[INFO] Username valid.\n";
         } else {
             std::cout << "[INFO] Username contains invalid characters.\n";
@@ -147,9 +192,13 @@ struct WebSocketBehavior
             if (connData->user_data.being_processed != true) {
                 memset(connData->username, 0, sizeof(connData->username));
                 connData->user_data = full_user_data(); //default construct it = reset cleanly
-                strncpy(connData->username, msg_method.keys["username"].c_str(), sizeof(connData->username));
+                strncpy(connData->username, parsed_message.keys["username"].c_str(), sizeof(connData->username));
                 //connData->username = msg_method.keys["username"];
                 connData->ws = ws;
+
+
+
+
 
                 ConnectionData* copyData = new ConnectionData(*connData);
                 copyData->user_data.being_processed = true;
@@ -168,12 +217,13 @@ struct WebSocketBehavior
                 return;
             }
 
+
        }
-        if (msg_method.type == "signup") {
+        if (parsed_message.action == "signup") {
            std::cout << "[INFO] User requests signup\n";
             return;
         }
-        if (msg_method.type != "signin" || msg_method.type != "signup") {
+        if (parsed_message.action != "signin" || parsed_message.action != "signup") {
            std::cout << "[INFO] Unknown message type, rejecting message.";
             return;
         }

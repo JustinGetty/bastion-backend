@@ -26,7 +26,7 @@ void print_hex(unsigned char *data, int length);
 STATUS check_username_exists(bastion_username *username, bool *output);
 STATUS add_new_user_to_db(new_user_struct *user_data);
 STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data);
-STATUS get_seed_phrase_hash(bastion_username username, seed_phrase_hash *seed_phrase);
+STATUS get_seed_phrase_hash(bastion_username* username, seed_phrase_hash *seed_phrase);
 STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc);
 STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_length priv_key);
 

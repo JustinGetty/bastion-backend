@@ -7,6 +7,7 @@
 #include <bastion_data.h>
 #include "databaseq.h"
 #include "SeedCipher.h"
+#include <sstream>
 
 //TODO need to standardize seed phrase!!!
 STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_phrase, recovered_sec_user_outbound_data *outbound_data) {
@@ -45,6 +46,7 @@ STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_p
         return DATABASE_FAILURE;
     }
 
+    //fix
     token raw_token{};
     seed_cipher.decryptToken(token_enc, raw_token);
 
@@ -68,9 +70,26 @@ STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_p
         return DATABASE_FAILURE;
     }
 
-    memcpy(outbound_data->auth_token_raw, raw_token, sizeof(raw_token));
+    //seg fault
+    memcpy(outbound_data->auth_token_raw, raw_token, 32);
     memcpy(outbound_data->pub_key.pub_key, asym_keys.pub_key, asym_keys.pub_key_len);
     outbound_data->pub_key.pub_key_len = asym_keys.pub_key_len;
 
+    return SUCCESS;
+}
+
+STATUS process_sec_recover_to_send(recovered_sec_user_outbound_data *outbound_data, std::string *outbound_response) {
+    std::string encoded_token = base64_encode(outbound_data->auth_token_raw, TOKEN_SIZE);
+    std::string encoded_pub_key = base64_encode(outbound_data->pub_key.pub_key, outbound_data->pub_key.pub_key_len);
+
+
+    //std::string resp = R"({"status": "valid"})";
+    std::ostringstream oss;
+    oss << "{\"status\": \"valid\", "
+            << "\"token\": \"" << encoded_token << "\", "
+            << "\"pub_key\": \"" << encoded_pub_key << "\"}";
+
+    *outbound_response = oss.str();
+    std::cout << "[INFO] Data being sent: " << outbound_response << "\n";
     return SUCCESS;
 }
