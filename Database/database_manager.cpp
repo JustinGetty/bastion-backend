@@ -408,6 +408,24 @@ while (true) {
                 break;
                 }
 
+                case GET_CLIENT_ID_BY_SPA: {
+
+                    int raw_spa_id;
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        raw_spa_id = sqlite3_column_int(stmt, 0);
+                    }
+
+                    if (temp_status == -1){
+                        inbound_data_struct->status = DATABASE_FAILURE;
+                    } else {
+                        inbound_data_struct->processed_data.client_id = raw_spa_id;
+                        inbound_data_struct->status = SUCCESS;
+                        std::cout << "[INFO] Successfully retrieved spa id\n.";
+                    }
+                    inbound_data_struct->is_ready = true;
+                    break;
+                }
+
 
 
                 default:

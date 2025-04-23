@@ -17,6 +17,7 @@
 #include <string>
 #include <regex>
 #include "Headers/validate_username.h"
+#include "main_helpers.h"
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -195,12 +196,19 @@ struct WebSocketBehavior
                 strncpy(connData->username, parsed_message.keys["username"].c_str(), sizeof(connData->username));
                 //connData->username = msg_method.keys["username"];
                 connData->ws = ws;
+                //this will be the unique id to track every transaction
                 connData->transaction_id = generate_transaction_id();
                 connData->base_64_sha_256_enc_challenge_hash = parsed_message.keys["code_challenge"];
                 connData->challenge_method = parsed_message.keys["code_challenge_method"];
                 connData->state = parsed_message.keys["state"];
                 connData->spa_id = parsed_message.keys["client_id"];
-                connData->site_id = verify_spa_and_get_site_id();
+                int site_id = 0;
+                STATUS verify_spa_status = verify_spa_and_get_site_id(connData->spa_id, &site_id);
+                if (verify_spa_status != SUCCESS) {
+                    std::cout << "[Info] Site ID valid.\n";
+                    return;
+                }
+                connData->site_id = site_id;
 
 
                 ConnectionData* copyData = new ConnectionData(*connData);

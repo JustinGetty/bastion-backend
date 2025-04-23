@@ -762,3 +762,37 @@ STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_le
 
     return queryData.status;
 }
+
+STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id) {
+    query_param query_params[1];
+    query_params[0] = create_param_text((char *)spa_id->c_str());
+
+    query_data data = set_query_data('g', GET_CLIENT_ID_BY_SPA, 1, query_params);
+    strncpy(data.query, GET_CLIENT_ID_BY_SPA_ID, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    query_data_struct *queryDataPtr = &queryData;
+    //void add_to_queue(query_data_struct* queryData)
+    add_to_queue(queryDataPtr);
+
+    while (queryDataPtr->is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+
+    STATUS process_status = queryDataPtr->status;
+    if (process_status != SUCCESS) {
+        return process_status;
+    }
+
+    //if queryDataPtr->querydata->realtype  == blah blah blah TODO
+    if (queryDataPtr->status != SUCCESS) {
+        return DATABASE_FAILURE;
+    }
+    if (queryDataPtr->status == SUCCESS) {
+        *client_id = queryDataPtr->processed_data.client_id;
+    }
+
+    return SUCCESS;
+}
