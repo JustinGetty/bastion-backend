@@ -18,7 +18,7 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
             if (isEmpty())
             {
                 //lock.unlock();
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(5));
                 continue;
             }
             data = dequeue();

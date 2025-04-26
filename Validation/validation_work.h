@@ -9,17 +9,75 @@
 #include "validation_work.h"
 #include <bastion_data.h>
 #include "../Headers/conn_data_storage.h"
-
 #include "databaseq.h"
 #include "../Headers/cryptography.h"
+#include <openssl/evp.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <string>
+#include <algorithm>
 
 
 
 //TODO need a way to validate more secure version where it decrypts the token hash that was encrypted when put in db
-
+//TODO get all this shit out of a header file ahhh
 
 extern CircularQueue<validation_work*> g_workQueue;
 extern ConnectionDataStorage cds;
+
+
+inline std::string base64url(const unsigned char* data, size_t len) {
+    BIO *b64 = BIO_new(BIO_f_base64());
+    BIO *bmem = BIO_new(BIO_s_mem());
+    BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+    b64 = BIO_push(b64, bmem);
+    BIO_write(b64, data, len);
+    BIO_flush(b64);
+
+    BUF_MEM *bptr;
+    BIO_get_mem_ptr(b64, &bptr);
+    std::string b64str(bptr->data, bptr->length);
+    BIO_free_all(b64);
+
+    for (auto &c : b64str) {
+        if (c == '+') c = '-';
+        else if (c == '/') c = '_';
+    }
+    b64str.erase(std::find(b64str.begin(), b64str.end(), '='), b64str.end());
+    return b64str;
+}
+
+inline std::string sha256_challenge(const std::string &verifier) {
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hash_len = 0;
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(mdctx, EVP_sha256(), NULL);
+    EVP_DigestUpdate(mdctx, verifier.data(), verifier.size());
+    EVP_DigestFinal_ex(mdctx, hash, &hash_len);
+    EVP_MD_CTX_free(mdctx);
+
+    return base64url(hash, hash_len);
+}
+
+
+inline STATUS validate_challenge_code(ConnectionData *connData) {
+    /*send request for code, while waiting to get it sleep
+        hash the og code
+        check if they match
+        proceed/reject
+     */
+    std::string wait_msg = R"({"action": "og_challenge_code_req"})";
+    connData->ws->send(wait_msg, uWS::OpCode::TEXT);
+    connData->user_data.being_processed = true;
+    while (connData->user_data.being_processed == true) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    if (sha256_challenge(connData->original_challenge_code) != connData->base_64_sha_256_enc_challenge_hash) {
+        std::cout << "[INFO] Challenge codes do not match.\n";
+        return LOGIC_FAILURE;
+    }
+    return SUCCESS;
+}
 
 class MyValidationWork : public validation_work {
 public:
@@ -102,6 +160,16 @@ public:
             //TODO need to read in the actual success or reject as well
             if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
                 printf("[INFO] Token verification successful.\n");
+
+                STATUS challenge_verification_status = validate_challenge_code(data_from_storage);
+                if (challenge_verification_status != SUCCESS) {
+                    std::cout << "[INFO] Challenge codes do not match.\n";
+                    std::string failure_msg = R"({"status": "rejected"})";
+                    data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
+                    return;
+                }
+
+
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
                 std::string success_msg = R"({"status": "approved"})";
@@ -162,6 +230,14 @@ public:
             //TODO need to read in the actual success or reject as well!! super importanttttttttt. prob just different endpoint lol
             if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
                 printf("[INFO] Token verification successful.\n");
+
+                STATUS challenge_verification_status = validate_challenge_code(data_from_storage);
+                if (challenge_verification_status != SUCCESS) {
+                    std::cout << "[INFO] Challenge codes do not match.\n";
+                    std::string failure_msg = R"({"status": "rejected"})";
+                    data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
+                    return;
+                }
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
                 std::string success_msg = R"({"status": "approved"})";

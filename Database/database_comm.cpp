@@ -326,7 +326,7 @@ STATUS store_token_hash(const int user_id, const token_hash token_hash_, const s
 
     /* BLOCKING LOGIC, OPTIMIZE LATE TO ASYNC !!!*/
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
     STATUS process_status = queryDataPtr->status;
     std::cout << "Process status: " << process_status << "\n";
@@ -397,7 +397,7 @@ STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full)
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     priv_key_w_length priv_key{};
@@ -447,7 +447,7 @@ STATUS store_user_private_key(const int user_id, priv_key_w_length *priv_key_ful
 
     /* BLOCKING LOGIC, OPTIMIZE LATE TO ASYNC !!!*/
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
     STATUS process_status = queryDataPtr->status;
     std::cout << "Process status: " << process_status << "\n";
@@ -574,7 +574,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     STATUS process_status = queryDataPtr->status;
@@ -615,7 +615,7 @@ STATUS check_username_exists(bastion_username *username, bool *output) {
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     STATUS process_status = queryDataPtr->status;
@@ -642,7 +642,7 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
     queryData.is_ready = false;
     add_to_queue(&queryData);
     while (queryData.is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     return queryData.status;
@@ -669,7 +669,7 @@ STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data) {
     queryData.is_ready = false;
     add_to_queue(&queryData);
     while (queryData.is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     return queryData.status;
@@ -690,7 +690,7 @@ STATUS get_seed_phrase_hash(bastion_username *username, seed_phrase_hash *seed_p
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     STATUS process_status = queryDataPtr->status;
@@ -723,7 +723,7 @@ STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc) 
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     STATUS process_status = queryDataPtr->status;
@@ -757,7 +757,7 @@ STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_le
     queryData.is_ready = false;
     add_to_queue(&queryData);
     while (queryData.is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     return queryData.status;
@@ -778,7 +778,7 @@ STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id) {
     add_to_queue(queryDataPtr);
 
     while (queryDataPtr->is_ready == false) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     STATUS process_status = queryDataPtr->status;

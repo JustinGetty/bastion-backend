@@ -137,6 +137,7 @@ struct WebSocketBehavior
         1. Browser sends username, SPA, action, code challenge, challenge method, and state
         2. Server stores all the above, generates transaction id, and begins validation with mobile app
         3. Server sends browser message with the state and transaction id "signin_started"
+        lets do this after phone verifies
         4. Server asks for the original code challenge
         5. Server re-hashes code and checks it matches
         6. Server sends browser the approval
@@ -215,8 +216,25 @@ struct WebSocketBehavior
                 copyData->user_data.being_processed = true;
 
                 g_connThreadPool->enqueueConnection(copyData);
-               std::cout << "[INFO] Enqueued connection (id: " << connData->connection_id << ")" << "\n";
+                std::cout << "[INFO] Enqueued connection (id: " << connData->connection_id << ")" << "\n";
+
+                std::ostringstream oss;
+                oss << "{"
+                    << "\"status\":\"valid\","
+                    << "\"action\":\"signin_started\","
+                    << "\"transaction_id\":\"" << connData->transaction_id << "\","
+                    << "\"state\":\""          << connData->state          << "\""
+                    << "}";
+                std::string json_to_send_to_client = oss.str();
+                std::cout << "[DEBUG]" << json_to_send_to_client << "\n";
+
+                ws->send(json_to_send_to_client);
+                std::cout << "[INFO] Sign In verification sent back to client\n";
+
                 return;
+
+
+
             } else if (connData->user_data.being_processed == true) {
                //reject sign in attempt, tell current attempt to fail, tell client to retry
                 //every step in the process should check the "fail_this" flag to fail it and reject, then tell client
@@ -228,8 +246,22 @@ struct WebSocketBehavior
                 return;
             }
 
+        }
 
-       }
+        if (parsed_message.action == "og_challenge_code_res") {
+            auto *connData = static_cast<ConnectionData*>(ws->getUserData());
+            std::string transaction_id_temp = parsed_message.keys["transaction_id"];
+            if (transaction_id_temp != connData->transaction_id) {
+                std::cout << "[INFO] Transaction ID does not match.\n";
+                connData->user_data.fail_this = true;
+                connData->user_data.being_processed = false;
+                return;
+            }
+            connData->original_challenge_code = parsed_message.keys["code_verifier"];
+            connData->user_data.being_processed = false;
+            return;
+        }
+
         if (parsed_message.action == "signup") {
            std::cout << "[INFO] User requests signup\n";
             return;
