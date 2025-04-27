@@ -426,6 +426,27 @@ while (true) {
                     break;
                 }
 
+                case GET_IOS_DEVICE_TOKEN: {
+                    const unsigned char* raw_username{};
+                    int token_in_bytes;
+                    while (sqlite3_step(stmt) == SQLITE_ROW) {
+                        raw_username = sqlite3_column_text(stmt, 0);
+                        token_in_bytes = sqlite3_column_bytes(stmt, 0);
+                    }
+
+                    if (temp_status == -1){
+                        inbound_data_struct->status = DATABASE_FAILURE;
+                    } else {
+                        auto charPtr = reinterpret_cast<const char *>(raw_username);
+                        std::string temp(charPtr, token_in_bytes);
+                        inbound_data_struct->processed_data.device_token = temp;
+                        inbound_data_struct->status = SUCCESS;
+                        std::cout << "[INFO] Successfully retrieved device token.\n";
+                    }
+                    inbound_data_struct->is_ready = true;
+                    break;
+                }
+
 
 
                 default:

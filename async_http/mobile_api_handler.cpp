@@ -28,10 +28,12 @@
 #include "UserRecovery.h"
 #include "EmailRecovery.h"
 
+
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+
 
 extern EmailRecovery email_recovery_obj();
 
@@ -205,7 +207,7 @@ private:
 
             /*
             * Secure key endpoint, this will ...
-            *
+            * CREATE SECURE USER
              */
             if (path == "/secure_key") {
                 std::string username;
@@ -253,8 +255,7 @@ private:
                 send_json_response(outbound_response, http::status::ok);
             }
 
-
-
+            //CREATE REGULAR USER
         if (path == "/reg_keys") {
             std::cout << "[INFO] Getting regular keys.\n";
             std::string username;
@@ -478,6 +479,34 @@ private:
             std::string target = std::string(req.target());
             std::cout << "[INFO] Target: " << target << "\n";
 
+            if (target == "/devices") {
+                std::cout << "[INFO] Processing device token\n";
+                const std::string received_json = req.body();
+                std::cout <<  received_json << "\n";
+
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    return;
+                }
+                if (msg_method.keys.find("device_token") != msg_method.keys.end()) {
+                    std::string device_token = msg_method.keys["device_token"];
+                    std::string username = msg_method.keys["username"];
+                    std::cout << "[DEBUG] Username: " << username << " Device Token: " << device_token << "\n";
+                } else {
+                    std::cerr << "[ERROR] Device message contains no data\n";
+                    return;
+                }
+
+                //TODO add token to DB!!!
+
+            }
+
             if (target == "/reg_signin") {
                 std::cout << "[INFO] Processing root target\n";
                 const std::string received_json = req.body();
@@ -552,6 +581,12 @@ private:
 
 
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
+            }
+            if (target == "/signinresponse") {
+                std::cout << "[INFO] Received response\n";
+                std::string received_json = req.body();
+                std::cout << received_json << "\n";
+                return;
             }
 
             if (target == "/get_recovery_code") {

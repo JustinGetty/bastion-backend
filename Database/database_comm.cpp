@@ -796,3 +796,22 @@ STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id) {
 
     return SUCCESS;
 }
+STATUS get_device_token_by_username(bastion_username* username, std::string *device_token_out) {
+    query_param query_params[1];
+    query_params[0] = create_param_username(username);
+
+    query_data data = set_query_data('g', GET_IOS_DEVICE_TOKEN, 1, query_params);
+    strncpy(data.query, GET_DEVICE_TOKEN_IOS, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    return queryData.status;
+
+    return SUCCESS;
+}
