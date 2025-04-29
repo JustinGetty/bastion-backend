@@ -6,8 +6,9 @@
 #define IOS_NOTIFICATIONS_H
 
 #include <iostream>
+#include <bastion_data.h>
 
-void notify_signin_request(const std::string& username,
+STATUS notify_signin_request(const std::string& username,
                            const std::string& siteName,
                            const std::string& siteUrl,
                            const std::string& requestId);

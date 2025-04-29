@@ -166,7 +166,13 @@ while (true) {
                         std::cout << "[ERROR] Failed to bind blob of type PARAM_SEED_PHRASE_HASH.\n";
                         temp_status = -1;
                     }
+                break;
 
+                case PARAM_APNS_DEVICE_TOKEN:
+                    if (sqlite3_bind_text(stmt, index, reinterpret_cast<const char*>(param.data.apns_token_val), 32, SQLITE_TRANSIENT) != SQLITE_OK) {
+                        std::cout << "[ERROR] Failed to bind blob of type PARAM_APNS_DEVICE_TOKEN.\n";
+                        temp_status = -1;
+                    }
                 break;
 
                 default:
@@ -181,6 +187,11 @@ while (true) {
         }
         //get requests
         if (inbound_data->type == 'g') {
+            char *expanded = sqlite3_expanded_sql(stmt);
+            if (expanded) {
+                printf("[DEBUG] Executing SQL: %s\n", expanded);
+                sqlite3_free(expanded);
+            }
             switch (inbound_data->real_type) {
 
 
@@ -427,21 +438,23 @@ while (true) {
                 }
 
                 case GET_IOS_DEVICE_TOKEN: {
-                    const unsigned char* raw_username{};
-                    int token_in_bytes;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
-                        raw_username = sqlite3_column_text(stmt, 0);
-                        token_in_bytes = sqlite3_column_bytes(stmt, 0);
-                    }
+                        auto raw_token = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+                        int token_in_bytes = sqlite3_column_bytes(stmt, 0);
 
-                    if (temp_status == -1){
-                        inbound_data_struct->status = DATABASE_FAILURE;
-                    } else {
-                        auto charPtr = reinterpret_cast<const char *>(raw_username);
-                        std::string temp(charPtr, token_in_bytes);
-                        inbound_data_struct->processed_data.device_token = temp;
-                        inbound_data_struct->status = SUCCESS;
-                        std::cout << "[INFO] Successfully retrieved device token.\n";
+                        if (temp_status == -1){
+                            inbound_data_struct->status = DATABASE_FAILURE;
+                        } else {
+                            constexpr int BUF_SIZE = sizeof(inbound_data_struct->processed_data.device_token);
+                            int n = std::min(token_in_bytes, BUF_SIZE - 1);
+                            memcpy(inbound_data_struct->processed_data.device_token,
+                                   raw_token,
+                                   n);
+                            inbound_data_struct->processed_data.device_token[n] = '\0';
+
+                            inbound_data_struct->status = SUCCESS;
+                            std::cout << "[INFO] Successfully retrieved device token.\n";
+                        }
                     }
                     inbound_data_struct->is_ready = true;
                     break;

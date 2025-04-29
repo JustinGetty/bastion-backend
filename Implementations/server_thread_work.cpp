@@ -3,6 +3,7 @@
 #include "conn_data_storage.h"
 #include "databaseq.h"
 #include "cryptography.h"
+#include "ios_notifications.h"
 
 
 void processConnectionData(std::unique_ptr<ConnectionData> data);
@@ -50,6 +51,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
               << "[INFO] Initiating mobile verification request for connection id: "
               << data->connection_id << "\n------------------" << std::endl;
 
+
     // Prepare the username string (initialize and ensure null-termination).
     bastion_username username = {0};
     std::strncpy(username, data->username, MAX_USERNAME_LENGTH - 1);
@@ -63,6 +65,17 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     std::cout << "[DEBUG] Username from connection data: " << username << std::endl;
     std::cout << "[INFO] Processing connection data in thread: "
               << std::this_thread::get_id() << std::endl;
+
+
+    std::string username_temp = username;
+
+    //send push notif to phone
+    STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", "69");
+    if (send_notif_status != SUCCESS) {
+        std::cout << "[ERROR] Failed to send push notification\n";
+        return;
+    }
+    std::cout << "[INFO] Push notification sent\n";
 
     // Retrieve full user data from the database.
     full_user_data local_data = {};

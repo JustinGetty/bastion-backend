@@ -30,5 +30,7 @@ STATUS get_seed_phrase_hash(bastion_username* username, seed_phrase_hash *seed_p
 STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc);
 STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_length priv_key);
 STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id);
-STATUS get_device_token_by_username(bastion_username* username, std::string *device_token_out);
+STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out);
+STATUS update_device_token_ios_by_username(bastion_username *username, apns_token *device_token);
+
 #endif

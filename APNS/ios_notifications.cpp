@@ -2,12 +2,15 @@
 // Created by root on 4/27/25.
 //
 
-#include "ios_notifications.h"
+#include "../Headers/ios_notifications.h"
 #include <fstream>
 #include <curl/curl.h>
 #include <jwt/jwt.hpp>
 #include <jwt/algorithm.hpp>
 #include "databaseq.h"
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 std::string load_pem(const std::string& path) {
     std::ifstream in(path);
@@ -19,15 +22,15 @@ std::string load_pem(const std::string& path) {
 
 std::string make_apns_jwt()
 {
-    auto key_pem = load_pem("AuthKey_ABCDE12345.p8");
+    auto key_pem = load_pem("/infinite/Projects/NoPass/Server/certs/AuthKey_DS6Q8VRAF7.p8");
 
     jwt::jwt_object obj{
         jwt::params::algorithm(jwt::algorithm::ES256),
         jwt::params::secret(key_pem)
     };
 
-    obj.header().add_header("kid", "ABCDE12345");
-    obj.payload().add_claim(jwt::registered_claims::issuer,     "YOUR_TEAM_ID");
+    obj.header().add_header("kid", "DS6Q8VRAF7");
+    obj.payload().add_claim(jwt::registered_claims::issuer, "X8D485939U");
     obj.payload().add_claim(jwt::registered_claims::issued_at,  std::chrono::system_clock::now());
 
     return obj.signature();
@@ -40,13 +43,13 @@ void send_push(const std::string& deviceToken,
     CURL* curl = curl_easy_init();
     if (!curl) return;
 
-    std::string url = "https://api.push.apple.com/3/device/" + deviceToken;
+    std::string url = "https://api.development.push.apple.com/3/device/" + deviceToken;
 
     struct curl_slist* headers = nullptr;
     headers = curl_slist_append(headers,
       ("authorization: bearer " + jwt).c_str());
     headers = curl_slist_append(headers,
-      "apns-topic: com.mycompany.myapp");
+      "apns-topic: bastion-software.bastion-ios-mobile");
     headers = curl_slist_append(headers,
       "apns-push-type: alert");
 
@@ -63,7 +66,7 @@ void send_push(const std::string& deviceToken,
     curl_easy_cleanup(curl);
 }
 
-void notify_signin_request(const std::string& username,
+STATUS notify_signin_request(const std::string& username,
                            const std::string& siteName,
                            const std::string& siteUrl,
                            const std::string& requestId)
@@ -72,26 +75,40 @@ void notify_signin_request(const std::string& username,
     static std::string apnsJwt = make_apns_jwt();
     // TODO: check expiration and refresh every 45min
 
-    std::string token;
+    apns_token token;
     bastion_username username_temp{};
-    strncpy(username_temp, username.c_str(), username.length());
+    strncpy(username_temp, username.c_str(), sizeof(username_temp)-1);
+    username_temp[sizeof(username_temp)-1] = '\0';
+
     STATUS token_ret_status = get_device_token_by_username(&username_temp, &token);
+    std::string token_string(reinterpret_cast<const char*>(token), 32);
+    if (token_ret_status != SUCCESS) {
+        std::cout << "[INFO] Failed to get device token, sign in request aborted\n";
+        return DATABASE_FAILURE;
+    }
 
-    crow::json::wvalue aps;
-    aps["alert"]["title"] = "Sign-in request";
-    aps["alert"]["body"]  = siteName + " wants to sign you in";
-    aps["category"]       = "SIGNIN_REQUEST";
+    json aps = {
+      { "alert", {
+          { "title", "Sign-in request" },
+          { "body",  siteName + " wants to sign you in" }
+        }
+      },
+      { "category", "SIGNIN_REQUEST" }
+    };
 
-    crow::json::wvalue top;
-    top["aps"]         = aps;
-    top["requestId"]   = requestId;
-    top["siteName"]    = siteName;
-    top["siteUrl"]     = siteUrl;
-    top["type"]        = "authRequest";
+    // 2) Build the top-level payload
+    json payloadJson = {
+      { "aps",       aps },
+      { "requestId", requestId },
+      { "siteName",  siteName },
+      { "siteUrl",   siteUrl },
+      { "type",      "authRequest" }
+    };
 
-    std::string payload = crow::json::dump(top);
+    std::string payload = payloadJson.dump();  // compact by default
 
-    // 4) send it
-    send_push(token, apnsJwt, payload);
+
+    send_push(token_string, apnsJwt, payload);
+    return SUCCESS;
 }
 

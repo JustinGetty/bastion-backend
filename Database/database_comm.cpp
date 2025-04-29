@@ -120,6 +120,12 @@ query_param create_param_seed_phrase_hash(seed_phrase_hash seed_phrase_hash_) {
     print_hex(param.data.seed_phrase_hash_, 32);
     return param;
 }
+query_param create_param_apns_token(apns_token *apns_token) {
+    query_param param;
+    param.type = PARAM_APNS_DEVICE_TOKEN;
+    memcpy(&param.data.apns_token_val, apns_token, 32);
+    return param;
+}
 
 
 STATUS send_query(int sock, query_data data) {
@@ -603,7 +609,8 @@ STATUS check_username_exists(bastion_username *username, bool *output) {
 
     query_param query_params[MAX_PARAMS];
     query_params[0] = create_param_username(username);
-    query_data data = set_query_data('g', GET_USERNAME_EXISTS, 1, query_params);
+    query_params[1] = create_param_username(username);
+    query_data data = set_query_data('g', GET_USERNAME_EXISTS, 2, query_params);
     strncpy(data.query, CHECK_IF_USERNAME_EXISTS, sizeof(data.query));
 
 
@@ -796,7 +803,7 @@ STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id) {
 
     return SUCCESS;
 }
-STATUS get_device_token_by_username(bastion_username* username, std::string *device_token_out) {
+STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out) {
     query_param query_params[1];
     query_params[0] = create_param_username(username);
 
@@ -811,7 +818,26 @@ STATUS get_device_token_by_username(bastion_username* username, std::string *dev
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
-    return queryData.status;
+    memcpy(*device_token_out, queryData.processed_data.device_token, 32);
 
-    return SUCCESS;
+    return queryData.status;
+}
+
+STATUS update_device_token_ios_by_username(bastion_username *username, apns_token *device_token) {
+    query_param query_params[2];
+    query_params[0] = create_param_username(username);
+    query_params[1] = create_param_apns_token(device_token);
+
+    query_data data = set_query_data('p', UPDATE_IOS_DEVICE_TOKEN, 2, query_params);
+    strncpy(data.query, UPDATE_DEVICE_TOKEN_IOS, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    return queryData.status;
 }

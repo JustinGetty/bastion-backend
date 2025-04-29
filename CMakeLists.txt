@@ -3,16 +3,15 @@ project(bastion_auth)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(CURL    REQUIRED)
 
-# Try to locate Crypto++ include directory.
 find_path(CRYPTOPP_INCLUDE_DIR
         NAMES cryptopp/cryptlib.h
         PATHS /usr/include /usr/local/include
 )
 
-# Locate the Crypto++ library in /usr/lib64 (or the standard locations).
 find_library(CRYPTOPP_LIBRARY
         NAMES cryptopp
         PATHS /usr/lib64 /usr/lib /usr/local/lib
@@ -56,6 +55,7 @@ target_link_libraries(bastion_data PUBLIC
         ZLIB::ZLIB
         sqlite3
         CryptoPP::CryptoPP
+        ${CURL_LIBRARIES}
 )
 
 add_executable(bastion_auth main.cpp
@@ -82,8 +82,14 @@ add_executable(bastion_auth main.cpp
         Headers/EmailRecovery.h
         MainEventLoop/main_helpers.cpp
         Headers/main_helpers.h
+        APNS/ios_notifications.cpp
+        Headers/ios_notifications.h
 )
 
+
+find_path(JWT_INCLUDE_DIR
+        NAMES jwt/jwt.hpp
+        HINTS /usr/include /usr/local/include)
 
 # Add include directories for the executable.
 target_include_directories(bastion_auth PRIVATE
@@ -93,6 +99,8 @@ target_include_directories(bastion_auth PRIVATE
         /usr/lib64
         /infinite/Projects/NoPass/SourceFiles/uWebSockets/src
         /infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/src
+        /usr/local/include/Crow/include
+        ${JWT_INCLUDE_DIR}
 )
 
 # Link the static library and the uSockets static library.

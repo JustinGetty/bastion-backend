@@ -485,6 +485,8 @@ private:
                 std::cout <<  received_json << "\n";
 
                 MsgMethod msg_method;
+                std::string username;
+                std::string device_token;
                 try {
                     msg_method = parse_method(received_json);
                     std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
@@ -495,16 +497,25 @@ private:
                     return;
                 }
                 if (msg_method.keys.find("device_token") != msg_method.keys.end()) {
-                    std::string device_token = msg_method.keys["device_token"];
-                    std::string username = msg_method.keys["username"];
+                    device_token = msg_method.keys["device_token"];
+                    username = msg_method.keys["username"];
                     std::cout << "[DEBUG] Username: " << username << " Device Token: " << device_token << "\n";
                 } else {
                     std::cerr << "[ERROR] Device message contains no data\n";
                     return;
                 }
 
-                //TODO add token to DB!!!
+                bastion_username username_bastion;
+                apns_token device_token_bastion;
+                strncpy(username_bastion, username.c_str(), 20);
+                memcpy(device_token_bastion, reinterpret_cast<const char*>(device_token.c_str()), 32);
 
+                STATUS sattyyy = update_device_token_ios_by_username(&username_bastion, &device_token_bastion);
+                if (sattyyy != SUCCESS) {
+                    std::cerr << "[ERROR] Failed to update device token.\n";
+                    return;
+                }
+                std::cout << "[INFO] Device token updated.\n";
             }
 
             if (target == "/reg_signin") {
