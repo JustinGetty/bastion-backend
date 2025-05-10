@@ -593,6 +593,10 @@ private:
 
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
             }
+
+            //big issue is that it always pulls from user and not user_sec, hard to join cause different data
+            //can't switch on type because type unknown at time of retrieval. FUCK.
+            //Union return with extra fields ig???
             if (target == "/signinresponse") {
                 /* TODO
                  * Read in sign in type (secure or email), to verify accordingly
@@ -602,6 +606,117 @@ private:
                 std::cout << "[INFO] Received response\n";
                 std::string received_json = req.body();
                 std::cout << received_json << "\n";
+
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    return;
+                }
+                if (msg_method.keys.find("recovery_method")->second == "seed") {
+                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
+                    std::string token_hash_encoded;
+                    if (temp_val != msg_method.keys.end()) {
+                        token_hash_encoded = temp_val->second;
+
+                    } else {
+                        return;
+                    }
+
+
+                    temp_val = msg_method.keys.find("connection_id");
+                    int connection_id;
+                    if (temp_val != msg_method.keys.end()) {
+                        connection_id = std::stoi(temp_val->second);
+                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
+                    } else {
+                        std::cout << "[ERROR] Connection ID not found" << std::endl;
+                        return;
+                    }
+
+                    //error handle here if theyre not found!!
+
+
+                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+                    //ID needs to be random or systematic idk
+                    //TODO add type here so SEC can be validated without major rewrite
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh"));
+
+
+                    //send back status response to mobile
+                    send_json_response(received_json, http::status::ok);
+                    return;
+                }
+
+                // double check "email" keyword being sent
+                if (msg_method.keys.find("recovery_method")->second == "email") {
+                    //not finalized!!!
+                    std::cout << "[INFO] Processing root target\n";
+                    const std::string received_json = req.body();
+
+                    MsgMethod msg_method;
+                    try {
+                        msg_method = parse_method(received_json);
+                        std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                        for (const auto &kv : msg_method.keys)
+                            std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                    } catch (const std::exception &ex) {
+                        std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                        return;
+                    }
+
+                    /*
+                     *From here keys and data gets added to thread pool queue for processing
+                     */
+
+                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
+                    std::string token_hash_encoded;
+                    if (temp_val != msg_method.keys.end()) {
+                        token_hash_encoded = temp_val->second;
+
+                    } else {
+                        return;
+                    }
+
+                    temp_val = msg_method.keys.find("sym_key_enc");
+                    std::string sym_key_enc;
+                    if (temp_val != msg_method.keys.end()) {
+                        sym_key_enc = temp_val->second;
+
+                    } else {
+                        std::cout << "[ERROR] Sym key not found" << std::endl;
+                        return;
+                    }
+
+                    temp_val = msg_method.keys.find("connection_id");
+                    int connection_id;
+                    if (temp_val != msg_method.keys.end()) {
+                        connection_id = std::stoi(temp_val->second);
+                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
+                    } else {
+                        std::cout << "[ERROR] Connection ID not found" << std::endl;
+                        return;
+                    }
+
+                    //error handle here if theyre not found!!
+
+
+                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+                    //ID needs to be random or systematic idk
+                    //TODO add type here so SEC can be validated without major rewrite
+                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
+
+
+                    //send back status response to mobile
+                    send_json_response(received_json, http::status::ok);
+                    return;
+
+                }
+                //handle error of no recovery method specified
                 return;
             }
 

@@ -197,8 +197,6 @@ public:
             // in this mode the token is sent over only encoded and then encrypted with pub key
 
             std::cout << "[INFO] Executing regular validation work " << id_ << std::endl;
-            unsigned char decoded_key_iv[256];
-            decode_fixed_length(sym_key_iv_encoded, decoded_key_iv, 256);
 
             std::cout << "[INFO] Received token: \n" << token_hash_encoded << std::endl;
             unsigned char decoded_token_hash[256];
