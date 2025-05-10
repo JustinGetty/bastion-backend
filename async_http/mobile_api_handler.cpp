@@ -508,7 +508,7 @@ private:
                 bastion_username username_bastion;
                 apns_token device_token_bastion;
                 strncpy(username_bastion, username.c_str(), 20);
-                memcpy(device_token_bastion, reinterpret_cast<const char*>(device_token.c_str()), 32);
+                memcpy(device_token_bastion, reinterpret_cast<const char*>(device_token.c_str()), APNS_TOKEN_SIZE);
 
                 STATUS sattyyy = update_device_token_ios_by_username(&username_bastion, &device_token_bastion);
                 if (sattyyy != SUCCESS) {
@@ -594,6 +594,11 @@ private:
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
             }
             if (target == "/signinresponse") {
+                /* TODO
+                 * Read in sign in type (secure or email), to verify accordingly
+                 */
+                //example payload:
+                // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id"}
                 std::cout << "[INFO] Received response\n";
                 std::string received_json = req.body();
                 std::cout << received_json << "\n";

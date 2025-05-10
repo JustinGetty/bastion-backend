@@ -66,7 +66,7 @@ PROBLEMMMMMMMMM
 ConnThreadPool* g_connThreadPool = nullptr;
 std::atomic<int> globalConnectionId{1};
 
-
+//TODO whether they have an account or not they will signin with username, if we find they have a bastion account and not a site account we send signup, else signin
 struct WebSocketBehavior
 {
     static void open(uWS::WebSocket<false, true, ConnectionData> *ws)
@@ -207,6 +207,8 @@ struct WebSocketBehavior
                 STATUS verify_spa_status = verify_spa_and_get_site_id(connData->spa_id, &site_id);
                 if (verify_spa_status != SUCCESS) {
                     std::cout << "[Info] Site ID valid.\n";
+                    std::string spa_id_failure = R"({"status":"invalid_spa_id"})";
+                    ws->send(spa_id_failure, uWS::OpCode::TEXT);
                     return;
                 }
                 connData->site_id = site_id;
@@ -263,7 +265,10 @@ struct WebSocketBehavior
         }
 
         if (parsed_message.action == "signup") {
+            /* This grabs user email for the site and inserts into user_site_data
+             */
            std::cout << "[INFO] User requests signup\n";
+
             return;
         }
         if (parsed_message.action != "signin" || parsed_message.action != "signup") {

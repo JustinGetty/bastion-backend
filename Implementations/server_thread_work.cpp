@@ -79,6 +79,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
     // Retrieve full user data from the database.
     full_user_data local_data = {};
+    //TODO here we also need to check if this user exists in the requesting site, so that we can send signup or signin to mobile phone
     STATUS user_data_status = get_full_user_data_by_uname(&username, &local_data);
     std::cout << "[INFO] Database lookup status for username (" << username
               << "): " << user_data_status << std::endl;

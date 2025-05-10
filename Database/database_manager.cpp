@@ -169,7 +169,7 @@ while (true) {
                 break;
 
                 case PARAM_APNS_DEVICE_TOKEN:
-                    if (sqlite3_bind_text(stmt, index, reinterpret_cast<const char*>(param.data.apns_token_val), 32, SQLITE_TRANSIENT) != SQLITE_OK) {
+                    if (sqlite3_bind_text(stmt, index, reinterpret_cast<const char*>(param.data.apns_token_val), APNS_TOKEN_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
                         std::cout << "[ERROR] Failed to bind blob of type PARAM_APNS_DEVICE_TOKEN.\n";
                         temp_status = -1;
                     }
@@ -187,14 +187,7 @@ while (true) {
         }
         //get requests
         if (inbound_data->type == 'g') {
-            char *expanded = sqlite3_expanded_sql(stmt);
-            if (expanded) {
-                printf("[DEBUG] Executing SQL: %s\n", expanded);
-                sqlite3_free(expanded);
-            }
             switch (inbound_data->real_type) {
-
-
                 case GET_FULL_USER_BY_ID: {
                     full_user_data user_data;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
@@ -421,12 +414,12 @@ while (true) {
 
                 case GET_CLIENT_ID_BY_SPA: {
 
-                    int raw_spa_id;
+                    int raw_spa_id = -1;
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
                         raw_spa_id = sqlite3_column_int(stmt, 0);
                     }
 
-                    if (temp_status == -1){
+                    if (temp_status == -1 || raw_spa_id == -1) {
                         inbound_data_struct->status = DATABASE_FAILURE;
                     } else {
                         inbound_data_struct->processed_data.client_id = raw_spa_id;

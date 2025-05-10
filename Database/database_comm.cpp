@@ -123,7 +123,7 @@ query_param create_param_seed_phrase_hash(seed_phrase_hash seed_phrase_hash_) {
 query_param create_param_apns_token(apns_token *apns_token) {
     query_param param;
     param.type = PARAM_APNS_DEVICE_TOKEN;
-    memcpy(&param.data.apns_token_val, apns_token, 32);
+    memcpy(&param.data.apns_token_val, apns_token, APNS_TOKEN_SIZE);
     return param;
 }
 
@@ -818,7 +818,7 @@ STATUS get_device_token_by_username(bastion_username* username, apns_token *devi
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
-    memcpy(*device_token_out, queryData.processed_data.device_token, 32);
+    memcpy(*device_token_out, queryData.processed_data.device_token, APNS_TOKEN_SIZE);
 
     return queryData.status;
 }

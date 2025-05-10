@@ -1,6 +1,7 @@
 1. Move cryptography and data_base comm to the library project once implemented fully
 2. Mobile comm daemon ( https reqs)
 3. Signup process (starts with phone)
+3.5 Sign in/up requests need to come from specific site TODO
 4. make shit CONST where it can be
 5. all sensitive memory should be erased with explicit_bzero()
 6. https daemon should also have support for user account creation from the app
@@ -14,4 +15,5 @@
 14. Fix load issues
 15. Give user choice of more secure or less secure recovery
 16. TODO Make sure auth token is stored hashed and enc with sym key on server side, super important
-17. Check username isnt too long
+17. Check username isnt too long, some are null terminated in places, try and switch all to string. Also make username length max 2 less than bastion_username size
+18. Prepend/Append unique id to usernames to help prevent accidental signins
