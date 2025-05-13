@@ -568,8 +568,9 @@ int num = 0;
 STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user_data) {
     query_param params[MAX_PARAMS];
     params[0] = create_param_username(uname);
+    params[1] = create_param_username(uname);
     query_data data{};
-    data = set_query_data('g', GET_FULL_USER_BY_UNAME, 1, params);
+    data = set_query_data('g', GET_FULL_USER_BY_UNAME, 2, params);
     strncpy(data.query, GET_FULL_USER_DATA_BY_UNAME_QUERY, sizeof(data.query));
 
     query_data_struct queryData{};
@@ -600,7 +601,7 @@ STATUS get_full_user_data_by_uname(bastion_username *uname, full_user_data *user
         memcpy(user_data->priv_key_w_len.priv_key, full_user_data.priv_key_w_len.priv_key, sizeof(user_data->priv_key_w_len.priv_key));
         user_data->priv_key_w_len.priv_key_len = full_user_data.priv_key_w_len.priv_key_len;
         memcpy(user_data->enc_auth_token, full_user_data.enc_auth_token, std::size(user_data->enc_auth_token));
-
+        user_data->secure_recovery_method = full_user_data.secure_recovery_method;
     }
     return user_data->user_status;
 }

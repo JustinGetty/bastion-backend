@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <cctype>
 
 void print_token_hash(token_hash token_hash) {
     printf("[INFO] Token Hash:\n[DATA] ");
@@ -437,8 +438,13 @@ unsigned char* base64_decode(const std::string &encoded, int &out_length) {
 }
 
 bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t expected_size) {
+    std::cerr << "[DEBUG] About to Base64‑decode (" << encoded.size()
+              << " chars): `" << encoded << "`\n";
     int decodedLength = 0;
     unsigned char* decoded = base64_decode(encoded, decodedLength);
+    std::cerr << "[DEBUG] Got encoded token (" << encoded.size()
+          << " chars): `" << encoded << "`\n";
+
 
     if (decodedLength != static_cast<int>(expected_size)) {
         std::cerr << "[ERROR] Decoded length (" << decodedLength
@@ -447,6 +453,55 @@ bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t 
         return false;
     }
 
+    std::memcpy(out, decoded, expected_size);
+    delete[] decoded;
+    return true;
+}
+
+
+bool decode_fixed_length_sec(const std::string &encoded, unsigned char* out, size_t expected_size) {
+    std::string cleaned;
+    cleaned.reserve(encoded.size());
+    for (size_t i = 0; i < encoded.size(); ++i) {
+        char c = encoded[i];
+        // turn '\/' → '/'
+        if (c == '\\' && i + 1 < encoded.size() && encoded[i+1] == '/') {
+            cleaned.push_back('/');
+            ++i;  // skip the '/'
+        }
+        // skip any other backslashes
+        else if (c == '\\') {
+            continue;
+        }
+        // skip whitespace (just in case)
+        else if (std::isspace(static_cast<unsigned char>(c))) {
+            continue;
+        }
+        else {
+            cleaned.push_back(c);
+        }
+    }
+
+    std::cerr << "[DEBUG] Cleaned Base64 token (" << cleaned.size()
+              << " chars): `" << cleaned << "`\n";
+
+    // 2) Decode
+    int decodedLength = 0;
+    unsigned char* decoded = base64_decode(cleaned, decodedLength);
+    if (!decoded) {
+        std::cerr << "[ERROR] base64_decode returned null\n";
+        return false;
+    }
+
+    // 3) Verify length
+    if (decodedLength != static_cast<int>(expected_size)) {
+        std::cerr << "[ERROR] Decoded length (" << decodedLength
+                  << ") does not match expected (" << expected_size << ")\n";
+        delete[] decoded;
+        return false;
+    }
+
+    // 4) Copy out and clean up
     std::memcpy(out, decoded, expected_size);
     delete[] decoded;
     return true;

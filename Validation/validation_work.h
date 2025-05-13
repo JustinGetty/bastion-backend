@@ -14,7 +14,6 @@
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
-#include <string>
 #include <algorithm>
 
 
@@ -24,6 +23,40 @@
 
 extern CircularQueue<validation_work*> g_workQueue;
 extern ConnectionDataStorage cds;
+
+constexpr size_t MAX_TOKEN_LEN = 500;
+
+inline bool decodeTokenToFixedBuffer(
+    const std::string &b64,
+    unsigned char outBuf[MAX_TOKEN_LEN],
+    size_t &outLen) {
+    // 1) Set up a BIO chain: base64 filter → memory buffer
+    BIO *b64_bio = BIO_new(BIO_f_base64());
+    BIO *mem_bio = BIO_new_mem_buf(b64.data(), (int)b64.size());
+    if (!b64_bio || !mem_bio) {
+        BIO_free_all(b64_bio);
+        BIO_free_all(mem_bio);
+        return false;
+    }
+    BIO *bio = BIO_push(b64_bio, mem_bio);
+    // Disable line breaks
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+
+    // 2) Read decoded bytes directly into outBuf
+    int decoded = BIO_read(bio, outBuf, (int)MAX_TOKEN_LEN);
+    BIO_free_all(bio);
+
+    if (decoded <= 0) {
+        return false;
+    }
+    // If the decoded data would exceed our fixed buffer:
+    if ((size_t)decoded > MAX_TOKEN_LEN) {
+        return false;
+    }
+
+    outLen = (size_t)decoded;
+    return true;
+}
 
 
 inline std::string base64url(const unsigned char* data, size_t len) {
@@ -199,10 +232,24 @@ public:
             std::cout << "[INFO] Executing regular validation work " << id_ << std::endl;
 
             std::cout << "[INFO] Received token: \n" << token_hash_encoded << std::endl;
-            unsigned char decoded_token_hash[256];
-            decode_fixed_length(token_hash_encoded, decoded_token_hash, 256);
+            //unsigned char decoded_token_hash[256];
+            //decode_fixed_length(token_hash_encoded, decoded_token_hash, 256);
 
-            ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
+            unsigned char buffer[MAX_TOKEN_LEN];
+                 size_t length = 0;
+
+                 bool stat = decodeTokenToFixedBuffer("gVWTYCH2z81iIqjgKenZpVkYYNwEHCWGsNJR3T8uwqLnZOWswtvGCERvur8tJfNblDKekzzo/yexDzJalltcTfq/GKT8nQPOWVECm1wgOMhTuXi4Ajw7aS+QbYhUvZ7GSUkkUPdQRNxjfB40Zn6w7FAoXnt+8isbYMYnCJ64hBPR+kIWFp2V4r/ZWzY+sGsT1leI/HQUGZ84nhVJkIKJ25wDcxafJEkygiJhi7q1rMUS7l2+dTMJCuZH6yXO8v2k6WC8g68YSvb//nZIee4NhD28MQBBNycWbzAUJvWpPNf6K8cpqESny4Rt+TonttX2lRj8S+9ohxC9NsPbh+C5DA==", buffer, length);
+                     std::cout << "Decoded " << length << " bytes:\n";
+                     for (size_t i = 0; i < length; ++i) {
+                         printf("%02x", buffer[i]);
+                     }
+                     printf("\n");
+                unsigned char decoded_token_hash[length];
+                     memcpy(decoded_token_hash, buffer, length);
+
+
+            //ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
+            ConnectionData *data_from_storage = cds.get_connection_data(1);
             if (data_from_storage->user_data.fail_this == true) {
                 data_from_storage->user_data.being_processed = false;
                 data_from_storage->user_data.fail_this = false;
@@ -214,12 +261,18 @@ public:
             int decrypted_token_len;
             token decrypted_token;
             if (decrypt_with_private_key(data_from_storage->user_data.priv_key_w_len.priv_key, data_from_storage->user_data.priv_key_w_len.priv_key_len,
-                                        decoded_token_hash, 256,
+                                        decoded_token_hash, length,
                                         decrypted_token, &decrypted_token_len) != SUCCESS)
 
             {
                 std::fprintf(stderr, "[ERROR] Asymmetric decryption of key/IV failed\n");
             }
+
+            std::cout << "Token:\n";
+            for (size_t i = 0; i < decrypted_token_len; ++i) {
+                printf("%02x", decrypted_token[i]);
+            }
+            printf("\n");
 
             token_hash computed_hash;
 

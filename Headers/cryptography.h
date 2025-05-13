@@ -61,7 +61,7 @@ STATUS verify_seed_phrase(bastion_username username, const std::string received_
 std::string base64_encode(const unsigned char* buffer, size_t length);
 //std::vector<unsigned char> base64_decode(const std::string &encoded);
 bool decode_fixed_length(const std::string &encoded, unsigned char* out, size_t expected_size);
-
+bool decode_fixed_length_sec(const std::string &encoded, unsigned char* out, size_t expected_size);
 
 // TESTSSS -------------------------------------------------------
 int test_as_main();

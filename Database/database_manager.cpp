@@ -309,6 +309,18 @@ while (true) {
 
                 case GET_FULL_USER_BY_UNAME: {
                     full_user_data user_data;
+                    const char *expanded = sqlite3_expanded_sql(stmt);
+                    if (expanded) {
+                        std::cout
+                          << "[DEBUG] Fully bound SQL:\n"
+                          << expanded
+                          << "\n";
+                        sqlite3_free((void*)expanded);
+                    } else {
+                        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL—"
+                                  << "are you using SQLite >= 3.14?\n";
+                    }
+
                     while (sqlite3_step(stmt) == SQLITE_ROW) {
                         user_data.user_id = sqlite3_column_int(stmt, 0);
                         const unsigned char* raw_username = sqlite3_column_text(stmt, 1);
@@ -333,6 +345,14 @@ while (true) {
                             memcpy(user_data.priv_key_w_len.priv_key, raw_asym_key, sizeof(user_data.priv_key_w_len.priv_key));
                             user_data.priv_key_w_len.priv_key_len = asym_key_len;
                         }
+
+                        const char *table_source = (const char*)sqlite3_column_text(stmt, 6);
+                        if (table_source && strcmp(table_source, "user_sec") == 0) {
+                            user_data.secure_recovery_method = true;
+                        } else {
+                            user_data.secure_recovery_method = false;
+                        }
+
                         //add sym key here
                         if (temp_status == -1) {
                             user_data.user_status = DATABASE_FAILURE;
