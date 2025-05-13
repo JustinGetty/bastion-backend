@@ -17,3 +17,5 @@
 16. TODO Make sure auth token is stored hashed and enc with sym key on server side, super important
 17. Check username isnt too long, some are null terminated in places, try and switch all to string. Also make username length max 2 less than bastion_username size
 18. Prepend/Append unique id to usernames to help prevent accidental signins
+19. It tries to store the device token like 20 times wtf
+20. HUGE issue fix duplicate user ids in user and user_sec

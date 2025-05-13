@@ -13,29 +13,36 @@
 
 using json = nlohmann::json;
 
-
 STATUS parse_inbound_msg(std::string_view msg_json, inbound_msg* msg_map) {
     try {
-        json j = json::parse(msg_json);
+        auto j = json::parse(msg_json);
 
-        msg_map->action = j.at("action").get<std::string>();
-        msg_map->keys["client_id"] = j.at("client_id").get<std::string>();
-        msg_map->keys["username"] = j.at("username").get<std::string>();
-        msg_map->keys["code_challenge"] = j.at("code_challenge").get<std::string>();
-        msg_map->keys["code_challenge_method"] = j.at("code_challenge_method").get<std::string>();
-        msg_map->keys["state"] = j.at("state").get<std::string>();
+        if (auto it = j.find("action"); it != j.end() && it->is_string()) {
+            msg_map->action = it->get<std::string>();
+        } else {
+            msg_map->action.clear();
+        }
+
+        for (auto& [key, val] : j.items()) {
+            if (key == "action") continue;
+            if (val.is_string()) {
+                msg_map->keys[key] = val.get<std::string>();
+            } else {
+                msg_map->keys[key] = val.dump();
+            }
+        }
+
         return SUCCESS;
-
     }
-    catch (nlohmann::json::parse_error& e) {
+
+    catch (const json::parse_error& e) {
         std::cerr << "JSON parse error: " << e.what() << "\n";
         return UNKNOWN_FAILURE;
     }
-    catch (nlohmann::json::type_error& e) {
+    catch (const json::type_error& e) {
         std::cerr << "Type error: " << e.what() << "\n";
         return UNKNOWN_FAILURE;
     }
-
 }
 
 inline const char* skip_ws(const char* p, const char* end) {
