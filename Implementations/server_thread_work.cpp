@@ -29,16 +29,14 @@ void ConnectionQueue::main_server_management(bool &stop_flag)
     }
 }
 
-//SERVER WORK GOES HERE
 void processConnectionData(std::unique_ptr<ConnectionData> data) {
-    // Check that we received valid data.
+    //check that we received valid data.
     std::cout << "[THREAD] Processing" << std::this_thread::get_id() << "\n";
     if (!data) {
         std::cerr << "[ERROR] processConnectionData: Received null ConnectionData pointer." << std::endl;
         return;
     }
 
-    // If the previous attempt already flagged failure, reset flags and exit.
     if (data->user_data.fail_this) {
         std::cerr << "[WARN] processConnectionData: User data flagged as failed for connection id: "
                   << data->connection_id << ". Aborting processing." << std::endl;
@@ -52,7 +50,6 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
               << data->connection_id << "\n------------------" << std::endl;
 
 
-    // Prepare the username string (initialize and ensure null-termination).
     bastion_username username = {0};
     std::strncpy(username, data->username, MAX_USERNAME_LENGTH - 1);
     username[MAX_USERNAME_LENGTH - 1] = '\0';
@@ -70,7 +67,7 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
     std::string username_temp = username;
 
     //send push notif to phone
-    STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", "69");
+    STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id));
     if (send_notif_status != SUCCESS) {
         std::cout << "[ERROR] Failed to send push notification\n";
         return;

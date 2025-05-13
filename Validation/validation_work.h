@@ -248,8 +248,7 @@ public:
                      memcpy(decoded_token_hash, buffer, length);
 
 
-            //ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
-            ConnectionData *data_from_storage = cds.get_connection_data(1);
+            ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
             if (data_from_storage->user_data.fail_this == true) {
                 data_from_storage->user_data.being_processed = false;
                 data_from_storage->user_data.fail_this = false;
