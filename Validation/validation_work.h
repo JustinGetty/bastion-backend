@@ -121,19 +121,22 @@ public:
         int connection_id,
         //make references
         const std::string token_hash_encoded,
-        const std::string sym_key_iv_encoded)
+        const std::string sym_key_iv_encoded,
+        bool is_approved)
         :
           is_secure_mode_(is_secure_mode),
           id_(id),
           user_id_(user_id),
             connection_id_(connection_id),
           token_hash_encoded(token_hash_encoded),
-          sym_key_iv_encoded(sym_key_iv_encoded)
+          sym_key_iv_encoded(sym_key_iv_encoded),
+          is_approved_(is_approved)
     {
     }
 
     void execute() override {
         if (is_secure_mode_ == false) {
+            //TODO validate approval BOOL and add to request
             std::cout << "[INFO] Executing regular validation work " << id_ << std::endl;
             unsigned char decoded_key_iv[256];
             decode_fixed_length(sym_key_iv_encoded, decoded_key_iv, 256);
@@ -255,7 +258,7 @@ public:
                 std::cout << "[INFO] Aborting signin.\n";
                 return;
             }
-            std::cout << "[INFO] Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
+            std::cout << "[INFO] Data pulled from storage with id: "     << data_from_storage->connection_id << "\n";
 
             int decrypted_token_len;
             token decrypted_token;
@@ -285,18 +288,27 @@ public:
                 if (challenge_verification_status != SUCCESS) {
                     std::cout << "[INFO] Challenge codes do not match.\n";
                     std::string failure_msg = R"({"status": "rejected"})";
+                    STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
                     data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
                     return;
                 }
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-                std::string success_msg = R"({"status": "approved"})";
+                //TODO send back this -> data_from_storage->transaction_id
+                std::string success_msg;
+                if (is_approved_) {
+                    success_msg = R"({"status": "approved"})";
+                } else if (!is_approved_) {
+                    success_msg = R"({"status": "rejected"})";
+                }
+                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, is_approved_);
                 ws->send(success_msg, uWS::OpCode::TEXT);
                 return;
 
             } else {
                 printf("[INFO] Token verification failed. SignIn rejected.\n");
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
+                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
                 std::string failure_msg = R"({"status": "rejected"})";
                 ws->send(failure_msg, uWS::OpCode::TEXT);
             }
@@ -315,5 +327,6 @@ private:
     const std::string sym_key_iv_encoded;
     int connection_id_;
     bool is_secure_mode_;
+    bool is_approved_;
 };
 #endif // MY_VALIDATION_WORK_H

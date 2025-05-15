@@ -32,5 +32,7 @@ STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_le
 STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id);
 STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out);
 STATUS update_device_token_ios_by_username(bastion_username *username, apns_token *device_token);
+STATUS check_if_user_is_in_site(bastion_username* username, bool *output);
+STATUS insert_request(const int site_id, bastion_username* username, const int approved);
 
 #endif

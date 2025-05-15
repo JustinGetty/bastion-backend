@@ -842,3 +842,42 @@ STATUS update_device_token_ios_by_username(bastion_username *username, apns_toke
 
     return queryData.status;
 }
+STATUS check_if_user_is_in_site(bastion_username* username, bool *output) {
+    query_param query_params[1];
+    query_params[0] = create_param_username(username);
+    query_data data = set_query_data('g', GET_USERNAME_EXISTS, 1, query_params);
+    strncpy(data.query, CHECK_IF_USER_EXISTS_FOR_SITE, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    while (queryData.is_ready == false) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    STATUS process_status = queryData.status;
+    if (process_status != SUCCESS) {
+        return process_status;
+    }
+
+    *output = queryData.processed_data.username_exists;
+    return queryData.status;
+}
+
+STATUS insert_request(const int site_id, bastion_username* username, const int approved) {
+
+    query_param query_params[3];
+    query_params[0] = create_param_int(site_id);
+    query_params[1] = create_param_username(username);
+    query_params[2] = create_param_int(approved);
+
+    query_data data = set_query_data('p', UPDATE_REQUEST_DATA, 3, query_params);
+    strncpy(data.query, INSERT_REQUEST_IN_DB, sizeof(data.query));
+
+    query_data_struct queryData{};
+    queryData.queryData = data;
+    queryData.is_ready = false;
+    add_to_queue(&queryData);
+    return SUCCESS;
+}

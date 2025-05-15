@@ -65,13 +65,28 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
 
     std::string username_temp = username;
-
-    //send push notif to phone
-    STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id));
-    if (send_notif_status != SUCCESS) {
-        std::cout << "[ERROR] Failed to send push notification\n";
+    //TODO check if user exists for site id, if not, send signup, if yes, send signin
+    bool output;
+    STATUS user_exists_status = check_if_user_is_in_site(&username, &output);
+    if (user_exists_status != SUCCESS) {
+        std::cout << "[DEBUG] FAILURE WITH STATUS: " << user_exists_status << "\n";
         return;
     }
+
+    //TODO send notif by type
+    if (output == false) {
+        //send push notif to phone
+        STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id));
+        if (send_notif_status != SUCCESS) {
+            std::cout << "[ERROR] Failed to send push notification\n";
+            return;
+        }
+
+    }
+    if (output == true) {
+        //send signup notif
+    }
+
     std::cout << "[INFO] Push notification sent\n";
 
     // Retrieve full user data from the database.

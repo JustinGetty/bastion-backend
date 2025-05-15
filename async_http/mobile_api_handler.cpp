@@ -572,7 +572,13 @@ private:
                 //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
                 //ID needs to be random or systematic idk
                 //TODO add type here so SEC can be validated without major rewrite
-                g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
+                bool approved_request;
+                if (msg_method.keys.find("approved")->second == "true") {
+                    approved_request = true;
+                } else {
+                    approved_request = false;
+                }
+                g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request));
 
 
                 //send back status response to mobile
@@ -594,9 +600,6 @@ private:
                 //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
             }
 
-            //big issue is that it always pulls from user and not user_sec, hard to join cause different data
-            //can't switch on type because type unknown at time of retrieval. FUCK.
-            //Union return with extra fields ig???
             if (target == "/signinresponse") {
                 /* TODO
                  * Read in sign in type (secure or email), to verify accordingly
@@ -643,8 +646,14 @@ private:
 
                     //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
                     //ID needs to be random or systematic idk
-                    //TODO add type here so SEC can be validated without major rewrite
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh"));
+                    bool approved_request;
+                    if (msg_method.keys.find("approved")->second == "true") {
+                       approved_request = true;
+                    } else {
+                        approved_request = false;
+                    }
+
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
 
 
                     //send back status response to mobile
@@ -707,8 +716,14 @@ private:
 
                     //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
                     //ID needs to be random or systematic idk
-                    //TODO add type here so SEC can be validated without major rewrite
-                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
+                    bool approved_request;
+                    if (msg_method.keys.find("approved")->second == "true") {
+                        approved_request = true;
+                    } else {
+                        approved_request = false;
+                    }
+
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
 
 
                     //send back status response to mobile
@@ -725,67 +740,74 @@ private:
                 //get code, add to map, wait send to email
             }
 
-        //TODO check both tables for the username not just user
-        if (target == "/validate_username") {
 
-            std::string received_json = req.body();
-            std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
-            MsgMethod msg_method;
-            try {
-                msg_method = parse_method(received_json);
-                std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                for (const auto &kv : msg_method.keys)
-                    std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-            } catch (const std::exception &ex) {
-                std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                std::string resp = R"({"status":"error"})";
+            if (target == "/signup-response") {
+                std::cout << "Hit target signup-response\n";
+                //add new fields to DB site_data
+               return;
+            }
+
+            //TODO check both tables for the username not just user
+            if (target == "/validate_username") {
+
+                std::string received_json = req.body();
+                std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                std::string username = msg_method.keys["username"].c_str();
+
+                std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
+                for (unsigned char c : username) {
+                    printf("%02x ", c);
+                }
+                std::cout << "\n";
+
+                bastion_username user_username{};
+                bastion_username *user_username_ptr = &user_username;
+                //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
+                if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
+                    std::cout << "[INFO] Username valid.\n";
+                } else {
+                    std::cout << "[INFO] Username contains invalid characters.\n";
+                    std::string resp = R"({"status":"invalid_char"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                /*
+                 *Check is username exists in DB here, reject if not
+                 */
+                bool username_exists;
+                bool *username_exists_ptr = &username_exists;
+                STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+                if (username_exists_status != SUCCESS) {
+                    std::cout << "[ERROR] Error checking username.\n";
+                    std::string resp = R"({"status": "db_error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                if (*username_exists_ptr == true) {
+                    std::cout << "[INFO] Username already in use.\n";
+                    std::string resp = R"({"status": "user_already_exists"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                std::cout << "[INFO] Username is valid.\n";
+                std::string resp = R"({"status": "valid"})";
                 send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            std::string username = msg_method.keys["username"].c_str();
-
-            std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
-            for (unsigned char c : username) {
-                printf("%02x ", c);
-            }
-            std::cout << "\n";
-
-            bastion_username user_username{};
-            bastion_username *user_username_ptr = &user_username;
-            //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
-            if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
-                std::cout << "[INFO] Username valid.\n";
-            } else {
-                std::cout << "[INFO] Username contains invalid characters.\n";
-                std::string resp = R"({"status":"invalid_char"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            /*
-             *Check is username exists in DB here, reject if not
-             */
-            bool username_exists;
-            bool *username_exists_ptr = &username_exists;
-            STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
-            if (username_exists_status != SUCCESS) {
-                std::cout << "[ERROR] Error checking username.\n";
-                std::string resp = R"({"status": "db_error"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            if (*username_exists_ptr == true) {
-                std::cout << "[INFO] Username already in use.\n";
-                std::string resp = R"({"status": "user_already_exists"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            std::cout << "[INFO] Username is valid.\n";
-            std::string resp = R"({"status": "valid"})";
-            send_json_response(resp, http::status::ok);
 
 
 
@@ -827,7 +849,6 @@ private:
             });
     }
 
-    // Helper to send a JSON response.
     void send_json_response(std::string const& body, http::status status = http::status::ok)
     {
         string_response_.emplace(
