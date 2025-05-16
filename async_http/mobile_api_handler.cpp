@@ -736,6 +736,11 @@ private:
 
             if (target == "/signup-response") {
                 std::cout << "Hit target signup-response\n";
+                /*
+                 *This is going to be the exact same fucking thing as a signin except its gonna return an email too
+                 *
+                 *DONT FORGET TO HASH THE EMAIL, LOG THE HASh, THEN SEND THE HASH TO THE FUCKING CLIENT
+                 */
                 //add new fields to DB site_data
                 //TODO pick up here
                return;
