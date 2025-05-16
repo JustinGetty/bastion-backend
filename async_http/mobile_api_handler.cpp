@@ -586,7 +586,10 @@ private:
 
             }
 
-            if (target == "/secure_signin") {
+            if (target == "/signinresponse") {
+                /* TODO
+                 * Read in sign in type (secure or email), to verify accordingly
+                 */
 
                 /*
                  *To validate the sign in when using seed phrase encrypytion, same as before parse keys pass to valid queue, flag will handle switch
@@ -594,16 +597,6 @@ private:
                  * Need to add flag on mobile of user type
                  */
 
-                //need actual data
-
-
-                //g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, sym_key_enc));
-            }
-
-            if (target == "/signinresponse") {
-                /* TODO
-                 * Read in sign in type (secure or email), to verify accordingly
-                 */
                 //example payload:
                 // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id"}
                 std::cout << "[INFO] Received response\n";
@@ -744,6 +737,7 @@ private:
             if (target == "/signup-response") {
                 std::cout << "Hit target signup-response\n";
                 //add new fields to DB site_data
+                //TODO pick up here
                return;
             }
 

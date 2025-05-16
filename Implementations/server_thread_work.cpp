@@ -66,15 +66,15 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
 
     std::string username_temp = username;
     //TODO check if user exists for site id, if not, send signup, if yes, send signin
-    bool output;
-    STATUS user_exists_status = check_if_user_is_in_site(&username, &output);
+    bool new_user_site_relation;
+    STATUS user_exists_status = check_if_user_is_in_site(&username, &new_user_site_relation);
     if (user_exists_status != SUCCESS) {
         std::cout << "[DEBUG] FAILURE WITH STATUS: " << user_exists_status << "\n";
         return;
     }
 
     //TODO send notif by type
-    if (output == false) {
+    if (new_user_site_relation == false) {
         //send push notif to phone
         STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id));
         if (send_notif_status != SUCCESS) {
@@ -83,13 +83,14 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         }
 
     }
-    if (output == true) {
+    //TODO here
+    if (new_user_site_relation == true) {
         //send signup notif
     }
 
     std::cout << "[INFO] Push notification sent\n";
 
-    // Retrieve full user data from the database.
+    //retrieve full user data from the database
     full_user_data local_data = {};
     //TODO here we also need to check if this user exists in the requesting site, so that we can send signup or signin to mobile phone
     //NEED TO RETURN DIFFERENT TABLE DATA
@@ -109,10 +110,10 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         print_hex(local_data.enc_auth_token, sizeof(local_data.enc_auth_token) / sizeof(local_data.enc_auth_token[0]));
     }
 
-    // Update the connection data with the retrieved user data.
+    //update the connection data with the retrieved user data
     data->user_data = local_data;
 
-    // Try to insert the connection data into the global storage.
+    //try to insert the connection data into the global storage
     ConnectionData *raw_conn_data_ptr = data.get();
     if (connection_storage.insert_connection_data(raw_conn_data_ptr) != SUCCESS) {
         std::cerr << "[ERROR] Failed to insert connection data into storage for connection id: "

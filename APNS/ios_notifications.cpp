@@ -1,7 +1,7 @@
 //  ios_notifications.cpp
 //  bastion-ios-mobile-server
 //
-// TODO do "validity check" and only send banner alert if valid; otherwise send silent push
+// TODO do "validity check" and only send banner alert if valid; otherwise send silent push!!
 
 #include "../Headers/ios_notifications.h"
 #include <fstream>
@@ -63,33 +63,33 @@ static bool send_push(
     const std::string& payloadJson,
     bool sandbox = true
 ) {
-    auto url = std::string(apns_host(sandbox)) + "/3/device/" + deviceToken;
+    // Always use alert push-type (priority 10)
     CURL* curl = curl_easy_init();
     if (!curl) return false;
 
-    bool silent = payloadJson.find("\"content-available\"") != std::string::npos;
-
     struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, ("authorization: bearer " + jwt).c_str());
-    headers = curl_slist_append(headers, ("apns-topic: "   + std::string(kBundleId)).c_str());
     headers = curl_slist_append(
-        headers,
-        silent
-          ? "apns-push-type: background"
-          : "apns-push-type: alert"
+      headers,
+      ("authorization: bearer " + jwt).c_str()
     );
     headers = curl_slist_append(
-        headers,
-        silent
-          ? "apns-priority: 5"
-          : "apns-priority: 10"
+      headers,
+      ("apns-topic: " + std::string(kBundleId)).c_str()
+    );
+    headers = curl_slist_append(
+      headers,
+      "apns-push-type: alert"
+    );
+    headers = curl_slist_append(
+      headers,
+      "apns-priority: 10"
     );
 
-    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION,   CURL_HTTP_VERSION_2_0);
+    std::string url = std::string(apns_host(sandbox)) + "/3/device/" + deviceToken;
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
     curl_easy_setopt(curl, CURLOPT_URL,            url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER,     headers);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS,     payloadJson.c_str());
-    // curl_easy_setopt(curl, CURLOPT_VERBOSE,      1L);  //debug
 
     CURLcode res = curl_easy_perform(curl);
     long statusCode = 0;
@@ -114,14 +114,15 @@ STATUS notify_signin_request(
     strncpy(uname, username.c_str(), sizeof(uname)-1);
     uname[sizeof(uname)-1] = '\0';
 
-    STATUS dbStatus = get_device_token_by_username(&uname, &tokenBuf);
-    if (dbStatus != SUCCESS) {
+    if (get_device_token_by_username(&uname, &tokenBuf) != SUCCESS) {
         std::cerr << "[ERROR] Could not load device token for " << username << "\n";
         return DATABASE_FAILURE;
     }
     std::string deviceToken(reinterpret_cast<char*>(tokenBuf));
+    auto jwt = make_apns_jwt();
 
-    json aps = {
+    // Build a single payload with both alert and content‑available
+    nlohmann::json aps = {
         { "alert", {
             { "title", siteName + " wants to sign you in" },
             { "body",  "Authorize sign‑in" }
@@ -129,20 +130,18 @@ STATUS notify_signin_request(
         { "sound",            "default" },
         { "badge",               1 },
         { "category",   "SIGNIN_REQUEST" },
-        { "content-available",   1 }   //wake app in background
+        { "content-available",   1 }
     };
 
-    json payload = {
+    nlohmann::json payload = {
         { "aps",       aps },
         { "requestId", requestId },
-        {"siteId",    "demo_site_id" },
+        { "siteId",    "demo_site_id" },
         { "siteName",  siteName },
         { "siteUrl",   siteUrl },
         { "type",      "authRequest" }
     };
-    auto payloadJson = payload.dump();
-
-    auto jwt = make_apns_jwt();
-    bool ok = send_push(deviceToken, jwt, payloadJson, /*sandbox=*/true);
-    return ok ? SUCCESS : HTTP_FAILURE;
+    return send_push(deviceToken, jwt, payload.dump(), /*sandbox=*/true)
+         ? SUCCESS
+         : HTTP_FAILURE;
 }

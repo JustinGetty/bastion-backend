@@ -19,3 +19,4 @@
 18. Prepend/Append unique id to usernames to help prevent accidental signins
 19. It tries to store the device token like 20 times wtf
 20. HUGE issue fix duplicate user ids in user and user_sec
+21. On the website dashboard the client should be able to set a pfp for their company that gets shown on the app

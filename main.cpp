@@ -262,8 +262,10 @@ struct WebSocketBehavior
             connData->original_challenge_code = parsed_message.keys["code_verifier"];
             connData->user_data.being_processed = false;
             //send approval
-            std::string success_msg = R"({"status": "approved"})";
+            /* DO NOT SEND APPROVAL HERE, SEND IT IN VALIDATION*/
+            /*std::string success_msg = R"({"status": "approved"})";
             ws->send(success_msg, uWS::OpCode::TEXT);
+            */
 
             return;
         }

@@ -99,16 +99,29 @@ inline STATUS validate_challenge_code(ConnectionData *connData) {
         check if they match
         proceed/reject
      */
+    //TODO THIS IS FUCKED BECAUSE ItS BLOCKING OTHER VALIDATION
     std::string wait_msg = R"({"action": "og_challenge_code_req"})";
     connData->ws->send(wait_msg, uWS::OpCode::TEXT);
     connData->user_data.being_processed = true;
+
+    //TODO change this to only wait for X time before aborting
     while (connData->user_data.being_processed == true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    if (sha256_challenge(connData->original_challenge_code) != connData->base_64_sha_256_enc_challenge_hash) {
+    //TODO THIS IS FUCKED
+    auto computed = sha256_challenge(connData->original_challenge_code);
+    std::cout << "computed [" << computed.size() << "]: " << computed << "\n";
+
+    std::string stored{ connData->base_64_sha_256_enc_challenge_hash,
+                        sizeof(connData->base_64_sha_256_enc_challenge_hash) /* or sizeof(buffer) */ };
+    std::cout << "stored   [" << stored.size()   << "]: " << stored   << "\n";
+
+    /*
+     if (sha256_challenge(connData->original_challenge_code) != connData->base_64_sha_256_enc_challenge_hash) {
         std::cout << "[INFO] Challenge codes do not match.\n";
         return LOGIC_FAILURE;
     }
+    */
     return SUCCESS;
 }
 
@@ -127,7 +140,7 @@ public:
           is_secure_mode_(is_secure_mode),
           id_(id),
           user_id_(user_id),
-            connection_id_(connection_id),
+          connection_id_(connection_id),
           token_hash_encoded(token_hash_encoded),
           sym_key_iv_encoded(sym_key_iv_encoded),
           is_approved_(is_approved)
@@ -198,6 +211,7 @@ public:
                 printf("[INFO] Token verification successful.\n");
 
                 STATUS challenge_verification_status = validate_challenge_code(data_from_storage);
+                //NEVER ACTUALLY HITTING THISAHH
                 if (challenge_verification_status != SUCCESS) {
                     std::cout << "[INFO] Challenge codes do not match.\n";
                     std::string failure_msg = R"({"status": "rejected"})";
@@ -294,11 +308,11 @@ public:
                 }
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-                //TODO send back this -> data_from_storage->transaction_id
+                //TODO send back this -> data_from_storage->transaction_id!! and og_challenge_code_req
                 std::string success_msg;
-                if (is_approved_) {
+                if (is_approved_ == true) {
                     success_msg = R"({"status": "approved"})";
-                } else if (!is_approved_) {
+                } else if (is_approved_ == false) {
                     success_msg = R"({"status": "rejected"})";
                 }
                 STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, is_approved_);
