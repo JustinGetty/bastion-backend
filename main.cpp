@@ -213,11 +213,11 @@ struct WebSocketBehavior
                 }
                 connData->site_id = site_id;
 
+                connData->user_data.being_processed = true;
 
-                ConnectionData* copyData = new ConnectionData(*connData);
-                copyData->user_data.being_processed = true;
+                g_connThreadPool->enqueueConnection(connData);
 
-                g_connThreadPool->enqueueConnection(copyData);
+
                 std::cout << "[INFO] Enqueued connection (id: " << connData->connection_id << ")" << "\n";
 
                 std::ostringstream oss;

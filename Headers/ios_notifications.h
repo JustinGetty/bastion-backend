@@ -11,5 +11,7 @@
 STATUS notify_signin_request(const std::string& username,
                            const std::string& siteName,
                            const std::string& siteUrl,
-                           const std::string& requestId);
+                           const std::string& requestId,
+                           const bool is_new_user
+                           );
 #endif //IOS_NOTIFICATIONS_H

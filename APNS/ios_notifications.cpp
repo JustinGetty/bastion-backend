@@ -107,7 +107,8 @@ STATUS notify_signin_request(
     const std::string& username,
     const std::string& siteName,
     const std::string& siteUrl,
-    const std::string& requestId
+    const std::string& requestId,
+    const bool is_new_user
 ) {
     apns_token tokenBuf{};
     bastion_username uname{};
@@ -122,26 +123,51 @@ STATUS notify_signin_request(
     auto jwt = make_apns_jwt();
 
     // Build a single payload with both alert and content‑available
-    nlohmann::json aps = {
-        { "alert", {
-            { "title", siteName + " wants to sign you in" },
-            { "body",  "Authorize sign‑in" }
-        }},
-        { "sound",            "default" },
-        { "badge",               1 },
-        { "category",   "SIGNIN_REQUEST" },
-        { "content-available",   1 }
-    };
+    nlohmann::json aps;
+    nlohmann::json payload;
+    if (is_new_user) {
+        aps = {
+            { "alert", {
+                { "title", siteName + " wants you to sign up" },
+                { "body",  "Authorize sign-up" }
+            }},
+            { "sound",            "default" },
+            { "badge",               1 },
+            { "category",   "SIGNUP_REQUEST" },
+            { "content-available",   1 }
+        };
 
-    nlohmann::json payload = {
-        { "aps",       aps },
-        { "requestId", requestId },
-        { "siteId",    "demo_site_id" },
-        { "siteName",  siteName },
-        { "siteUrl",   siteUrl },
-        { "type",      "authRequest" }
-    };
+        payload = {
+            { "aps",       aps },
+            { "requestId", requestId },
+            { "siteId",    "demo_site_id" },
+            { "siteName",  siteName },
+            { "siteUrl",   siteUrl },
+            { "type",      "newUserAuthRequest" }
+        };
+    } else {
+         aps = {
+            { "alert", {
+                { "title", siteName + " wants to sign you in" },
+                { "body",  "Authorize sign‑in" }
+            }},
+            { "sound",            "default" },
+            { "badge",               1 },
+            { "category",   "SIGNIN_REQUEST" },
+            { "content-available",   1 }
+        };
+        payload = {
+            { "aps",       aps },
+            { "requestId", requestId },
+            { "siteId",    "demo_site_id" },
+            { "siteName",  siteName },
+            { "siteUrl",   siteUrl },
+            { "type",      "authRequest" }
+        };
+    }
     return send_push(deviceToken, jwt, payload.dump(), /*sandbox=*/true)
          ? SUCCESS
          : HTTP_FAILURE;
 }
+
+

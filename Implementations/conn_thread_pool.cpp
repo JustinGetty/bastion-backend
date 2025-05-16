@@ -25,7 +25,7 @@ void ConnThreadPool::worker()
 
 void ConnThreadPool::enqueueConnection(ConnectionData* data)
 {
-    connection_queue.enqueue(std::unique_ptr<ConnectionData>(data));
+    connection_queue.enqueue(data);
 }
 
 ConnThreadPool::~ConnThreadPool()

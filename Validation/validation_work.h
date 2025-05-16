@@ -109,19 +109,11 @@ inline STATUS validate_challenge_code(ConnectionData *connData) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
     //TODO THIS IS FUCKED
-    auto computed = sha256_challenge(connData->original_challenge_code);
-    std::cout << "computed [" << computed.size() << "]: " << computed << "\n";
 
-    std::string stored{ connData->base_64_sha_256_enc_challenge_hash,
-                        sizeof(connData->base_64_sha_256_enc_challenge_hash) /* or sizeof(buffer) */ };
-    std::cout << "stored   [" << stored.size()   << "]: " << stored   << "\n";
-
-    /*
      if (sha256_challenge(connData->original_challenge_code) != connData->base_64_sha_256_enc_challenge_hash) {
         std::cout << "[INFO] Challenge codes do not match.\n";
         return LOGIC_FAILURE;
     }
-    */
     return SUCCESS;
 }
 

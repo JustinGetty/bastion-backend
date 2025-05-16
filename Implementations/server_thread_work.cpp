@@ -11,25 +11,20 @@ ConnectionDataStorage connection_storage;
 
 void ConnectionQueue::main_server_management(bool &stop_flag)
 {
-    while (!stop_flag)
-    {
-        std::unique_ptr<ConnectionData> data;
-        {
-            //std::unique_lock<std::mutex> lock(conn_mutex);
-            if (isEmpty())
-            {
-                //lock.unlock();
-                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-                continue;
-            }
-            data = dequeue();
-
+    using namespace std::chrono_literals;
+    while (!stop_flag) {
+        // pull the next ConnectionData*; nullptr if queue is empty
+        ConnectionData* data = dequeue();
+        if (!data) {
+            std::this_thread::sleep_for(5ms);
+            continue;
         }
-        processConnectionData(std::move(data));
+        // process on the very same object the WebSocket holds
+        processConnectionData(data);
     }
 }
 
-void processConnectionData(std::unique_ptr<ConnectionData> data) {
+void processConnectionData(ConnectionData *data) {
     //check that we received valid data.
     std::cout << "[THREAD] Processing" << std::this_thread::get_id() << "\n";
     if (!data) {
@@ -110,11 +105,9 @@ void processConnectionData(std::unique_ptr<ConnectionData> data) {
         print_hex(local_data.enc_auth_token, sizeof(local_data.enc_auth_token) / sizeof(local_data.enc_auth_token[0]));
     }
 
-    //update the connection data with the retrieved user data
     data->user_data = local_data;
 
-    //try to insert the connection data into the global storage
-    ConnectionData *raw_conn_data_ptr = data.get();
+    ConnectionData *raw_conn_data_ptr = data;
     if (connection_storage.insert_connection_data(raw_conn_data_ptr) != SUCCESS) {
         std::cerr << "[ERROR] Failed to insert connection data into storage for connection id: "
                   << data->connection_id << std::endl;

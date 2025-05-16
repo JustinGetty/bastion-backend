@@ -1,50 +1,47 @@
-#ifndef CONNECTION_DATA_QUEUE_H
-#define CONNECTION_DATA_QUEUE_H
+// connection_data_queue.h
+#pragma once
 
-#include <iostream>
-#include <App.h>
-#include <mutex>
 #include <bastion_data.h>
+#include <array>
+#include <mutex>
+#include <chrono>
+#include <thread>
+#include <iostream>
 
-#define MAX_CONNECTIONS 10000
+// error codes / messages
+static constexpr int GOOD_QUEUE_INIT_ERR_CODE = 0;
+static constexpr int GOOD_ENQUEUE_ERR_CODE   = 0;
+static constexpr int FULL_QUEUE_ERR_CODE     = 1;
+static constexpr auto FULL_QUEUE_ERR  = "Queue is full\n";
+static constexpr auto EMPTY_QUEUE_ERR = "Queue is empty\n";
 
-#define SUCC_ENQUEUE "Data inserted successfully!\n"
-#define SUCC_DEQUEUE "Data dequeued successfully!\n"
+// forward-declared in your ConnThreadPool or a helpers header:
+void processConnectionData(ConnectionData* connData);
 
-#define FULL_QUEUE_ERR "ERROR: Queue is full!\n"
-#define EMPTY_QUEUE_ERR "ERROR: Queue is empty!\n"
-
-#define FULL_QUEUE_ERR_CODE -3
-#define GOOD_ENQUEUE_ERR_CODE 0
-#define BAD_QUEUE_INIT_ERR_CODE -1
-#define GOOD_QUEUE_INIT_ERR_CODE 0
-
-typedef struct
-{
-	std::array<std::unique_ptr<ConnectionData>, MAX_CONNECTIONS> connections;
-	int front;
-	int size;
-} Queue;
-
-class ConnectionQueue
-{
-private:
-	Queue connection_queue;
-	std::mutex conn_mutex;
-
+class ConnectionQueue {
 public:
 	ConnectionQueue();
-	int init_queue();
+	int  init_queue();
 	void destroy_queue();
-	bool isFull();
-	bool isEmpty();
-	int enqueue(std::unique_ptr<ConnectionData> insert_data);
+	bool isFull()  const;
+	bool isEmpty() const;
 
-	std::unique_ptr<ConnectionData> dequeue();
-	ConnectionData getFront();
+	// Enqueue/dequeue raw pointers (no ownership transfer!)
+	int             enqueue(ConnectionData* insert_data);
+	ConnectionData* dequeue();
+	ConnectionData* getFront() const;
 
+	// loop until stop_flag becomes true, pulling each pointer and processing it
 	void main_server_management(bool &stop_flag);
+
+private:
+	static constexpr int MAX_CONNECTIONS = 128;
+
+	struct {
+		int front;
+		int size;
+		std::array<ConnectionData*, MAX_CONNECTIONS> connections;
+	} connection_queue;
+
+	mutable std::mutex conn_mutex;
 };
-
-
-#endif
