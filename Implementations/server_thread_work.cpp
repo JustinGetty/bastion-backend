@@ -62,16 +62,17 @@ void processConnectionData(ConnectionData *data) {
     std::string username_temp = username;
     //TODO check if user exists for site id, if not, send signup, if yes, send signin
     bool new_user_site_relation;
+    //if bool is true then they exist and are a sign in, if false then signup
     STATUS user_exists_status = check_if_user_is_in_site(&username, &new_user_site_relation);
     if (user_exists_status != SUCCESS) {
         std::cout << "[DEBUG] FAILURE WITH STATUS: " << user_exists_status << "\n";
         return;
     }
-
     //TODO send notif by type
     if (new_user_site_relation == false) {
         //send push notif to phone
-        STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id));
+        STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id), true);
+        std::cout << "[INFO] New user site signup\n";
         if (send_notif_status != SUCCESS) {
             std::cout << "[ERROR] Failed to send push notification\n";
             return;
@@ -81,6 +82,13 @@ void processConnectionData(ConnectionData *data) {
     //TODO here
     if (new_user_site_relation == true) {
         //send signup notif
+        STATUS send_notif_status = notify_signin_request(username_temp, "site_test_one", "www.site_one.edu", std::to_string(data->connection_id), false);
+        std::cout << "[INFO] Existing user signin\n";
+        if (send_notif_status != SUCCESS) {
+            std::cout << "[ERROR] Failed to send push notification\n";
+            return;
+        }
+
     }
 
     std::cout << "[INFO] Push notification sent\n";

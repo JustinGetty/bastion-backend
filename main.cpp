@@ -284,6 +284,11 @@ struct WebSocketBehavior
 
     }
 
+
+    /* TODO switch to std::shared_pointer
+     * Plan is to switch to shared pointers, here we can update a flag in the pointer for when its freed here,
+     * then we can check on other locations whether we need to free that shared pointer
+     */
     static void close(uWS::WebSocket<false, true, ConnectionData> *ws, int code, std::string_view message)
     {
         auto *connData = ws->getUserData();

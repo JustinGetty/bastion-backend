@@ -245,16 +245,17 @@ public:
             //decode_fixed_length(token_hash_encoded, decoded_token_hash, 256);
 
             unsigned char buffer[MAX_TOKEN_LEN];
-                 size_t length = 0;
+             size_t length = 0;
 
-                 bool stat = decodeTokenToFixedBuffer("gVWTYCH2z81iIqjgKenZpVkYYNwEHCWGsNJR3T8uwqLnZOWswtvGCERvur8tJfNblDKekzzo/yexDzJalltcTfq/GKT8nQPOWVECm1wgOMhTuXi4Ajw7aS+QbYhUvZ7GSUkkUPdQRNxjfB40Zn6w7FAoXnt+8isbYMYnCJ64hBPR+kIWFp2V4r/ZWzY+sGsT1leI/HQUGZ84nhVJkIKJ25wDcxafJEkygiJhi7q1rMUS7l2+dTMJCuZH6yXO8v2k6WC8g68YSvb//nZIee4NhD28MQBBNycWbzAUJvWpPNf6K8cpqESny4Rt+TonttX2lRj8S+9ohxC9NsPbh+C5DA==", buffer, length);
-                     std::cout << "Decoded " << length << " bytes:\n";
-                     for (size_t i = 0; i < length; ++i) {
-                         printf("%02x", buffer[i]);
-                     }
-                     printf("\n");
-                unsigned char decoded_token_hash[length];
-                     memcpy(decoded_token_hash, buffer, length);
+             bool stat = decodeTokenToFixedBuffer(token_hash_encoded, buffer, length);
+
+             std::cout << "decoded " << length << " bytes:\n";
+             for (size_t i = 0; i < length; ++i) {
+                 printf("%02x", buffer[i]);
+             }
+             printf("\n");
+             unsigned char decoded_token_hash[length];
+             memcpy(decoded_token_hash, buffer, length);
 
 
             ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
@@ -276,16 +277,30 @@ public:
                 std::fprintf(stderr, "[ERROR] Asymmetric decryption of key/IV failed\n");
             }
 
-            std::cout << "Token:\n";
+            std::cout << "Token decrypted:\n";
             for (size_t i = 0; i < decrypted_token_len; ++i) {
                 printf("%02x", decrypted_token[i]);
             }
             printf("\n");
 
-            token_hash computed_hash;
+
+            token_hash computed_hash{};
 
             compute_token_hash(decrypted_token, TOKEN_SIZE, computed_hash);
 
+            std::cout << "token hash computed:\n";
+            for (size_t i = 0; i < TOKEN_SIZE; ++i) {
+                printf("%02x", computed_hash[i]);
+            }
+            printf("\n");
+
+           token_hash token_from_storage{};
+           memcpy(token_from_storage, data_from_storage->user_data.enc_auth_token, TOKEN_SIZE);
+            std::cout << "token from storage:\n";
+            for (size_t i = 0; i < TOKEN_SIZE; ++i) {
+                printf("%02x", token_from_storage[i]);
+            }
+            printf("\n");
             //TODO need to read in the actual success or reject as well!! super importanttttttttt. prob just different endpoint lol
             if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
                 printf("[INFO] Token verification successful.\n");

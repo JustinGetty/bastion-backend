@@ -588,13 +588,15 @@ private:
 
             if (target == "/signinresponse") {
                 /* TODO
-                 * Read in sign in type (secure or email), to verify accordingly
+                 * Could really pass this shit to a thread pool
                  */
 
                 /*
                  *To validate the sign in when using seed phrase encrypytion, same as before parse keys pass to valid queue, flag will handle switch
                  *Only take in key we will store the auth token with the iv to make retrieval easier.
                  * Need to add flag on mobile of user type
+                 *
+                 *
                  */
 
                 //example payload:
@@ -734,16 +736,152 @@ private:
             }
 
 
-            if (target == "/signup-response") {
-                std::cout << "Hit target signup-response\n";
+            if (target == "/signupresponse") {
+                std::cout << "Hit target signup response\n";
                 /*
                  *This is going to be the exact same fucking thing as a signin except its gonna return an email too
                  *
                  *DONT FORGET TO HASH THE EMAIL, LOG THE HASh, THEN SEND THE HASH TO THE FUCKING CLIENT
+                 * NOTES
+                 * Lets create and cache the hash in the server work thread while we wait, we can just have that ready since we-
+                 * already know it will be a signup
                  */
                 //add new fields to DB site_data
                 //TODO pick up here
-               return;
+
+                /* TODO
+                 * Could really pass this shit to a thread pool
+                 */
+
+                //example payload:
+                // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id", "user_email":""}
+                std::cout << "[INFO] Received response\n";
+                std::string received_json = req.body();
+                std::cout << received_json << "\n";
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    return;
+                }
+                if (msg_method.keys.find("recovery_method")->second == "seed") {
+                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
+                    std::string token_hash_encoded;
+                    if (temp_val != msg_method.keys.end()) {
+                        token_hash_encoded = temp_val->second;
+
+                    } else {
+                        return;
+                    }
+
+
+                    temp_val = msg_method.keys.find("connection_id");
+                    int connection_id;
+                    if (temp_val != msg_method.keys.end()) {
+                        connection_id = std::stoi(temp_val->second);
+                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
+                    } else {
+                        std::cout << "[ERROR] Connection ID not found" << std::endl;
+                        return;
+                    }
+
+                    //error handle here if theyre not found!!
+
+
+                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+                    //ID needs to be random or systematic idk
+                    bool approved_request;
+                    if (msg_method.keys.find("approved")->second == "true") {
+                       approved_request = true;
+                    } else {
+                        approved_request = false;
+                    }
+
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+
+
+                    //send back status response to mobile
+                    send_json_response(received_json, http::status::ok);
+                    return;
+                }
+
+                // double check "email" keyword being sent
+                if (msg_method.keys.find("recovery_method")->second == "email") {
+                    //not finalized!!!
+                    std::cout << "[INFO] Processing root target\n";
+                    const std::string received_json = req.body();
+
+                    MsgMethod msg_method;
+                    try {
+                        msg_method = parse_method(received_json);
+                        std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                        for (const auto &kv : msg_method.keys)
+                            std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                    } catch (const std::exception &ex) {
+                        std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                        return;
+                    }
+
+                    /*
+                     *From here keys and data gets added to thread pool queue for processing
+                     */
+
+                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
+                    std::string token_hash_encoded;
+                    if (temp_val != msg_method.keys.end()) {
+                        token_hash_encoded = temp_val->second;
+
+                    } else {
+                        return;
+                    }
+
+                    temp_val = msg_method.keys.find("sym_key_enc");
+                    std::string sym_key_enc;
+                    if (temp_val != msg_method.keys.end()) {
+                        sym_key_enc = temp_val->second;
+
+                    } else {
+                        std::cout << "[ERROR] Sym key not found" << std::endl;
+                        return;
+                    }
+
+                    temp_val = msg_method.keys.find("connection_id");
+                    int connection_id;
+                    if (temp_val != msg_method.keys.end()) {
+                        connection_id = std::stoi(temp_val->second);
+                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
+                    } else {
+                        std::cout << "[ERROR] Connection ID not found" << std::endl;
+                        return;
+                    }
+
+                    //error handle here if theyre not found!!
+
+
+                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
+                    //ID needs to be random or systematic idk
+                    bool approved_request;
+                    if (msg_method.keys.find("approved")->second == "true") {
+                        approved_request = true;
+                    } else {
+                        approved_request = false;
+                    }
+
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+
+
+                    //send back status response to mobile
+                    send_json_response(received_json, http::status::ok);
+                    return;
+
+                }
+                //handle error of no recovery method specified
+                return;
+
             }
 
             //TODO check both tables for the username not just user
