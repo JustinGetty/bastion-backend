@@ -15,7 +15,7 @@ class DBService {
     UserDAO    userDao;
 public:
     explicit DBService(Scheduler& s, sqlite3* db);
-    Future<User> getUserById(int id);
+    Future<full_user_data> getUserDataByUsername(std::string username);
 };
 
 #endif //DBSERVICE_H

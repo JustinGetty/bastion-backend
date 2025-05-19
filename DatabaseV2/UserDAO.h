@@ -5,17 +5,19 @@
 #ifndef USERDAO_H
 #define USERDAO_H
 
-#include "sqlite3.h"
-#include "user.h"
+#include <bastion_data.h>
 
-class UserDAO : public DAO<User>{
+#include "sqlite3.h"
+#include "User.h"
+#include "DAO.h"
+
+class UserDAO : public DAO<full_user_data> {
    sqlite3 *db;
-   sqlite3_stmt *stmtFindById;
+   sqlite3_stmt *stmtFindByUsername;
 public:
    explicit UserDAO(sqlite3* db);
    ~UserDAO() override;
-   User findById(int id) override;
-   void save(const User& u) override;
+   full_user_data get_user_by_uname(std::string username) override;
 };
 
 

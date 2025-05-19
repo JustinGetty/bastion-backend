@@ -18,6 +18,7 @@
 #include <regex>
 #include "Headers/validate_username.h"
 #include "main_helpers.h"
+#include "DatabaseV2/database_comm_v2.h"
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -312,6 +313,7 @@ int main()
     t.detach();
 
 
+    STATUS start_status = start_db_comm();
 
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -334,5 +336,7 @@ int main()
 
     // event loop
     app.run();
+
+    void shutdown_db_comm();
     return 0;
 }

@@ -40,6 +40,12 @@ add_library(bastion_data STATIC
         Database/database_manager.cpp
         Implementations/conn_data_storage.cpp
 
+        DatabaseV2/database_comm_v2.cpp
+        DatabaseV2/DBService.cpp
+        DatabaseV2/Scheduler.cpp
+        DatabaseV2/User.cpp
+        DatabaseV2/UserDAO.cpp
+
 )
 
 # Specify include directories for the bastion_data library.
@@ -47,6 +53,7 @@ target_include_directories(bastion_data PUBLIC
         ${PROJECT_SOURCE_DIR}/Headers
         ${PROJECT_SOURCE_DIR}/Validation
         /usr/local/include
+        ${PROJECT_SOURCE_DIR}/DatabaseV2
 )
 
 # Link external libraries with bastion_data.

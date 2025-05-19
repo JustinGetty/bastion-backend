@@ -4,7 +4,7 @@
 
 #ifndef FUTURE_H
 #define FUTURE_H
-
+#include <future>
 template<typename T>
 class Future {
     //returns type T

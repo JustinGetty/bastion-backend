@@ -7,8 +7,7 @@
 
 template<typename T>
 struct DAO {
-    virtual T findById(int) = 0;
-    virtual void save(const T&) = 0;
+    virtual T get_user_by_uname(std::string) = 0;
     virtual ~DAO() = default;
 };
 

@@ -9,6 +9,7 @@
 #include <deque>
 
 #include "IDatabaseRequest.h"
+#include <vector>
 
 
 class Scheduler {

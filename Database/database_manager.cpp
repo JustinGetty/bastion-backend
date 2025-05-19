@@ -101,7 +101,7 @@ while (true) {
 
                 case PARAM_TEXT:
                     if (sqlite3_bind_text(stmt, index, param.data.text_val, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
-                        std::cout << "[ERROR] Failed to bind blob of type PARAM_TEXT.\n";
+                        std::cout << "[ERROR] Failed to bind of type PARAM_TEXT.\n";
                         temp_status = -1;
                     }
                 break;

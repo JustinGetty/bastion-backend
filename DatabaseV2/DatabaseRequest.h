@@ -9,6 +9,8 @@
 
 #include "Future.h"
 #include "IDatabaseRequest.h"
+#include "Promise.h"
+#include <future>
 
 template<typename T>
 class DatabaseRequest : public IDatabaseRequest {
@@ -23,13 +25,13 @@ public:
     void execute() override {
         try {
             T result = exec_function();
-            promise.set_value(result);
+            promise.setValue(result);
         } catch (...) {
-            promise.set_exception(std::current_exception());
+            promise.setException(std::current_exception());
         }
     }
-    Future<T> get_future() {
-        return promise.get_future();
+    Future<T> getFuture() {
+        return promise.getFuture();
     }
 
 };
