@@ -8,14 +8,35 @@
 #include "UserDAO.h"
 #include "Future.h"
 #include "DatabaseRequest.h"
-#include "DAO.h"
+#include "DeviceDAO.h"
+#include <bastion_data.h>
+#include "IDeviceTokenStore.h"
 
 class DBService {
-    Scheduler& sched;
-    UserDAO    userDao;
 public:
-    explicit DBService(Scheduler& s, sqlite3* db);
-    Future<full_user_data> getUserDataByUsername(std::string username);
+    DBService(Scheduler& sched,
+              std::unique_ptr<IUserReader>  userReader,
+              std::unique_ptr<IUserWriter>  userWriter,
+              std::unique_ptr<IDeviceTokenStore> deviceStore);
+
+    Future<full_user_data> getUserById(int id);
+    Future<full_user_data> getUserByName(const std::string& uname);
+    Future<void> createUser(const full_user_data& u);
+    Future<void>           changeAuthToken(int userId,
+                                            const token_hash& newHash);
+
+    Future<ios_device_token> fetchDeviceToken(const std::string& uname);
+    Future<void>             storeDeviceToken(const std::string& uname,
+                                              const ios_device_token& tok);
+
+private:
+    Scheduler&                         sched;
+    std::unique_ptr<IUserReader>      rdr;
+    std::unique_ptr<IUserWriter>      wtr;
+    std::unique_ptr<IDeviceTokenStore> devStore;
+
+    template<typename T, typename Fn>
+    Future<T> asyncExec(Fn work);
 };
 
 #endif //DBSERVICE_H

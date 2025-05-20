@@ -27,12 +27,14 @@
 #include "validate_username.h"
 #include "UserRecovery.h"
 #include "EmailRecovery.h"
+#include "database_comm_v2.h"
+#include "../DatabaseV2/database_comm_v2.h"
 
 
-namespace beast = boost::beast;         // from <boost/beast.hpp>
-namespace http = beast::http;           // from <boost/beast/http.hpp>
-namespace net = boost::asio;            // from <boost/asio.hpp>
-using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
+namespace beast = boost::beast;
+namespace http = beast::http;
+namespace net = boost::asio;
+using tcp = boost::asio::ip::tcp;
 
 
 extern EmailRecovery email_recovery_obj();
@@ -506,11 +508,11 @@ private:
                 }
 
                 bastion_username username_bastion;
-                apns_token device_token_bastion;
                 strncpy(username_bastion, username.c_str(), 20);
-                memcpy(device_token_bastion, reinterpret_cast<const char*>(device_token.c_str()), APNS_TOKEN_SIZE);
 
-                STATUS sattyyy = update_device_token_ios_by_username(&username_bastion, &device_token_bastion);
+                //STATUS sattyyy = update_device_token_ios_by_username(&username_bastion, &device_token_bastion);
+                STATUS sattyyy = insert_ios_device_token_by_username_v2(&username_bastion, &device_token);
+
                 if (sattyyy != SUCCESS) {
                     std::cerr << "[ERROR] Failed to update device token.\n";
                     return;

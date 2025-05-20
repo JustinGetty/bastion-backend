@@ -36,4 +36,27 @@ public:
 
 };
 
+template<>
+class DatabaseRequest<void> : public IDatabaseRequest {
+    std::function<void()> exec_function;
+    Promise<void>         promise;
+public:
+    explicit DatabaseRequest(std::function<void()>&& fn)
+      : exec_function(std::move(fn)), promise()
+    {}
+
+    void execute() override {
+        try {
+            exec_function();
+            promise.setValue();
+        } catch (...) {
+            promise.setException(std::current_exception());
+        }
+    }
+
+    Future<void> getFuture() {
+        return promise.getFuture();
+    }
+};
+
 #endif //DATABASEREQUEST_H

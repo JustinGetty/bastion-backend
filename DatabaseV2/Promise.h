@@ -25,4 +25,19 @@ public:
 
 };
 
+template<>
+class Promise<void> {
+    std::promise<void> prom;
+public:
+    Future<void> getFuture() {
+        return Future<void>(prom.get_future());
+    }
+    void         setValue() {
+        prom.set_value();
+    }
+    void         setException(std::exception_ptr e) {
+        prom.set_exception(e);
+    }
+};
+
 #endif //PROMISE_H

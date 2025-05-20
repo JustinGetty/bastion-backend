@@ -22,4 +22,22 @@ public:
     }
 };
 
+template<>
+class Future<void> {
+    std::future<void> fut;
+public:
+    explicit Future(std::future<void> f)
+      : fut(std::move(f))
+    {}
+
+    //blocks until ready, returns nothing
+    void get() {
+        fut.get();
+    }
+
+    bool valid() const noexcept {
+        return fut.valid();
+    }
+};
+
 #endif //FUTURE_H

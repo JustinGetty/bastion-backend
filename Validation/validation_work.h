@@ -244,7 +244,7 @@ public:
             //unsigned char decoded_token_hash[256];
             //decode_fixed_length(token_hash_encoded, decoded_token_hash, 256);
 
-            unsigned char buffer[MAX_TOKEN_LEN];
+             unsigned char buffer[MAX_TOKEN_LEN];
              size_t length = 0;
 
              bool stat = decodeTokenToFixedBuffer(token_hash_encoded, buffer, length);

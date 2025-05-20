@@ -21,13 +21,13 @@ UserDAO::~UserDAO() {
 }
 
 
-full_user_data UserDAO::get_user_by_uname(std::string username) {
+full_user_data UserDAO::findByUsername(const std::string& uname) {
     sqlite3_reset(stmtFindByUsername);
     sqlite3_clear_bindings(stmtFindByUsername);
-    if (sqlite3_bind_text(stmtFindByUsername, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmtFindByUsername, 1, uname.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         std::cerr << "AHHH ERROR BINDING AHHHH\n";
     }
-    sqlite3_bind_text(stmtFindByUsername, 2, username.c_str(), -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(stmtFindByUsername, 2, uname.c_str(), -1, SQLITE_TRANSIENT);
 
     const char *expanded = sqlite3_expanded_sql(stmtFindByUsername);
     if (expanded) {
@@ -75,7 +75,22 @@ full_user_data UserDAO::get_user_by_uname(std::string username) {
     printf("[DEBUG] Data retrieved:\n");
     printf("[DEBUG] User ID: %d\n", user_data.user_id);
     printf("[DEBUG] Username: %s\n", user_data.username);
-    printf("[DEBUG] User creation time: %d\n", user_data.user_creation_time);
+    //printf("[DEBUG] User creation time: %d\n", user_data.user_creation_time);
 
     return user_data;
+}
+
+full_user_data UserDAO::findById(int id) {
+    //implement later
+    full_user_data user_data{};
+    return user_data;
+}
+
+void UserDAO::insertNewUser(const full_user_data& u) {
+    //impleement laterrr
+   return;
+}
+void UserDAO::updateAuthToken(int userId, const token_hash& newHash) {
+    //implement later
+    return;
 }
