@@ -14,10 +14,14 @@ UserDAO::UserDAO(sqlite3* _db): db(_db) {
 
     if (sqlite3_prepare_v2(db, GET_FULL_USER_DATA_BY_UNAME_QUERY, -1, &stmtFindByUsername, nullptr) != SQLITE_OK)
         throw std::runtime_error("Failed to prepare statement");
+
+    if (sqlite3_prepare_v2(db, CHECK_IF_USER_EXISTS_FOR_SITE, -1, &stmtCheckUserSiteExists, nullptr) != SQLITE_OK)
+        throw std::runtime_error("Failed to prepare statement");
 }
 
 UserDAO::~UserDAO() {
     sqlite3_finalize(stmtFindByUsername);
+    sqlite3_finalize(stmtCheckUserSiteExists);
 }
 
 
@@ -94,3 +98,21 @@ void UserDAO::updateAuthToken(int userId, const token_hash& newHash) {
     //implement later
     return;
 }
+
+bool UserDAO::getUserSiteDataExists(const std::string username) {
+    sqlite3_reset(stmtCheckUserSiteExists);
+    sqlite3_clear_bindings(stmtCheckUserSiteExists);
+
+    if (sqlite3_bind_text(stmtCheckUserSiteExists, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtCheckUserSiteExists\n";
+    }
+
+    if (sqlite3_step(stmtCheckUserSiteExists) != SQLITE_ROW) {
+        std::cout << "[INFO] User does not exist in site\n";
+        return false;
+    }
+    std::cout << "[INFO] User does exist in site\n";
+    return true;
+
+}
+

@@ -64,7 +64,8 @@ void processConnectionData(ConnectionData *data) {
     //TODO check if user exists for site id, if not, send signup, if yes, send signin
     bool new_user_site_relation;
     //if bool is true then they exist and are a sign in, if false then signup
-    STATUS user_exists_status = check_if_user_is_in_site(&username, &new_user_site_relation);
+    //STATUS user_exists_status = check_if_user_is_in_site(&username, &new_user_site_relation);
+    STATUS user_exists_status  = check_if_user_is_new_to_site(username_temp, &new_user_site_relation);
     if (user_exists_status != SUCCESS) {
         std::cout << "[DEBUG] FAILURE WITH STATUS: " << user_exists_status << "\n";
         return;

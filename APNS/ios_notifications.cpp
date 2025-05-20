@@ -125,7 +125,7 @@ STATUS notify_signin_request(
     // Build a single payload with both alert and content‑available
     nlohmann::json aps;
     nlohmann::json payload;
-    if (is_new_user) {
+    if (is_new_user == true) {
         aps = {
             { "alert", {
                 { "title", siteName + " wants you to sign up" },
@@ -145,7 +145,7 @@ STATUS notify_signin_request(
             { "siteUrl",   siteUrl },
             { "type",      "newUserAuthRequest" }
         };
-    } else {
+    } else if (is_new_user == false) {
          aps = {
             { "alert", {
                 { "title", siteName + " wants to sign you in" },

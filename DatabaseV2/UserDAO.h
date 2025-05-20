@@ -14,6 +14,7 @@
 class UserDAO : public IUserReader, public IUserWriter {
    sqlite3 *db;
    sqlite3_stmt *stmtFindByUsername;
+   sqlite3_stmt *stmtCheckUserSiteExists;
 public:
    explicit UserDAO(sqlite3* db);
    ~UserDAO() override;
@@ -23,9 +24,7 @@ public:
 
    void insertNewUser(const full_user_data& u) override;
    void updateAuthToken(int userId, const token_hash& newHash) override;
-
-   //void insertNewUser(const full_user_data& u) override;
-   //void           updateAuthToken(int userId, const token_hash& newHash) override;
+   bool getUserSiteDataExists(const std::string username) override;
 };
 
 

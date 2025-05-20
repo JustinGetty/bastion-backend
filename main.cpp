@@ -18,7 +18,7 @@
 #include <regex>
 #include "Headers/validate_username.h"
 #include "main_helpers.h"
-#include "DatabaseV2/database_comm_v2.h"
+#include "Headers/database_comm_v2.h"
 
 #define EMPTY_USERNAME "NOTSET"
 

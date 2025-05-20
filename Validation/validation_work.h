@@ -15,6 +15,8 @@
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <algorithm>
+#include "database_comm_v2.h"
+#include <openssl/sha.h>
 
 
 
@@ -99,7 +101,6 @@ inline STATUS validate_challenge_code(ConnectionData *connData) {
         check if they match
         proceed/reject
      */
-    //TODO THIS IS FUCKED BECAUSE ItS BLOCKING OTHER VALIDATION
     std::string wait_msg = R"({"action": "og_challenge_code_req"})";
     connData->ws->send(wait_msg, uWS::OpCode::TEXT);
     connData->user_data.being_processed = true;
@@ -108,7 +109,6 @@ inline STATUS validate_challenge_code(ConnectionData *connData) {
     while (connData->user_data.being_processed == true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-    //TODO THIS IS FUCKED
 
      if (sha256_challenge(connData->original_challenge_code) != connData->base_64_sha_256_enc_challenge_hash) {
         std::cout << "[INFO] Challenge codes do not match.\n";
@@ -116,6 +116,34 @@ inline STATUS validate_challenge_code(ConnectionData *connData) {
     }
     return SUCCESS;
 }
+inline std::string strip_domain(std::string email) {
+    int domain_index = email.find('@');
+    return email.substr(0, domain_index);
+}
+
+inline STATUS create_email_hash_and_encode_it(std::string email_with_domain, std::string* hash_out) {
+    std::string email_no_domain = strip_domain(email_with_domain);
+    std::string local = strip_domain(email_with_domain);
+
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    if (!SHA256(reinterpret_cast<const unsigned char*>(local.data()),
+                local.size(),
+                digest))
+    {
+        return CRYPTO_FAILURE;
+    }
+
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+    for (size_t i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        oss << std::setw(2) << static_cast<int>(digest[i]);
+    }
+    *hash_out = oss.str();
+
+    return SUCCESS;
+}
+
+
 
 class MyValidationWork : public validation_work {
 public:
@@ -127,7 +155,9 @@ public:
         //make references
         const std::string token_hash_encoded,
         const std::string sym_key_iv_encoded,
-        bool is_approved)
+        bool is_approved,
+        bool is_signup,
+        const std::string user_email)
         :
           is_secure_mode_(is_secure_mode),
           id_(id),
@@ -135,7 +165,9 @@ public:
           connection_id_(connection_id),
           token_hash_encoded(token_hash_encoded),
           sym_key_iv_encoded(sym_key_iv_encoded),
-          is_approved_(is_approved)
+          is_approved_(is_approved),
+          is_signup_(is_signup),
+          email_(user_email)
     {
     }
 
@@ -313,12 +345,28 @@ public:
                     data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
                     return;
                 }
+
+
+
+
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
                 //TODO send back this -> data_from_storage->transaction_id!! and og_challenge_code_req
                 std::string success_msg;
                 if (is_approved_ == true) {
                     success_msg = R"({"status": "approved"})";
+                    if (is_signup_) {
+
+                        //hash email
+                        //username, email, hash, id
+                        std::string email_hash;;
+                        STATUS email_hash_status = create_email_hash_and_encode_it(email_, &email_hash);
+                        if (email_hash_status != SUCCESS) {
+                            //TODO handle error
+                        } else {
+                            STATUS email_insert_status = insert_user_email_by_username(std::string(data_from_storage->username), email_, email_hash, data_from_storage->spa_id);
+                        }
+                    }
                 } else if (is_approved_ == false) {
                     success_msg = R"({"status": "rejected"})";
                 }
@@ -349,5 +397,7 @@ private:
     int connection_id_;
     bool is_secure_mode_;
     bool is_approved_;
+    bool is_signup_;
+    const std::string email_;
 };
 #endif // MY_VALIDATION_WORK_H

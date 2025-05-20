@@ -45,6 +45,7 @@ add_library(bastion_data STATIC
         DatabaseV2/Scheduler.cpp
         DatabaseV2/UserDAO.cpp
         DatabaseV2/DeviceDAO.cpp
+        DatabaseV2/EmailDAO.cpp
 
 )
 

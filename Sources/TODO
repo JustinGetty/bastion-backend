@@ -28,3 +28,5 @@
     5. copy stack mem over to conndata
 23. That previous method is beyond stupid, going to use a shared pointer ig. Fuck
     - add flag of when to abort, then return to make shared_ptr go out of scope
+
+24. Make sure new device token is sent every app launch!!!

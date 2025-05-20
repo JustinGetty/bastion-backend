@@ -28,7 +28,7 @@
 #include "UserRecovery.h"
 #include "EmailRecovery.h"
 #include "database_comm_v2.h"
-#include "../DatabaseV2/database_comm_v2.h"
+#include "../Headers/database_comm_v2.h"
 
 
 namespace beast = boost::beast;
@@ -520,73 +520,6 @@ private:
                 std::cout << "[INFO] Device token updated.\n";
             }
 
-            if (target == "/reg_signin") {
-                std::cout << "[INFO] Processing root target\n";
-                const std::string received_json = req.body();
-
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    return;
-                }
-
-                /*
-                 *From here keys and data gets added to thread pool queue for processing
-                 */
-
-                auto temp_val = msg_method.keys.find("client_auth_token_enc");
-                std::string token_hash_encoded;
-                if (temp_val != msg_method.keys.end()) {
-                    token_hash_encoded = temp_val->second;
-
-                } else {
-                    return;
-                }
-
-                temp_val = msg_method.keys.find("sym_key_enc");
-                std::string sym_key_enc;
-                if (temp_val != msg_method.keys.end()) {
-                    sym_key_enc = temp_val->second;
-
-                } else {
-                    std::cout << "[ERROR] Sym key not found" << std::endl;
-                    return;
-                }
-
-                temp_val = msg_method.keys.find("connection_id");
-                int connection_id;
-                if (temp_val != msg_method.keys.end()) {
-                    connection_id = std::stoi(temp_val->second);
-                    std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-                } else {
-                    std::cout << "[ERROR] Connection ID not found" << std::endl;
-                    return;
-                }
-
-                //error handle here if theyre not found!!
-
-
-                //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-                //ID needs to be random or systematic idk
-                //TODO add type here so SEC can be validated without major rewrite
-                bool approved_request;
-                if (msg_method.keys.find("approved")->second == "true") {
-                    approved_request = true;
-                } else {
-                    approved_request = false;
-                }
-                g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request));
-
-
-                //send back status response to mobile
-                send_json_response(received_json, http::status::ok);
-
-            }
 
             if (target == "/signinresponse") {
                 /* TODO
@@ -650,7 +583,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
 
 
                     //send back status response to mobile
@@ -720,7 +653,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
 
 
                     //send back status response to mobile
@@ -770,6 +703,7 @@ private:
                     std::cerr << "[ERROR] Error: " << ex.what() << "\n";
                     return;
                 }
+                std::string user_email = msg_method.keys.find("email")->second;
                 if (msg_method.keys.find("recovery_method")->second == "seed") {
                     auto temp_val = msg_method.keys.find("client_auth_token_enc");
                     std::string token_hash_encoded;
@@ -803,7 +737,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, true, user_email));
 
 
                     //send back status response to mobile
@@ -873,7 +807,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request));
+                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, true, user_email));
 
 
                     //send back status response to mobile
