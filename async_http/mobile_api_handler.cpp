@@ -38,7 +38,8 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
 
-extern EmailRecovery email_recovery_obj();
+//TODO make this an object with more comprehensive functions
+std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
 
 beast::string_view mime_type(beast::string_view path)
 {
@@ -698,6 +699,9 @@ private:
 
                 auto email_sender = new EmailSys(&username, &email);
                 email_sender->send_email_for_verification();
+                std::string recovery_code = email_sender->get_verification_code();
+                //need to get back correct code...
+                user_recovery_codes_storage[username] = recovery_code;
                 return;
 
             }
@@ -870,13 +874,7 @@ private:
                     return;
                 }
 
-                std::string username = msg_method.keys["username"].c_str();
-
-                std::cout << "[DEBUG] Raw username (hex): \n[DATA] ";
-                for (unsigned char c : username) {
-                    printf("%02x ", c);
-                }
-                std::cout << "\n";
+                std::string username = msg_method.keys["username"];
 
                 bastion_username user_username{};
                 bastion_username *user_username_ptr = &user_username;
@@ -914,8 +912,47 @@ private:
                 std::string resp = R"({"status": "valid"})";
                 send_json_response(resp, http::status::ok);
                 return;
-        }
-            std::cerr << "[ERROR] Target likely not found.\n";
+            }
+
+            if (target == "/verify_code") {
+
+                std::string received_json = req.body();
+                std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
+
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                std::string username = msg_method.keys["username"];
+                std::string inbound_recover_code = msg_method.keys["code"];
+                std::cout << "[INFO] Received verification code: " << inbound_recover_code << "\n";
+
+                std::string recovery_code = user_recovery_codes_storage[username];
+                std::cout << "[INFO] Verification code from storage: " << recovery_code << "\n";
+
+                if (recovery_code == inbound_recover_code) {
+                    std::cout << "[INFO] Verified recovery code\n";
+                    std::string resp = R"({"verified": true})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                std::cout << "[INFO] Recovery codes do not match\n";
+                std::string resp = R"({"verified": false, "error": "Invalid verification code"})";
+                send_json_response(resp, http::status::ok);
+                return;
+            }
+
+            std::cerr << "[ERROR] Target likely not found (or endpoint missing a return statement).\n";
 
     }
 

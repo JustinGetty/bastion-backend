@@ -14,6 +14,7 @@ public:
     STATUS send_email_for_verification();
     bool get_verification_status();
     STATUS validate_verification_codes(std::string rec_verif_code);
+    std::string get_verification_code();
 
 
 private:
@@ -21,6 +22,7 @@ private:
     std::string user_email;
     bool is_verified;
     std::string verification_code;
+    std::string generate_verification_code();
 };
 
 

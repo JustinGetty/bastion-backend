@@ -13,6 +13,18 @@
 #include <aws/sesv2/model/EmailContent.h>
 #include <aws/sesv2/model/Body.h>
 #include <aws/sesv2/model/Content.h>
+#include <cstdlib>
+
+std::string EmailSys::generate_verification_code() {
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    int code = std::rand() % 900000 + 100000;
+    std::string str_code = std::to_string(code);
+    std::cout << "[INFO] Verification code generated: " << str_code << "\n";
+
+    verification_code = str_code;
+
+    return str_code;
+}
 
 EmailSys::EmailSys(const std::string* username, const std::string *email) : username(*username), user_email(*email){
     is_verified = false;
@@ -30,8 +42,11 @@ STATUS EmailSys::send_email_for_verification() {
 
     //body text
     Aws::SESV2::Model::Content textBody;
+
+    std::string verification_code = generate_verification_code();
+
     std::ostringstream body_text;
-    body_text << "This is an email from: " << username << "enjoy!\n";
+    body_text << "This is an email to verify new user: " << username << ".\nYour Verification code is: " << verification_code;
     textBody.SetData(body_text.str());
     textBody.SetCharset("UTF-8");
 
@@ -64,12 +79,20 @@ STATUS EmailSys::send_email_for_verification() {
     }
 
 }
-STATUS validate_verification_codes(std::string rec_verif_code) {
+STATUS EmailSys::validate_verification_codes(const std::string rec_verif_code) {
     //create helper, compare codes, return, etc.
-
-    return SUCCESS;
+    if (!rec_verif_code.empty() && rec_verif_code == verification_code) {
+        is_verified = true;
+        return SUCCESS;
+    }
+    is_verified = false;
+    return CODE_VERIFICATION_FAILURE;
 }
 
 bool EmailSys::get_verification_status() {
     return is_verified;
+}
+
+std::string EmailSys::get_verification_code() {
+    return verification_code;
 }
