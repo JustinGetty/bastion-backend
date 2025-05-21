@@ -29,6 +29,7 @@
 #include "EmailRecovery.h"
 #include "database_comm_v2.h"
 #include "../Headers/database_comm_v2.h"
+#include "EmailSys.h"
 
 
 namespace beast = boost::beast;
@@ -274,7 +275,6 @@ private:
                     }
                 }
             }
-
 
             //FIX TODO
             if (username.empty()) {
@@ -668,6 +668,38 @@ private:
             if (target == "/get_recovery_code") {
                 //"get" just means send to user email, this should be sent with username, lookup email
                 //get code, add to map, wait send to email
+
+                //possible payload: {"request_id":"69", "username": "test121", "email": "test@gmail.com"}
+                std::cout << "[INFO] Processing email verification\n";
+                const std::string received_json = req.body();
+                std::cout << "[INFO] JSON received for email verification: " << received_json << "\n";
+
+                MsgMethod msg_method;
+                std::string username;
+                std::string email;
+                try {
+                    msg_method = parse_method(received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    return;
+                }
+
+                if (msg_method.keys.find("username") != msg_method.keys.end() && msg_method.keys.find("email") != msg_method.keys.end()) {
+                    username = msg_method.keys.find("username")->second;
+                    email = msg_method.keys.find("email")->second;
+                    std::cout << "[DEBUG] Username: " << username << " User Email: " << email << "\n";
+                } else {
+                    std::cerr << "[ERROR] Verificatioj message contains no email and/or username\n";
+                    return;
+                }
+
+                auto email_sender = new EmailSys(&username, &email);
+                email_sender->send_email_for_verification();
+                return;
+
             }
 
 
@@ -881,12 +913,11 @@ private:
                 std::cout << "[INFO] Username is valid.\n";
                 std::string resp = R"({"status": "valid"})";
                 send_json_response(resp, http::status::ok);
-
-
-
+                return;
         }
-    }
+            std::cerr << "[ERROR] Target likely not found.\n";
 
+    }
 
         else
         {

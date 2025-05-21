@@ -30,3 +30,5 @@
     - add flag of when to abort, then return to make shared_ptr go out of scope
 
 24. Make sure new device token is sent every app launch!!!
+25. Build logger output namespace
+26. Side note, need to make demo approval cdn window for development

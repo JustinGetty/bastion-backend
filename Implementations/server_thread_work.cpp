@@ -61,6 +61,8 @@ void processConnectionData(ConnectionData *data) {
 
 
     std::string username_temp = username;
+
+
     //TODO check if user exists for site id, if not, send signup, if yes, send signin
     bool new_user_site_relation;
     //if bool is true then they exist and are a sign in, if false then signup

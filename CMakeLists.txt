@@ -7,6 +7,9 @@ find_package(ZLIB REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(CURL    REQUIRED)
 
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib64/cmake/AWSSDK")
+find_package(AWSSDK REQUIRED COMPONENTS sesv2 lambda)
+
 find_path(CRYPTOPP_INCLUDE_DIR
         NAMES cryptopp/cryptlib.h
         PATHS /usr/include /usr/local/include
@@ -46,6 +49,9 @@ add_library(bastion_data STATIC
         DatabaseV2/UserDAO.cpp
         DatabaseV2/DeviceDAO.cpp
         DatabaseV2/EmailDAO.cpp
+
+        AWS_SES_LAMBDA/AWS_manager.cpp
+        AWS_SES_LAMBDA/EmailSys.cpp
 
 )
 
@@ -115,4 +121,5 @@ target_include_directories(bastion_auth PRIVATE
 target_link_libraries(bastion_auth PRIVATE
         bastion_data
         "/infinite/Projects/NoPass/SourceFiles/uWebSockets/uSockets/uSockets.a"
+        ${AWSSDK_LINK_LIBRARIES}
 )
