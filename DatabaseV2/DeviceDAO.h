@@ -13,7 +13,7 @@ class DeviceDAO : public IDeviceTokenStore {
    sqlite3 *db;
    sqlite3_stmt *stmtInsertApnsByUsername;
 public:
-   explicit DeviceDAO(sqlite3* db);
+   explicit DeviceDAO(sqlite3* db_);
    ~DeviceDAO() override;
 
    void insertOrUpdateToken(const std::string& uname, const ios_device_token& token) override;

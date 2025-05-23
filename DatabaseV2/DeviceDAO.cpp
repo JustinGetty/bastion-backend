@@ -4,7 +4,7 @@
 
 #include "DeviceDAO.h"
 
-DeviceDAO::DeviceDAO(sqlite3 *db) : db(db)
+DeviceDAO::DeviceDAO(sqlite3 *db_) : db(db_)
 {
     if (sqlite3_prepare_v2(db, UPDATE_DEVICE_TOKEN_IOS, -1, &stmtInsertApnsByUsername, nullptr) != SQLITE_OK)
         throw std::runtime_error("Failed to prepare statement");
@@ -18,12 +18,27 @@ void DeviceDAO::insertOrUpdateToken(const std::string& uname, const ios_device_t
     sqlite3_reset(stmtInsertApnsByUsername);
     sqlite3_clear_bindings(stmtInsertApnsByUsername);
 
+    std::cout << "[INFO] Binding Username: " << uname << "\n";
+
     if (sqlite3_bind_text(stmtInsertApnsByUsername, 1, uname.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         std::cerr << "[ERROR] Failed to bind text for username.\n";
     }
 
-    if (sqlite3_bind_text(stmtInsertApnsByUsername, 2, token.c_str(), APNS_TOKEN_SIZE, SQLITE_TRANSIENT) != SQLITE_OK) {
+    std::cout << "[INFO] Binding Device Token: " << token << "\n";
+
+    if (sqlite3_bind_text(stmtInsertApnsByUsername, 2, token.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         std::cout << "[ERROR] Failed to bind text for APNS TOKEN.\n";
+    }
+
+    const char *expanded = sqlite3_expanded_sql(stmtInsertApnsByUsername);
+    if (expanded) {
+        std::cout
+          << "[DEBUG] Fully bound SQL:\n"
+          << expanded
+          << "\n";
+        sqlite3_free((void*)expanded);
+    } else {
+        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
     }
 
     int step_result = sqlite3_step(stmtInsertApnsByUsername);
@@ -32,6 +47,9 @@ void DeviceDAO::insertOrUpdateToken(const std::string& uname, const ios_device_t
     }
     else {
         std::cerr << "[ERROR] Failed to add APNS TOKEN for device.\n";
+        std::cerr << "[ERROR] SQLite error [" << step_result << "]: "
+              << sqlite3_errmsg(sqlite3_db_handle(stmtInsertApnsByUsername))
+              << "\n";
     }
 
 }

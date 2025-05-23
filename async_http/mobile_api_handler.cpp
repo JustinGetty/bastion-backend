@@ -283,11 +283,9 @@ private:
                 send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
                 return;
             }
-            bastion_username temp_username{};
-            memcpy(temp_username, username.c_str(), username.length());
 
             new_user_outbound_data outbound_data{};
-            STATUS create_new_user_stat = create_new_user_unsec(temp_username, &outbound_data);
+            STATUS create_new_user_stat = create_new_user_unsec(&username, &outbound_data);
             if (create_new_user_stat != SUCCESS) {
                 std::cerr << "[ERROR] Failed to create new user.\n";
                 std::string resp = R"({"status": "server_failure"})";
@@ -383,7 +381,9 @@ private:
                 return;
             }
             bastion_username temp_username{};
+            //TODO fucked!
             memcpy(temp_username, username.c_str(), username.length());
+
 
             recovered_sec_user_outbound_data outbound_data{};
             STATUS recover_user_stat = recover_user_by_seed_phrase(temp_username, seed, &outbound_data);
@@ -515,6 +515,7 @@ private:
                 STATUS sattyyy = insert_ios_device_token_by_username_v2(&username_bastion, &device_token);
 
                 if (sattyyy != SUCCESS) {
+                    //TODO this will always return success
                     std::cerr << "[ERROR] Failed to update device token.\n";
                     return;
                 }
@@ -989,6 +990,32 @@ private:
                 accept();
             });
     }
+    //TODO replace old one with this one eventially
+    /*
+    void send_json_response(
+        boost::asio::ip::tcp::socket& socket,
+        http::request<http::string_body> const& req,
+        std::string const& body,
+        http::status status = http::status::ok)
+        {
+            // 1) Build the response
+            http::response<http::string_body> res{status, req.version()};
+            res.set(http::field::server, "bastion_auth");
+            res.set(http::field::content_type, "application/json");
+            res.keep_alive(req.keep_alive());
+            res.body() = body;
+
+            // 2) This sets the Content-Length header for you
+            res.prepare_payload();
+
+            // 3) And this writes it all in one call
+            boost::system::error_code ec;
+            http::write(socket, res, ec);
+            if(ec)
+                std::cerr << "[ERROR] HTTP write: " << ec.message() << "\n";
+        }
+        */
+
 
     void send_json_response(std::string const& body, http::status status = http::status::ok)
     {

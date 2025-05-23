@@ -12,7 +12,7 @@
 #include <sstream>
 #include "SeedCipher.h"
 
-STATUS create_new_user_unsec(bastion_username username, new_user_outbound_data* user_data) {
+STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user_data) {
     //Create auth token ----------------------------------------------------------------
     token auth_token{};
     if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
@@ -67,7 +67,7 @@ STATUS create_new_user_unsec(bastion_username username, new_user_outbound_data* 
     //TODO DO NOT GO TO PROD WITH THIS PLEASEEEEEEEE
     username[MAX_USERNAME_LENGTH - 1] = '\0';
     new_user_struct new_user_data{};
-    memcpy(new_user_data.new_username, username, sizeof(username));
+    memcpy(new_user_data.new_username, username->c_str(), username->length());
     memcpy(new_user_data.new_token_hash, computed_hash, HASH_SIZE);
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;

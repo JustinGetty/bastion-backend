@@ -481,6 +481,19 @@ while (true) {
             }
         }
         if (inbound_data->type == 'p') {
+
+
+            const char *expanded = sqlite3_expanded_sql(stmt);
+            if (expanded) {
+                std::cout
+                  << "[DEBUG] Fully bound SQL:\n"
+                  << expanded
+                  << "\n";
+                sqlite3_free((void*)expanded);
+            } else {
+                std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
+            }
+
             int step_result = sqlite3_step(stmt);
             STATUS update_status;
 
