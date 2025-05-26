@@ -996,7 +996,7 @@ private:
                 std::string username = msg_method.keys["username"];
 
                 std::vector<site_data_for_mobile> site_data;
-                STATUS get_site_data_status = get_site_data_for_mobile(username, &site_data);
+                STATUS get_site_data_status = get_site_data_for_mobile(&username, &site_data);
                 if (get_site_data_status != SUCCESS) {
                     std::string resp = R"({"status":"error"})";
                     send_json_response(resp, http::status::ok);
@@ -1006,9 +1006,8 @@ private:
                 resp["status"]    = "valid";
                 resp["site_data"] = site_data;
 
-                //TODO impliment for testing, override nlohmann::from_json
-                //std::cout << "Sending site data: \n";
-                //std::cout << resp.dump(2) << "\n";
+                std::cout << "Sending site data: \n";
+                std::cout << resp.dump(2) << "\n";
                 send_json_response(resp, http::status::ok);
             }
 
