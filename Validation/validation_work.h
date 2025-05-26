@@ -253,12 +253,12 @@ public:
             //TODO need to read in the actual success or reject as well
             if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
                 printf("[INFO] Token verification successful.\n");
-                /*
+
                 STATUS challenge_verification_status = validate_challenge_code(data_from_storage);
-                //NEVER ACTUALLY HITTING THISAHH
                 if (challenge_verification_status != SUCCESS) {
                     std::cout << "[INFO] Challenge codes do not match.\n";
                     std::string failure_msg = R"({"status": "rejected"})";
+                    STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
                     data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
                     return;
                 }
@@ -266,18 +266,36 @@ public:
 
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-                std::string success_msg = R"({"status": "approved"})";
+                //TODO send back this -> data_from_storage->transaction_id!! and og_challenge_code_req
+                std::string success_msg;
+                if (is_approved_ == true) {
+                    success_msg = R"({"status": "approved"})";
+                    if (is_signup_) {
+
+                        //hash email
+                        //username, email, hash, id
+                        std::string email_hash;;
+                        STATUS email_hash_status = create_email_hash_and_encode_it(email_, &email_hash);
+                        if (email_hash_status != SUCCESS) {
+                            //TODO handle error
+                        } else {
+                            STATUS email_insert_status = insert_user_email_by_username(std::string(data_from_storage->username), email_, email_hash, data_from_storage->spa_id);
+                        }
+                    }
+                } else if (is_approved_ == false) {
+                    success_msg = R"({"status": "rejected"})";
+                }
+                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, is_approved_);
                 ws->send(success_msg, uWS::OpCode::TEXT);
                 return;
-                */
+
             } else {
                 printf("[INFO] Token verification failed. SignIn rejected.\n");
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
+                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
                 std::string failure_msg = R"({"status": "rejected"})";
                 ws->send(failure_msg, uWS::OpCode::TEXT);
             }
-
-
         }
 
 
