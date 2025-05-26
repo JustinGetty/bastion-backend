@@ -87,6 +87,15 @@ Future<bool> DBService::checkUserSite(const std::string& uname) {
     );
 }
 
+Future<std::vector<site_data_for_mobile>> DBService::getSiteDataForMobile(const std::string& uname) {
+    return asyncExec<std::vector<site_data_for_mobile>>(
+        [this, uname]() {
+            //user reader get
+            return rdr->getSiteDataForMobileUser(uname);
+        }
+    );
+}
+
 
 
 //template to handle void
@@ -100,8 +109,9 @@ Future<T> DBService::asyncExec(Fn work) {
 }
 
 //explicit instantiations for the types we use:
-template Future<full_user_data>    DBService::asyncExec<full_user_data>(std::function<full_user_data()>);
-template Future<void>             DBService::asyncExec<void>(std::function<void()>);
-template Future<ios_device_token> DBService::asyncExec<ios_device_token>(std::function<ios_device_token()>);
-template Future<bool> DBService::asyncExec<bool>(std::function<bool()>);
+template Future<full_user_data>       DBService::asyncExec<full_user_data>(std::function<full_user_data()>);
+template Future<void>                 DBService::asyncExec<void>(std::function<void()>);
+template Future<ios_device_token>     DBService::asyncExec<ios_device_token>(std::function<ios_device_token()>);
+template Future<bool>                 DBService::asyncExec<bool>(std::function<bool()>);
+template Future<std::vector<site_data_for_mobile>> DBService::asyncExec<std::vector<site_data_for_mobile>>(std::function<std::vector<site_data_for_mobile>()>);
 

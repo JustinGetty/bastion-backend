@@ -28,9 +28,26 @@
 #include "UserRecovery.h"
 #include "EmailRecovery.h"
 #include "database_comm_v2.h"
-#include "../Headers/database_comm_v2.h"
 #include "EmailSys.h"
 
+namespace nlohmann {
+    inline void to_json(json& j, site_data_for_mobile const& data) {
+        std::string allow_forwarding = "true";
+        if (data.allow_forwarding == 0) {
+            allow_forwarding = "false";
+        }
+
+        j = nlohmann::json {
+                    {"site_name", data.site_name},
+                    {"site_domain", data.site_domain},
+                    {"user_email_raw", data.user_email_raw},
+                       {"allow_forwarding", allow_forwarding},
+                    {"last_used_timestamp", data.last_used_timestamp},
+                    {"user_since_timestamp", data.user_since_timestamp}
+        };
+    }
+
+}
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -175,6 +192,9 @@ private:
         }
         return "";
     }
+
+
+
 
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
@@ -457,6 +477,7 @@ private:
         }
 
 
+
     } //end get requests
 
 
@@ -625,7 +646,7 @@ private:
                         return;
                     }
 
-                    temp_val = msg_method.keys.find("sym_key_enc");
+                    temp_val = msg_method.keys.find("symmetric_key_enc");
                     std::string sym_key_enc;
                     if (temp_val != msg_method.keys.end()) {
                         sym_key_enc = temp_val->second;
@@ -657,7 +678,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
+                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request, false, "NO_EMAIL"));
 
 
                     //send back status response to mobile
@@ -953,6 +974,42 @@ private:
                 std::string resp = R"({"verified": false, "error": "Invalid verification code"})";
                 send_json_response(resp, http::status::ok);
                 return;
+            }
+
+            if (target == "/get_site_data") {
+                const std::string* received_json = &req.body();
+                std::cout << "[DEBUG] Received JSON: " << *received_json << "\n";
+
+                MsgMethod msg_method;
+                try {
+                    msg_method = parse_method(*received_json);
+                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
+                    for (const auto &kv : msg_method.keys)
+                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
+                } catch (const std::exception &ex) {
+                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+
+                std::string username = msg_method.keys["username"];
+
+                std::vector<site_data_for_mobile> site_data;
+                STATUS get_site_data_status = get_site_data_for_mobile(username, &site_data);
+                if (get_site_data_status != SUCCESS) {
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+               }
+                nlohmann::json resp;
+                resp["status"]    = "valid";
+                resp["site_data"] = site_data;
+
+                //TODO impliment for testing, override nlohmann::from_json
+                //std::cout << "Sending site data: \n";
+                //std::cout << resp.dump(2) << "\n";
+                send_json_response(resp, http::status::ok);
             }
 
             std::cerr << "[ERROR] Target likely not found (or endpoint missing a return statement).\n";

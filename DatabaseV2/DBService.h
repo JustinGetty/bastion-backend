@@ -33,6 +33,7 @@ public:
                                               const ios_device_token& tok);
     Future<void> storeUserEmail(const std::string& uname, const std::string& email, const std::string& emailHash, const std::string& client_spa_id);
     Future<bool> checkUserSite(const std::string& uname);
+    Future <std::vector<site_data_for_mobile>> getSiteDataForMobile(const std::string& uname);
 
 private:
     Scheduler&                         sched;

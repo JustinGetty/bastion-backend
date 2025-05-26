@@ -17,6 +17,10 @@ UserDAO::UserDAO(sqlite3* _db): db(_db) {
 
     if (sqlite3_prepare_v2(db, CHECK_IF_USER_EXISTS_FOR_SITE, -1, &stmtCheckUserSiteExists, nullptr) != SQLITE_OK)
         throw std::runtime_error("Failed to prepare statement");
+
+    if (sqlite3_prepare_v2(db, GET_SITE_DATA_FOR_MOBILE, -1, &stmtGetSiteData, nullptr) != SQLITE_OK)
+        throw std::runtime_error("Failed to prepare statement");
+
 }
 
 UserDAO::~UserDAO() {
@@ -115,4 +119,33 @@ bool UserDAO::getUserSiteDataExists(const std::string username) {
     return true;
 
 }
+
+std::vector<site_data_for_mobile> UserDAO::getSiteDataForMobileUser(std::string username) {
+    sqlite3_reset(stmtGetSiteData);
+    sqlite3_clear_bindings(stmtGetSiteData);
+
+    if (sqlite3_bind_text(stmtGetSiteData, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtGetSiteData\n";
+    }
+
+    std::vector<site_data_for_mobile> outbound_data_local;
+    while (sqlite3_step(stmtGetSiteData) == SQLITE_ROW) {
+
+        const unsigned char* site_name_raw = sqlite3_column_text(stmtGetSiteData, 1);
+        const unsigned char* site_domain_raw = sqlite3_column_text(stmtGetSiteData, 2);
+        const unsigned char* user_email_raw = sqlite3_column_text(stmtGetSiteData, 3);
+
+        outbound_data_local.emplace_back(
+            site_name_raw ? reinterpret_cast<const char*>(site_name_raw) : std::string(),
+            site_domain_raw ? reinterpret_cast<const char*>(site_domain_raw) : std::string(),
+            user_email_raw ? reinterpret_cast<const char*>(user_email_raw) : std::string(),
+            sqlite3_column_int(stmtGetSiteData, 4),
+            sqlite3_column_int64(stmtGetSiteData, 5),
+            sqlite3_column_int64(stmtGetSiteData, 6)
+            );
+    }
+
+    return outbound_data_local;
+}
+
 

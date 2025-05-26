@@ -21,17 +21,17 @@ STATUS start_db_comm() {
         return UNKNOWN_FAILURE;
     }
 
-    // 3) start the thread pool
+    //start the thread pool
     g_sched.start(10);
 
-    // 4) construct the one DBService
-    //    note: DBService has no default ctor, so we use new
+    //construct the one DBService
+    //    note: DBService has no default ctor, so use new
     auto userReader = std::make_unique<UserDAO>(g_db);
     auto userWriter = std::make_unique<UserDAO>(g_db);
     auto deviceStore = std::make_unique<DeviceDAO>(g_db);
     auto emailStore = std::make_unique<EmailDAO>(g_db);
 
-    // 4) hand them (by move) into your one DBService
+    //move into DBService
     g_dbService = new DBService(
         g_sched,
         std::move(userReader),
@@ -78,4 +78,8 @@ STATUS check_if_user_is_new_to_site(const std::string username, bool *out) {
     *out = future_.get();
     return SUCCESS;
 }
-
+STATUS get_site_data_for_mobile(const std::string* username, std::vector<site_data_for_mobile>* site_data_out) {
+    auto future_ = g_dbService->getSiteDataForMobile(*username);
+    *site_data_out = future_.get();
+    return SUCCESS;
+}

@@ -19,5 +19,6 @@ STATUS get_user_by_username_v2(bastion_username *uname, full_user_data *user_dat
 STATUS insert_ios_device_token_by_username_v2(bastion_username *uname, ios_device_token *device_token);
 STATUS insert_user_email_by_username(std::string uname, std::string email, std::string email_hash, std::string client_spa_id);
 STATUS check_if_user_is_new_to_site(const std::string username, bool* out);
+STATUS get_site_data_for_mobile(const std::string username, std::vector<site_data_for_mobile>* site_data_out);
 
 #endif //DATABASE_COMM_V2_H
