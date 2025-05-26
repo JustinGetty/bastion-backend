@@ -669,6 +669,7 @@ private:
                 return;
             }
 
+           //TODO lets refactor to send back json response that code was sent successfully
             if (target == "/get_recovery_code") {
                 //"get" just means send to user email, this should be sent with username, lookup email
                 //get code, add to map, wait send to email
@@ -688,6 +689,8 @@ private:
                         std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
                 } catch (const std::exception &ex) {
                     std::cerr << "[ERROR] Error: " << ex.what() << "\n";
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
                     return;
                 }
 
@@ -697,14 +700,20 @@ private:
                     std::cout << "[DEBUG] Username: " << username << " User Email: " << email << "\n";
                 } else {
                     std::cerr << "[ERROR] Verificatioj message contains no email and/or username\n";
+
+                    std::string resp = R"({"status":"error", "message": "Email or Username missing"})";
+                    send_json_response(resp, http::status::ok);
                     return;
                 }
 
                 auto email_sender = new EmailSys(&username, &email);
+                //TODO make sure this sends, if not send {"status":"error", "message": "Failed to send email"}
                 email_sender->send_email_for_verification();
                 std::string recovery_code = email_sender->get_verification_code();
-                //need to get back correct code...
                 user_recovery_codes_storage[username] = recovery_code;
+
+                std::string resp = R"({"status":"valid"})";
+                send_json_response(resp, http::status::ok);
                 return;
 
             }
