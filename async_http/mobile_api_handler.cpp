@@ -41,6 +41,8 @@ using tcp = boost::asio::ip::tcp;
 //TODO make this an object with more comprehensive functions
 std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
 
+//TODO break these endpoints into smaller functions, just pass the json into a helper
+
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -725,7 +727,7 @@ private:
                  * Could really pass this shit to a thread pool
                  */
 
-                //example payload:
+                //example payload, need sym key!!:
                 // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id", "user_email":""}
                 std::cout << "[INFO] Received response\n";
                 std::string received_json = req.body();
@@ -741,6 +743,7 @@ private:
                     return;
                 }
                 std::string user_email = msg_method.keys.find("email")->second;
+
                 if (msg_method.keys.find("recovery_method")->second == "seed") {
                     auto temp_val = msg_method.keys.find("client_auth_token_enc");
                     std::string token_hash_encoded;
@@ -785,19 +788,9 @@ private:
                 // double check "email" keyword being sent
                 if (msg_method.keys.find("recovery_method")->second == "email") {
                     //not finalized!!!
-                    std::cout << "[INFO] Processing root target\n";
+                    std::cout << "[INFO] Processing signup with email recovery method\n";
                     const std::string received_json = req.body();
 
-                    MsgMethod msg_method;
-                    try {
-                        msg_method = parse_method(received_json);
-                        std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                        for (const auto &kv : msg_method.keys)
-                            std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                    } catch (const std::exception &ex) {
-                        std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                        return;
-                    }
 
                     /*
                      *From here keys and data gets added to thread pool queue for processing
@@ -812,7 +805,7 @@ private:
                         return;
                     }
 
-                    temp_val = msg_method.keys.find("sym_key_enc");
+                    temp_val = msg_method.keys.find("symmetric_key_enc");
                     std::string sym_key_enc;
                     if (temp_val != msg_method.keys.end()) {
                         sym_key_enc = temp_val->second;
@@ -844,7 +837,7 @@ private:
                         approved_request = false;
                     }
 
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, true, user_email));
+                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request, true, user_email));
 
 
                     //send back status response to mobile

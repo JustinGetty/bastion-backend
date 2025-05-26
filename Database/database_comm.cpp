@@ -642,7 +642,7 @@ STATUS add_new_user_to_db(new_user_struct *user_data) {
     query_params[2] = create_param_asym_key(user_data->new_priv_key);
     query_params[3] = create_param_int(user_data->new_priv_key.priv_key_len);
 
-    query_data data = set_query_data('p', INSERT_NEW_USER, 3, query_params);
+    query_data data = set_query_data('p', INSERT_NEW_USER, 4, query_params);
     strncpy(data.query, CREATE_USER_QUERY_REG, sizeof(data.query));
 
     query_data_struct queryData{};

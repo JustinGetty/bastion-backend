@@ -32,7 +32,7 @@ inline bool decodeTokenToFixedBuffer(
     const std::string &b64,
     unsigned char outBuf[MAX_TOKEN_LEN],
     size_t &outLen) {
-    // 1) Set up a BIO chain: base64 filter → memory buffer
+    //set up a BIO chain: base64 filter → memory buffer
     BIO *b64_bio = BIO_new(BIO_f_base64());
     BIO *mem_bio = BIO_new_mem_buf(b64.data(), (int)b64.size());
     if (!b64_bio || !mem_bio) {
@@ -41,17 +41,17 @@ inline bool decodeTokenToFixedBuffer(
         return false;
     }
     BIO *bio = BIO_push(b64_bio, mem_bio);
-    // Disable line breaks
+    //disable line breaks, idt mobile sends this anymore with line breaks regardless but redundancy ig
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
 
-    // 2) Read decoded bytes directly into outBuf
+    //read decoded bytes directly into outBuf
     int decoded = BIO_read(bio, outBuf, (int)MAX_TOKEN_LEN);
     BIO_free_all(bio);
 
     if (decoded <= 0) {
         return false;
     }
-    // If the decoded data would exceed our fixed buffer:
+    //if the decoded data exceeds buffer length
     if ((size_t)decoded > MAX_TOKEN_LEN) {
         return false;
     }
@@ -174,13 +174,30 @@ public:
     void execute() override {
         if (is_secure_mode_ == false) {
             //TODO validate approval BOOL and add to request
-            std::cout << "[INFO] Executing regular validation work " << id_ << std::endl;
-            unsigned char decoded_key_iv[256];
-            decode_fixed_length(sym_key_iv_encoded, decoded_key_iv, 256);
+            std::cout << "[INFO] Executing regular validation work for: " << id_ << std::endl;
 
-            std::cout << "Received token hash: \n" << token_hash_encoded << std::endl;
-            unsigned char decoded_token_hash[256];
-            decode_fixed_length(token_hash_encoded, decoded_token_hash, 256);
+            unsigned char sym_key_iv_buffer[256];
+            size_t sym_key_iv_length = 0;
+
+            bool decode_sym_status = decodeTokenToFixedBuffer(sym_key_iv_encoded, sym_key_iv_buffer, sym_key_iv_length);
+            printf("Decoded sym_iv_buffer\n");
+            for (auto& i : sym_key_iv_buffer) {
+                printf("%02x", i);
+            }
+            printf("\n");
+
+            unsigned char encrypted_token_hash_buffer[256];
+            size_t encrypted_token_hash_length = 0;
+
+            bool decode_tok_status = decodeTokenToFixedBuffer(token_hash_encoded, encrypted_token_hash_buffer, encrypted_token_hash_length);
+            printf("Decoded token sym encrypted\n");
+            for (auto& i : encrypted_token_hash_buffer) {
+                printf("%02x", i);
+            }
+            printf("\n");
+
+
+
 
             ConnectionData *data_from_storage = cds.get_connection_data(connection_id_);
             if (data_from_storage->user_data.fail_this == true) {
@@ -194,15 +211,17 @@ public:
             unsigned char decrypted_sym_iv[KEY_SIZE + IV_SIZE] = {0};
             int decrypted_sym_iv_len = 0;
             if (decrypt_with_private_key(data_from_storage->user_data.priv_key_w_len.priv_key, data_from_storage->user_data.priv_key_w_len.priv_key_len,
-                                        decoded_key_iv, std::size(decoded_key_iv),
+                                        sym_key_iv_buffer, sym_key_iv_length, //can also use sym_key_iv_length
                                         decrypted_sym_iv, &decrypted_sym_iv_len) != SUCCESS)
 
             {
                 std::fprintf(stderr, "[ERROR] Asymmetric decryption of key/IV failed\n");
             }
+
             if (decrypted_sym_iv_len != (KEY_SIZE + IV_SIZE)) {
                 std::fprintf(stderr, "[ERROR] Decrypted key/IV length mismatch\n");
             }
+
 
             unsigned char recovered_key[KEY_SIZE] = {0};
             unsigned char recovered_iv[IV_SIZE] = {0};
@@ -212,11 +231,12 @@ public:
             unsigned char decrypted_sym_encrypted[256] = {0};
             int decrypted_sym_encrypted_len = 0;
             if (decrypt_with_private_key(data_from_storage->user_data.priv_key_w_len.priv_key, data_from_storage->user_data.priv_key_w_len.priv_key_len,
-                                         decoded_token_hash, std::size(decoded_token_hash),
+                                         encrypted_token_hash_buffer, encrypted_token_hash_length,
                                          decrypted_sym_encrypted, &decrypted_sym_encrypted_len) != SUCCESS)
             {
                 std::fprintf(stderr, "[ERROR] Asymmetric decryption of wrapped token hash failed\n");
             }
+
 
             unsigned char final_decrypted_hash[TOKEN_SIZE] = {0};
             if (sym_decrypt(decrypted_sym_encrypted, &decrypted_sym_encrypted_len,
@@ -233,7 +253,7 @@ public:
             //TODO need to read in the actual success or reject as well
             if (constant_time_compare(data_from_storage->user_data.enc_auth_token, computed_hash, HASH_SIZE) == SUCCESS) {
                 printf("[INFO] Token verification successful.\n");
-
+                /*
                 STATUS challenge_verification_status = validate_challenge_code(data_from_storage);
                 //NEVER ACTUALLY HITTING THISAHH
                 if (challenge_verification_status != SUCCESS) {
@@ -249,13 +269,14 @@ public:
                 std::string success_msg = R"({"status": "approved"})";
                 ws->send(success_msg, uWS::OpCode::TEXT);
                 return;
-
+                */
             } else {
                 printf("[INFO] Token verification failed. SignIn rejected.\n");
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
                 std::string failure_msg = R"({"status": "rejected"})";
                 ws->send(failure_msg, uWS::OpCode::TEXT);
             }
+
 
         }
 
