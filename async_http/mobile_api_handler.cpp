@@ -38,6 +38,7 @@ namespace nlohmann {
         }
 
         j = nlohmann::json {
+                       {"id", data.site_id},
                     {"site_name", data.site_name},
                     {"site_domain", data.site_domain},
                     {"user_email_raw", data.user_email_raw},
@@ -476,6 +477,56 @@ private:
 
         }
 
+            if (path == "/get_site_data") {
+                std::string username;
+                std::istringstream queryStream(query);
+                std::string token;
+                while (std::getline(queryStream, token, '&')) {
+                    size_t eqPos = token.find('=');
+                    if (eqPos != std::string::npos) {
+                        std::string key = token.substr(0, eqPos);
+                        std::string value = token.substr(eqPos + 1);
+                        // Inline URL-decode the value
+                        std::string decoded;
+                        for (size_t i = 0; i < value.size(); i++) {
+                            if (value[i] == '%' && i + 2 < value.size()) {
+                                std::string hexStr = value.substr(i + 1, 2);
+                                char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
+                                decoded.push_back(ch);
+                                i += 2;
+                            } else if (value[i] == '+') {
+                                decoded.push_back(' ');
+                            } else {
+                                decoded.push_back(value[i]);
+                            }
+                        }
+                        if (key == "username") {
+                            username = decoded;
+                        }
+                    }
+                }
+                std::cout << "[INFO] Get site data for: username = " << username << "\n";
+
+
+                std::vector<site_data_for_mobile> site_data;
+                STATUS get_site_data_status = get_site_data_for_mobile(&username, &site_data);
+
+                if (get_site_data_status != SUCCESS) {
+                    std::string resp = R"({"status":"error"})";
+                    send_json_response(resp, http::status::ok);
+                    return;
+                }
+                nlohmann::json resp;
+                resp["status"]    = "valid";
+                resp["site_data"] = site_data;
+
+                std::cout << "Sending site data: \n";
+                std::cout << resp.dump(2) << "\n";
+
+
+                std::string resp_string = resp.dump();
+                send_json_response(resp_string, http::status::ok);
+            }
 
 
     } //end get requests
@@ -612,6 +663,7 @@ private:
 
 
                     //send back status response to mobile
+                    //TODO why are we sendging back the same json?????
                     send_json_response(received_json, http::status::ok);
                     return;
                 }
@@ -976,40 +1028,6 @@ private:
                 return;
             }
 
-            if (target == "/get_site_data") {
-                const std::string* received_json = &req.body();
-                std::cout << "[DEBUG] Received JSON: " << *received_json << "\n";
-
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(*received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::string username = msg_method.keys["username"];
-
-                std::vector<site_data_for_mobile> site_data;
-                STATUS get_site_data_status = get_site_data_for_mobile(&username, &site_data);
-                if (get_site_data_status != SUCCESS) {
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-               }
-                nlohmann::json resp;
-                resp["status"]    = "valid";
-                resp["site_data"] = site_data;
-
-                std::cout << "Sending site data: \n";
-                std::cout << resp.dump(2) << "\n";
-                send_json_response(resp, http::status::ok);
-            }
 
             std::cerr << "[ERROR] Target likely not found (or endpoint missing a return statement).\n";
 

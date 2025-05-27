@@ -136,12 +136,13 @@ std::vector<site_data_for_mobile> UserDAO::getSiteDataForMobileUser(std::string 
         const unsigned char* user_email_raw = sqlite3_column_text(stmtGetSiteData, 3);
 
         outbound_data_local.emplace_back(
-            site_name_raw ? reinterpret_cast<const char*>(site_name_raw) : std::string(),
-            site_domain_raw ? reinterpret_cast<const char*>(site_domain_raw) : std::string(),
-            user_email_raw ? reinterpret_cast<const char*>(user_email_raw) : std::string(),
-            sqlite3_column_int(stmtGetSiteData, 4),
-            sqlite3_column_int64(stmtGetSiteData, 5),
-            sqlite3_column_int64(stmtGetSiteData, 6)
+            (sqlite3_column_int(stmtGetSiteData, 0)),
+            (site_name_raw ? reinterpret_cast<const char*>(site_name_raw) : std::string()),
+            (site_domain_raw ? reinterpret_cast<const char*>(site_domain_raw) : std::string()),
+            (user_email_raw ? reinterpret_cast<const char*>(user_email_raw) : std::string()),
+            (sqlite3_column_int(stmtGetSiteData, 4)),
+            (sqlite3_column_int64(stmtGetSiteData, 5)),
+            (sqlite3_column_int64(stmtGetSiteData, 6))
             );
     }
 
