@@ -263,6 +263,8 @@ public:
                     return;
                 }
 
+                std::string username_str(data_from_storage->username);
+                STATUS update_user_site_usage_status = update_user_site_last_usage(&username_str, &data_from_storage->spa_id);
 
                 //send this back to client
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
@@ -386,6 +388,8 @@ public:
                 }
 
 
+                std::string username_str(data_from_storage->username);
+                STATUS update_user_site_usage_status = update_user_site_last_usage(&username_str, &data_from_storage->spa_id);
 
 
                 //send this back to client

@@ -2,6 +2,8 @@
 #include "../Headers/database_head.h"
 #include <sqlite3.h>
 
+
+//TODO get rid of this shitty manager lmao
 task_queue_t queue;
 
 void task_queue_init(task_queue_t *q) {
@@ -50,11 +52,14 @@ query_data_struct* task_queue_pop(task_queue_t *q) {
 void *worker_thread(void *arg) {
 //going to have server_worker_thread push to the queue a QueryData or ConnectionData or something
 sqlite3 *db;
-if (sqlite3_open(DATABASE, &db) != SQLITE_OK) {
+if (sqlite3_open_v2(DATABASE, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, nullptr) != SQLITE_OK) {
     fprintf(stderr, "[THREAD] ID %lu: Cannot open database: %s\n",
             pthread_self(), sqlite3_errmsg(db));
     pthread_exit(nullptr);
 }
+    sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+    //sqlite3_busy_timeout(db, 5000); //wait up to 5 seconds
+    //IF STILL ISSUE ADD THIS TO WAIT FOR LOCK:  sqlite3_busy_timeout(db, 5000);
 
 printf("[THREAD] ID %lu: Opening database %s\n", pthread_self(), DATABASE);
 //lets get this closer to actual max query size

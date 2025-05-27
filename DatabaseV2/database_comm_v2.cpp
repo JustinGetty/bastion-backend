@@ -17,9 +17,11 @@ DBService* g_dbService = nullptr;
 
 
 STATUS start_db_comm() {
-    if (sqlite3_open(DATABASE, &g_db) != SQLITE_OK) {
+    if (sqlite3_open_v2(DATABASE, &g_db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX, nullptr) != SQLITE_OK) {
         return UNKNOWN_FAILURE;
     }
+    sqlite3_exec(g_db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+    //sqlite3_busy_timeout(g_db, 5000);
 
     //start the thread pool
     g_sched.start(10);
@@ -81,5 +83,18 @@ STATUS check_if_user_is_new_to_site(const std::string username, bool *out) {
 STATUS get_site_data_for_mobile(const std::string* username, std::vector<site_data_for_mobile>* site_data_out) {
     auto future_ = g_dbService->getSiteDataForMobile(*username);
     *site_data_out = future_.get();
+    return SUCCESS;
+}
+
+STATUS update_site_usage_count(const std::string *spa_id) {
+    auto future_ = g_dbService->updateSiteUsageCount(*spa_id);
+    future_.get();
+    return SUCCESS;
+}
+
+
+STATUS update_user_site_last_usage(const std::string * username, const std::string *spa_id) {
+    auto future_ = g_dbService->updateUserLastUsedTime(*username, *spa_id);
+    future_.get();
     return SUCCESS;
 }

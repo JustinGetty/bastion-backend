@@ -98,6 +98,24 @@ Future<std::vector<site_data_for_mobile>> DBService::getSiteDataForMobile(const 
 
 
 
+Future<void> DBService::updateSiteUsageCount(const std::string& site_spa_id) {
+    return asyncExec<void>(
+        [this, site_spa_id]() {
+            wtr->updateSiteUsage(site_spa_id);
+        }
+    );
+}
+
+Future<void> DBService::updateUserLastUsedTime(const std::string &username, const std::string &site_spa_id) {
+    return asyncExec<void>(
+        [this, username, site_spa_id]() {
+            wtr->updateLastUserSiteUsage(username, site_spa_id);
+        }
+        );
+}
+
+
+
 //template to handle void
 template<typename T, typename Fn>
 Future<T> DBService::asyncExec(Fn work) {
@@ -114,4 +132,5 @@ template Future<void>                 DBService::asyncExec<void>(std::function<v
 template Future<ios_device_token>     DBService::asyncExec<ios_device_token>(std::function<ios_device_token()>);
 template Future<bool>                 DBService::asyncExec<bool>(std::function<bool()>);
 template Future<std::vector<site_data_for_mobile>> DBService::asyncExec<std::vector<site_data_for_mobile>>(std::function<std::vector<site_data_for_mobile>()>);
+
 

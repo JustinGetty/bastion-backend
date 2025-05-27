@@ -60,7 +60,7 @@ using tcp = boost::asio::ip::tcp;
 std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
 
 //TODO break these endpoints into smaller functions, just pass the json into a helper
-
+//TODO optimize, STOP BLOCKING THE FUCKING EVENT LOOP. pass to thread pool for work intensive asks for shit like mobile get-site-data
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -660,7 +660,6 @@ private:
                     }
 
                     g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
-
 
                     //send back status response to mobile
                     //TODO why are we sendging back the same json?????

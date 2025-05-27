@@ -5,6 +5,10 @@
 #include "UserDAO.h"
 #include <bastion_data.h>
 
+
+/*NOTES
+ * I am too lazy to make a new DAO for every type, so for now User is going to encompass alot of different types lmao
+ */
 UserDAO::UserDAO(sqlite3* _db): db(_db) {
     //const char* SQL = "SELECT id, username FROM user WHERE id = ?";
     /*
@@ -12,15 +16,13 @@ UserDAO::UserDAO(sqlite3* _db): db(_db) {
         throw std::runtime_error("Failed to prepare statement");
         */
 
-    if (sqlite3_prepare_v2(db, GET_FULL_USER_DATA_BY_UNAME_QUERY, -1, &stmtFindByUsername, nullptr) != SQLITE_OK)
+    if (sqlite3_prepare_v2(db, GET_FULL_USER_DATA_BY_UNAME_QUERY, -1, &stmtFindByUsername, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, CHECK_IF_USER_EXISTS_FOR_SITE, -1, &stmtCheckUserSiteExists, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, GET_SITE_DATA_FOR_MOBILE, -1, &stmtGetSiteData, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, UPDATE_SITE_USAGE, -1, &stmtUpdateSiteUsage, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, UPDATE_LAST_USED_SITE_TIMESTAMP, -1, &stmtUpdateLastSiteUsage, nullptr) != SQLITE_OK
+        )
         throw std::runtime_error("Failed to prepare statement");
-
-    if (sqlite3_prepare_v2(db, CHECK_IF_USER_EXISTS_FOR_SITE, -1, &stmtCheckUserSiteExists, nullptr) != SQLITE_OK)
-        throw std::runtime_error("Failed to prepare statement");
-
-    if (sqlite3_prepare_v2(db, GET_SITE_DATA_FOR_MOBILE, -1, &stmtGetSiteData, nullptr) != SQLITE_OK)
-        throw std::runtime_error("Failed to prepare statement");
-
 }
 
 UserDAO::~UserDAO() {
@@ -45,8 +47,7 @@ full_user_data UserDAO::findByUsername(const std::string& uname) {
           << "\n";
         sqlite3_free((void*)expanded);
     } else {
-        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL—"
-                  << "are you using SQLite >= 3.14?\n";
+        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
     }
 
     full_user_data user_data{};
@@ -147,6 +148,50 @@ std::vector<site_data_for_mobile> UserDAO::getSiteDataForMobileUser(std::string 
     }
 
     return outbound_data_local;
+}
+
+
+void UserDAO::updateSiteUsage(const std::string spa_id) {
+    sqlite3_reset(stmtUpdateSiteUsage);
+    sqlite3_clear_bindings(stmtUpdateSiteUsage);
+
+   if (sqlite3_bind_text(stmtUpdateSiteUsage, 1, spa_id.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtUpdateSiteUsage\n";
+        return;
+   }
+
+    if (sqlite3_step(stmtUpdateSiteUsage) != SQLITE_DONE) {
+        std::cerr << "[ERROR] Failed to update site usage\n";
+    }
+
+
+}
+
+void UserDAO::updateLastUserSiteUsage(const std::string username, const std::string spa_id) {
+    sqlite3_reset(stmtUpdateLastSiteUsage);
+    sqlite3_clear_bindings(stmtUpdateLastSiteUsage);
+
+    std::cout << "[INFO] Updating last site usage\n";
+
+   if (sqlite3_bind_text(stmtUpdateLastSiteUsage, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK
+       || sqlite3_bind_text(stmtUpdateLastSiteUsage, 2, spa_id.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+       std::cerr << "Failed to bind username or spa id for statement: stmtUpdateLastSiteUsage\n";
+
+    const char *expanded = sqlite3_expanded_sql(stmtUpdateLastSiteUsage);
+    if (expanded) {
+        std::cout
+          << "[DEBUG] Fully bound SQL:\n"
+          << expanded
+          << "\n";
+        sqlite3_free((void*)expanded);
+    } else {
+        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
+    }
+
+
+    if (sqlite3_step(stmtUpdateLastSiteUsage) != SQLITE_DONE) {
+        std::cerr << "[ERROR] Failed to update last user site usage\n";
+    }
 }
 
 

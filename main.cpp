@@ -234,6 +234,8 @@ struct WebSocketBehavior
                 ws->send(json_to_send_to_client);
                 std::cout << "[INFO] Sign In verification sent back to client\n";
 
+                //Update site usage
+                STATUS update_site_usage_status = update_site_usage_count(&connData->spa_id);
                 return;
 
 

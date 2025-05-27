@@ -9,6 +9,8 @@
 struct IUserWriter {
     virtual void insertNewUser(const full_user_data& u) = 0;
     virtual void updateAuthToken(int userId, const token_hash& newHash) = 0;
+    virtual void updateSiteUsage(const std::string spa_id) = 0;
+    virtual void updateLastUserSiteUsage(const std::string username, const std::string spa_id) = 0;
     virtual ~IUserWriter() = default;
 };
 
