@@ -5,7 +5,7 @@ ConnThreadPool::ConnThreadPool()
 {
     /* FIX only returning 1 */
     //unsigned int num_threads = std::thread::hardware_concurrency();
-    unsigned int num_threads = 8;
+    unsigned int num_threads = 3;
     /*
     if (num_threads == 0)
         num_threads = 2;

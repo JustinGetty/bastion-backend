@@ -53,6 +53,8 @@ add_library(bastion_data STATIC
         AWS_SES_LAMBDA/AWS_manager.cpp
         AWS_SES_LAMBDA/EmailSys.cpp
 
+        async_http/apiHandlerBoostPool.cpp
+        async_http/handler_functionality.cpp
 )
 
 # Specify include directories for the bastion_data library.
@@ -98,6 +100,10 @@ add_executable(bastion_auth main.cpp
         Headers/main_helpers.h
         APNS/ios_notifications.cpp
         Headers/ios_notifications.h
+        async_http/apiHandlerBoostPool.cpp
+        Headers/apiHandlerBoostPool.h
+        async_http/handler_functionality.cpp
+
 )
 
 

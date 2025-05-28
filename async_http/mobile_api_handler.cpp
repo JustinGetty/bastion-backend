@@ -29,6 +29,12 @@
 #include "EmailRecovery.h"
 #include "database_comm_v2.h"
 #include "EmailSys.h"
+#include "apiHandlerBoostPool.h"
+#include "handler_functionality.h"
+
+
+
+
 
 namespace nlohmann {
     inline void to_json(json& j, site_data_for_mobile const& data) {
@@ -55,9 +61,29 @@ namespace http = beast::http;
 namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;
 
-
-//TODO make this an object with more comprehensive functions
-std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
+/* TODO
+ * Recover by email flow:
+ * Get username
+ * Pull email
+ * Send code
+ * Have user enter code, send to db
+ * Codes match? Good
+ * Codes dont? Bad
+ *
+ * NOTES:
+ * Do not implement email server yet,
+ * wait for other server to be built and reuse
+ * For now pretend
+ *
+ * STRAT:
+ * Post request for recovery
+ * generates code server side and stores in hash table
+ * emails code to user and asks user for code on phone
+ * user puts in code which sends a get request with the code asking for new info
+ */
+/*
+ * print("Mock GET: /recover_account_by_seed?username=\(username)&seed=\(seedPhrase)")
+ */
 
 //TODO break these endpoints into smaller functions, just pass the json into a helper
 //TODO optimize, STOP BLOCKING THE FUCKING EVENT LOOP. pass to thread pool for work intensive asks for shit like mobile get-site-data
@@ -100,6 +126,7 @@ public:
         accept();
         check_deadline();
     }
+    apiHandlerBoostPool boost_thread_pool{ 3 };
 
 private:
     using alloc_t = std::allocator<char>;
@@ -132,6 +159,34 @@ private:
     // Optional response and serializer objects for string-based (JSON) responses.
     boost::optional<http::response<http::string_body, http::basic_fields<alloc_t>>> string_response_;
     boost::optional<http::response_serializer<http::string_body, http::basic_fields<alloc_t>>> string_serializer_;
+
+    //helper for the endpoints. simply calls the helper function and then returns the json response, sends it, and then final return
+    template<typename Helper>
+    void dispatch_async(
+        std::string query,
+        Helper&& helper,
+        http::status status = http::status::ok)
+        {
+            auto ioc = socket_.get_executor();
+
+            boost_thread_pool.enqueue([
+                this,
+                ioc,
+                query = std::move(query),
+                helper = std::forward<Helper>(helper),
+                status
+            ]() mutable {
+                std::string body = helper(query);
+
+                boost::asio::post(ioc, [
+                    this,
+                    body = std::move(body),
+                    status
+                ]() mutable {
+                    send_json_response(body, status);
+                });
+            });
+        }
 
     // Accept a new connection.
     void accept()
@@ -200,845 +255,82 @@ private:
 
     void process_request(http::request<request_body_t, http::basic_fields<alloc_t>> const& req)
     {
-
         //get requests
-        if(req.method() == http::verb::get)
-        {
+        if(req.method() == http::verb::get) {
             std::string targetStr = std::string(req.target());
             // Split into the path and query parts
             size_t pos = targetStr.find('?');
             std::string path = (pos != std::string::npos) ? targetStr.substr(0, pos) : targetStr;
             std::string query = (pos != std::string::npos) ? targetStr.substr(pos + 1) : "";
-            //likely never using get, since apple notif will be post to apple ANS server and then post back here
-            if (path == "/") {
-                send_json_response("{\"message\":\"Hello from GET\"}", http::status::ok);
-            }
-
-            //TODO make more comprehensive
-            else if (path == "/email_verif") {
-                // GET /email_verif?email=xxx
-                std::string email = parse_query_parameter(query, "email");
-                if (email.empty()) {
-                    std::cerr << "[ERROR] Email not provided in query" << std::endl;
-                    send_json_response("{\"status\":\"email_missing\"}", http::status::bad_request);
-                    return;
-                }
-                std::cout << "[INFO] Email verification requested for: " << email << std::endl;
-                send_json_response("{\"status\":\"email_sent\"}", http::status::ok);
-            }
-
-
-
-
-
-
-
-            /*
-            * Secure key endpoint, this will ...
-            * CREATE SECURE USER
-             */
-            if (path == "/secure_key") {
-                std::string username;
-                std::istringstream queryStream(query);
-                std::string token;
-                while (std::getline(queryStream, token, '&')) {
-                    size_t eqPos = token.find('=');
-                    if (eqPos != std::string::npos) {
-                        std::string key = token.substr(0, eqPos);
-                        std::string value = token.substr(eqPos + 1);
-                        if (key == "username") {
-                            username = value;  // You now have the username
-                            break;  // Stop once we've found it.
-                        }
-                    }
-                }
-
-
-                //FIX TODO
-                if (username.empty()) {
-                    std::cerr << "[ERROR] Username not provided in query" << std::endl;
-                    send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
-                    return;
-                }
-                bastion_username temp_username{};
-                memcpy(temp_username, username.c_str(), username.length());
-
-                new_user_outbound_data outbound_data{};
-                STATUS create_new_user_stat = create_new_user_sec(temp_username, &outbound_data);
-                if (create_new_user_stat != SUCCESS) {
-                    std::cerr << "[ERROR] Failed to create new user.\n";
-                    std::string resp = R"({"status": "server_failure"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-                std::string outbound_response;
-                outbound_data.secure_type = true;
-                STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
-                if (parse_status != SUCCESS) {
-                    std::cerr << "[ERROR] Failed to parse data to json.\n";
-                    std::string resp = R"({"status": "server_failure"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::cout << "[INFO] Username valid, user added.\n";
-                send_json_response(outbound_response, http::status::ok);
-                return;
-            }
-
-            //CREATE REGULAR USER
-        if (path == "/reg_keys") {
-            std::cout << "[INFO] Getting regular keys.\n";
-            std::string username;
-            std::istringstream queryStream(query);
-            std::string token;
-            while (std::getline(queryStream, token, '&')) {
-                size_t eqPos = token.find('=');
-                if (eqPos != std::string::npos) {
-                    std::string key = token.substr(0, eqPos);
-                    std::string value = token.substr(eqPos + 1);
-                    if (key == "username") {
-                        username = value;  // You now have the username
-                        break;  // Stop once we've found it.
-                    }
-                }
-            }
-
-            //FIX TODO
-            if (username.empty()) {
-                std::cerr << "[ERROR] Username not provided in query" << std::endl;
-                send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
-                return;
-            }
-
-            new_user_outbound_data outbound_data{};
-            STATUS create_new_user_stat = create_new_user_unsec(&username, &outbound_data);
-            if (create_new_user_stat != SUCCESS) {
-                std::cerr << "[ERROR] Failed to create new user.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-            std::string outbound_response;
-            outbound_data.secure_type = false;
-            STATUS parse_status = process_new_user_to_send(&outbound_data, &outbound_response);
-            if (parse_status != SUCCESS) {
-                std::cerr << "[ERROR] Failed to parse data to json.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            std::cout << "[INFO] Username valid, user added.\n";
-            send_json_response(outbound_response, http::status::ok);
-            return;
-        }
-
-
-        /* TODO
-         * Recover by email flow:
-         * Get username
-         * Pull email
-         * Send code
-         * Have user enter code, send to db
-         * Codes match? Good
-         * Codes dont? Bad
-         *
-         * NOTES:
-         * Do not implement email server yet,
-         * wait for other server to be built and reuse
-         * For now pretend
-         *
-         * STRAT:
-         * Post request for recovery
-         * generates code server side and stores in hash table
-         * emails code to user and asks user for code on phone
-         * user puts in code which sends a get request with the code asking for new info
-         */
-
-
-
-
-
-
-
-
-            /*
-             * print("Mock GET: /recover_account_by_seed?username=\(username)&seed=\(seedPhrase)")
-             */
-
-        if (path == "/rec_by_seed") {
-            std::string username;
-            std::string seed;
-            std::istringstream queryStream(query);
-            std::string token;
-            while (std::getline(queryStream, token, '&')) {
-                size_t eqPos = token.find('=');
-                if (eqPos != std::string::npos) {
-                    std::string key = token.substr(0, eqPos);
-                    std::string value = token.substr(eqPos + 1);
-                    // Inline URL-decode the value
-                    std::string decoded;
-                    for (size_t i = 0; i < value.size(); i++) {
-                        if (value[i] == '%' && i + 2 < value.size()) {
-                            std::string hexStr = value.substr(i + 1, 2);
-                            char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
-                            decoded.push_back(ch);
-                            i += 2;
-                        } else if (value[i] == '+') {
-                            decoded.push_back(' ');
-                        } else {
-                            decoded.push_back(value[i]);
-                        }
-                    }
-                    if (key == "username") {
-                        username = decoded;
-                    } else if (key == "seed") {
-                        seed = decoded;
-                    }
-                }
-            }
-            std::cout << "[INFO] Recovery by seed: username = " << username
-                      << ", seed = " << seed << std::endl;
-
-
-            // perform URL decoding on username here if needed.
-
-            //FIX TODO
-            if (username.empty()) {
-                std::cerr << "[ERROR] Username not provided in query" << std::endl;
-                send_json_response("{\"status\": \"username_missing\"}", http::status::bad_request);
-                return;
-            }
-            bastion_username temp_username{};
-            //TODO fucked!
-            memcpy(temp_username, username.c_str(), username.length());
-
-
-            recovered_sec_user_outbound_data outbound_data{};
-            STATUS recover_user_stat = recover_user_by_seed_phrase(temp_username, seed, &outbound_data);
-            if (recover_user_stat != SUCCESS) {
-                std::cerr << "[ERROR] Failed to create new user.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-            std::string outbound_response;
-            STATUS parse_status = process_sec_recover_to_send(&outbound_data, &outbound_response);
-            if (parse_status != SUCCESS) {
-                std::cerr << "[ERROR] Failed to parse data to json.\n";
-                std::string resp = R"({"status": "server_failure"})";
-                send_json_response(resp, http::status::ok);
-                return;
-            }
-
-            std::cout << "[INFO] Username valid, user added.\n";
-            send_json_response(outbound_response, http::status::ok);
-            return;
-        }
-
-
-
-
-        if (path == "/rec_by_code") {
-            /* Requires username and code from email
-             * Process:
-             * verify code
-             * if verifies, recover by email
-             * process to json
-             * send back user data
-             */
-
-            std::string username;
-            std::string code_string;
-            std::istringstream queryStream(query);
-            std::string token;
-            while (std::getline(queryStream, token, '&')) {
-                size_t eqPos = token.find('=');
-                if (eqPos != std::string::npos) {
-                    std::string key = token.substr(0, eqPos);
-                    std::string value = token.substr(eqPos + 1);
-                    // Inline URL-decode the value
-                    std::string decoded;
-                    for (size_t i = 0; i < value.size(); i++) {
-                        if (value[i] == '%' && i + 2 < value.size()) {
-                            std::string hexStr = value.substr(i + 1, 2);
-                            char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
-                            decoded.push_back(ch);
-                            i += 2;
-                        } else if (value[i] == '+') {
-                            decoded.push_back(' ');
-                        } else {
-                            decoded.push_back(value[i]);
-                        }
-                    }
-                    if (key == "username") {
-                        username = decoded;
-                        //TODO fix this will break
-                    } else if (key == "code") {
-                        code_string = decoded;
-                    }
-                }
-            }
-
-        }
 
             if (path == "/get_site_data") {
-                std::string username;
-                std::istringstream queryStream(query);
-                std::string token;
-                while (std::getline(queryStream, token, '&')) {
-                    size_t eqPos = token.find('=');
-                    if (eqPos != std::string::npos) {
-                        std::string key = token.substr(0, eqPos);
-                        std::string value = token.substr(eqPos + 1);
-                        // Inline URL-decode the value
-                        std::string decoded;
-                        for (size_t i = 0; i < value.size(); i++) {
-                            if (value[i] == '%' && i + 2 < value.size()) {
-                                std::string hexStr = value.substr(i + 1, 2);
-                                char ch = static_cast<char>(std::stoi(hexStr, nullptr, 16));
-                                decoded.push_back(ch);
-                                i += 2;
-                            } else if (value[i] == '+') {
-                                decoded.push_back(' ');
-                            } else {
-                                decoded.push_back(value[i]);
-                            }
-                        }
-                        if (key == "username") {
-                            username = decoded;
-                        }
-                    }
-                }
-                std::cout << "[INFO] Get site data for: username = " << username << "\n";
-
-
-                std::vector<site_data_for_mobile> site_data;
-                STATUS get_site_data_status = get_site_data_for_mobile(&username, &site_data);
-
-                if (get_site_data_status != SUCCESS) {
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-                nlohmann::json resp;
-                resp["status"]    = "valid";
-                resp["site_data"] = site_data;
-
-                std::cout << "Sending site data: \n";
-                std::cout << resp.dump(2) << "\n";
-
-
-                std::string resp_string = resp.dump();
-                send_json_response(resp_string, http::status::ok);
+                dispatch_async(query, [this](const std::string& q) {return get_site_data_helper(q);});
+                return;
+            }
+            if (path == "/email_verif") {
+                dispatch_async(query, [this](const std::string& q) {return verify_email_helper(q);});
+                return;
+            }
+            if (path == "/secure_key") {
+                dispatch_async(query, [this](const std::string& q) {return secure_key_helper(q);});
+                return;
+            }
+            if (path == "/reg_keys") {
+                dispatch_async(query, [this](const std::string& q) {return regular_key_helper(q);});
+                return;
+            }
+            if (path == "/rec_by_seed") {
+                dispatch_async(query, [this](const std::string& q) {return recover_by_seed_helper(q);});
+                return;
+            }
+            if (path == "/rec_by_code") {
+                /* SEE TODO AT TOP
+                 * Requires username and code from email
+                 */
+                return;
+            }
+            if (path == "/") {
+                std::cerr << "[ERROR] No endpoint specified\n";
+                std::string resp = R"({"status":"ERROR_NO_ENDPOINT"})";
+                send_json_response(resp, http::status::ok);
                 return;
             }
 
-
-    } //end get requests
-
-
+            std::cerr << "[ERROR] Endpoint not found\n";
+        } //end get requests
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //post requests
-        /*
-         *READ BACK THE users's sign in details and keys
-         *notif to user sent in different thread with APPLE/ANDROID notif services
-         */
         else if(req.method() == http::verb::post) {
+
             std::string target = std::string(req.target());
             std::cout << "[INFO] Target: " << target << "\n";
 
-            if (target == "/devices") {
-                std::cout << "[INFO] Processing device token\n";
-                const std::string received_json = req.body();
-                std::cout <<  received_json << "\n";
-
-                MsgMethod msg_method;
-                std::string username;
-                std::string device_token;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    return;
-                }
-                if (msg_method.keys.find("device_token") != msg_method.keys.end()) {
-                    device_token = msg_method.keys["device_token"];
-                    username = msg_method.keys["username"];
-                    std::cout << "[DEBUG] Username: " << username << " Device Token: " << device_token << "\n";
-                } else {
-                    std::cerr << "[ERROR] Device message contains no data\n";
-                    return;
-                }
-
-                bastion_username username_bastion;
-                strncpy(username_bastion, username.c_str(), 20);
-
-                //STATUS sattyyy = update_device_token_ios_by_username(&username_bastion, &device_token_bastion);
-                STATUS sattyyy = insert_ios_device_token_by_username_v2(&username_bastion, &device_token);
-
-                if (sattyyy != SUCCESS) {
-                    //TODO this will always return success
-                    std::cerr << "[ERROR] Failed to update device token.\n";
-                    return;
-                }
-                std::cout << "[INFO] Device token updated.\n";
-                return;
-            }
-
-
             if (target == "/signinresponse") {
-                /* TODO
-                 * Could really pass this shit to a thread pool
-                 */
-
-                /*
-                 *To validate the sign in when using seed phrase encrypytion, same as before parse keys pass to valid queue, flag will handle switch
-                 *Only take in key we will store the auth token with the iv to make retrieval easier.
-                 * Need to add flag on mobile of user type
-                 *
-                 *
-                 */
-
-                //example payload:
-                // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id"}
-                std::cout << "[INFO] Received response\n";
-                std::string received_json = req.body();
-                std::cout << received_json << "\n";
-
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    return;
-                }
-                if (msg_method.keys.find("recovery_method")->second == "seed") {
-                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
-                    std::string token_hash_encoded;
-                    if (temp_val != msg_method.keys.end()) {
-                        token_hash_encoded = temp_val->second;
-
-                    } else {
-                        return;
-                    }
-
-
-                    temp_val = msg_method.keys.find("connection_id");
-                    int connection_id;
-                    if (temp_val != msg_method.keys.end()) {
-                        connection_id = std::stoi(temp_val->second);
-                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-                    } else {
-                        std::cout << "[ERROR] Connection ID not found" << std::endl;
-                        return;
-                    }
-
-                    //error handle here if theyre not found!!
-
-
-                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-                    //ID needs to be random or systematic idk
-                    bool approved_request;
-                    if (msg_method.keys.find("approved")->second == "true") {
-                       approved_request = true;
-                    } else {
-                        approved_request = false;
-                    }
-
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
-
-                    //send back status response to mobile
-                    //TODO why are we sendging back the same json?????
-                    send_json_response(received_json, http::status::ok);
-                    return;
-                }
-
-                // double check "email" keyword being sent
-                if (msg_method.keys.find("recovery_method")->second == "email") {
-                    //not finalized!!!
-                    std::cout << "[INFO] Processing root target\n";
-                    const std::string received_json = req.body();
-
-                    MsgMethod msg_method;
-                    try {
-                        msg_method = parse_method(received_json);
-                        std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                        for (const auto &kv : msg_method.keys)
-                            std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                    } catch (const std::exception &ex) {
-                        std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                        return;
-                    }
-
-                    /*
-                     *From here keys and data gets added to thread pool queue for processing
-                     */
-
-                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
-                    std::string token_hash_encoded;
-                    if (temp_val != msg_method.keys.end()) {
-                        token_hash_encoded = temp_val->second;
-
-                    } else {
-                        return;
-                    }
-
-                    temp_val = msg_method.keys.find("symmetric_key_enc");
-                    std::string sym_key_enc;
-                    if (temp_val != msg_method.keys.end()) {
-                        sym_key_enc = temp_val->second;
-
-                    } else {
-                        std::cout << "[ERROR] Sym key not found" << std::endl;
-                        return;
-                    }
-
-                    temp_val = msg_method.keys.find("connection_id");
-                    int connection_id;
-                    if (temp_val != msg_method.keys.end()) {
-                        connection_id = std::stoi(temp_val->second);
-                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-                    } else {
-                        std::cout << "[ERROR] Connection ID not found" << std::endl;
-                        return;
-                    }
-
-                    //error handle here if theyre not found!!
-
-
-                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-                    //ID needs to be random or systematic idk
-                    bool approved_request;
-                    if (msg_method.keys.find("approved")->second == "true") {
-                        approved_request = true;
-                    } else {
-                        approved_request = false;
-                    }
-
-                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request, false, "NO_EMAIL"));
-
-
-                    //send back status response to mobile
-                    send_json_response(received_json, http::status::ok);
-                    return;
-
-                }
-                //handle error of no recovery method specified
-                std::cerr << "[ERROR] hit end of endpoints, somebody forgot a return statement ... you :(\n";
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return signin_response_helper(q);});
                 return;
             }
-
-           //TODO lets refactor to send back json response that code was sent successfully
-            if (target == "/get_recovery_code") {
-                //"get" just means send to user email, this should be sent with username, lookup email
-                //get code, add to map, wait send to email
-
-                //possible payload: {"request_id":"69", "username": "test121", "email": "test@gmail.com"}
-                std::cout << "[INFO] Processing email verification\n";
-                const std::string received_json = req.body();
-                std::cout << "[INFO] JSON received for email verification: " << received_json << "\n";
-
-                MsgMethod msg_method;
-                std::string username;
-                std::string email;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                if (msg_method.keys.find("username") != msg_method.keys.end() && msg_method.keys.find("email") != msg_method.keys.end()) {
-                    username = msg_method.keys.find("username")->second;
-                    email = msg_method.keys.find("email")->second;
-                    std::cout << "[DEBUG] Username: " << username << " User Email: " << email << "\n";
-                } else {
-                    std::cerr << "[ERROR] Verificatioj message contains no email and/or username\n";
-
-                    std::string resp = R"({"status":"error", "message": "Email or Username missing"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                auto email_sender = new EmailSys(&username, &email);
-                //TODO make sure this sends, if not send {"status":"error", "message": "Failed to send email"}
-                email_sender->send_email_for_verification();
-                std::string recovery_code = email_sender->get_verification_code();
-                user_recovery_codes_storage[username] = recovery_code;
-
-                std::string resp = R"({"status":"valid"})";
-                send_json_response(resp, http::status::ok);
-                return;
-
-            }
-
-
             if (target == "/signupresponse") {
-                std::cout << "Hit target signup response\n";
-                /*
-                 *This is going to be the exact same fucking thing as a signin except its gonna return an email too
-                 *
-                 *DONT FORGET TO HASH THE EMAIL, LOG THE HASh, THEN SEND THE HASH TO THE FUCKING CLIENT
-                 * NOTES
-                 * Lets create and cache the hash in the server work thread while we wait, we can just have that ready since we-
-                 * already know it will be a signup
-                 */
-                //add new fields to DB site_data
-                //TODO pick up here
-
-                /* TODO
-                 * Could really pass this shit to a thread pool
-                 */
-
-                //example payload, need sym key!!:
-                // {"request_id":"69","recovery_method":"seed","approved":true,"site_id":"demo_site_id", "user_email":""}
-                std::cout << "[INFO] Received response\n";
-                std::string received_json = req.body();
-                std::cout << received_json << "\n";
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    return;
-                }
-                std::string user_email = msg_method.keys.find("email")->second;
-
-                if (msg_method.keys.find("recovery_method")->second == "seed") {
-                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
-                    std::string token_hash_encoded;
-                    if (temp_val != msg_method.keys.end()) {
-                        token_hash_encoded = temp_val->second;
-
-                    } else {
-                        return;
-                    }
-
-
-                    temp_val = msg_method.keys.find("connection_id");
-                    int connection_id;
-                    if (temp_val != msg_method.keys.end()) {
-                        connection_id = std::stoi(temp_val->second);
-                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-                    } else {
-                        std::cout << "[ERROR] Connection ID not found" << std::endl;
-                        return;
-                    }
-
-                    //error handle here if theyre not found!!
-
-
-                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-                    //ID needs to be random or systematic idk
-                    bool approved_request;
-                    if (msg_method.keys.find("approved")->second == "true") {
-                       approved_request = true;
-                    } else {
-                        approved_request = false;
-                    }
-
-                    g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, true, user_email));
-
-
-                    //send back status response to mobile
-                    send_json_response(received_json, http::status::ok);
-                    return;
-                }
-
-                // double check "email" keyword being sent
-                if (msg_method.keys.find("recovery_method")->second == "email") {
-                    //not finalized!!!
-                    std::cout << "[INFO] Processing signup with email recovery method\n";
-                    const std::string received_json = req.body();
-
-
-                    /*
-                     *From here keys and data gets added to thread pool queue for processing
-                     */
-
-                    auto temp_val = msg_method.keys.find("client_auth_token_enc");
-                    std::string token_hash_encoded;
-                    if (temp_val != msg_method.keys.end()) {
-                        token_hash_encoded = temp_val->second;
-
-                    } else {
-                        return;
-                    }
-
-                    temp_val = msg_method.keys.find("symmetric_key_enc");
-                    std::string sym_key_enc;
-                    if (temp_val != msg_method.keys.end()) {
-                        sym_key_enc = temp_val->second;
-
-                    } else {
-                        std::cout << "[ERROR] Sym key not found" << std::endl;
-                        return;
-                    }
-
-                    temp_val = msg_method.keys.find("connection_id");
-                    int connection_id;
-                    if (temp_val != msg_method.keys.end()) {
-                        connection_id = std::stoi(temp_val->second);
-                        std::cout << "[INFO] Connection ID: " << connection_id << std::endl;
-                    } else {
-                        std::cout << "[ERROR] Connection ID not found" << std::endl;
-                        return;
-                    }
-
-                    //error handle here if theyre not found!!
-
-
-                    //id_(id), user_id(user_id), token_hash_encoded(token_hash_encoded), sym_key_iv_encoded(sym_key_iv_encoded)
-                    //ID needs to be random or systematic idk
-                    bool approved_request;
-                    if (msg_method.keys.find("approved")->second == "true") {
-                        approved_request = true;
-                    } else {
-                        approved_request = false;
-                    }
-
-                    g_workQueue.push(new MyValidationWork(false, 1, 1, connection_id, token_hash_encoded, sym_key_enc, approved_request, true, user_email));
-
-
-                    //send back status response to mobile
-                    send_json_response(received_json, http::status::ok);
-                    return;
-
-                }
-                //handle error of no recovery method specified
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return signup_response_helper(q);});
                 return;
-
             }
-
-            //TODO check both tables for the username not just user
+            if (target == "/devices") {
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return device_token_helper(q);});
+                return;
+            }
+            if (target == "/get_recovery_code") {
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return recovery_code_helper(q);});
+                return;
+            }
             if (target == "/validate_username") {
-
-                std::string received_json = req.body();
-                std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::string username = msg_method.keys["username"];
-
-                bastion_username user_username{};
-                bastion_username *user_username_ptr = &user_username;
-                //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
-                if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
-                    std::cout << "[INFO] Username valid.\n";
-                } else {
-                    std::cout << "[INFO] Username contains invalid characters.\n";
-                    std::string resp = R"({"status":"invalid_char"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                /*
-                 *Check is username exists in DB here, reject if not
-                 */
-                bool username_exists;
-                bool *username_exists_ptr = &username_exists;
-                STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
-                if (username_exists_status != SUCCESS) {
-                    std::cout << "[ERROR] Error checking username.\n";
-                    std::string resp = R"({"status": "db_error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                if (*username_exists_ptr == true) {
-                    std::cout << "[INFO] Username already in use.\n";
-                    std::string resp = R"({"status": "user_already_exists"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::cout << "[INFO] Username is valid.\n";
-                std::string resp = R"({"status": "valid"})";
-                send_json_response(resp, http::status::ok);
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return validate_username_helper(q);});
                 return;
             }
-
             if (target == "/verify_code") {
-
-                std::string received_json = req.body();
-                std::cout << "[DEBUG] Received JSON: " << received_json << "\n";
-
-                MsgMethod msg_method;
-                try {
-                    msg_method = parse_method(received_json);
-                    std::cout << "[INFO] Method type: " << msg_method.type << std::endl;
-                    for (const auto &kv : msg_method.keys)
-                        std::cout << "[DATA] " << kv.first << " : " << kv.second << std::endl;
-                } catch (const std::exception &ex) {
-                    std::cerr << "[ERROR] Error: " << ex.what() << "\n";
-                    std::string resp = R"({"status":"error"})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::string username = msg_method.keys["username"];
-                std::string inbound_recover_code = msg_method.keys["code"];
-                std::cout << "[INFO] Received verification code: " << inbound_recover_code << "\n";
-
-                std::string recovery_code = user_recovery_codes_storage[username];
-                std::cout << "[INFO] Verification code from storage: " << recovery_code << "\n";
-
-                if (recovery_code == inbound_recover_code) {
-                    std::cout << "[INFO] Verified recovery code\n";
-                    std::string resp = R"({"verified": true})";
-                    send_json_response(resp, http::status::ok);
-                    return;
-                }
-
-                std::cout << "[INFO] Recovery codes do not match\n";
-                std::string resp = R"({"verified": false, "error": "Invalid verification code"})";
-                send_json_response(resp, http::status::ok);
+                dispatch_async(std::string(req.body()), [this](const std::string& q) {return verify_code_helper(q);});
                 return;
             }
 
-
-            std::cerr << "[ERROR] Target likely not found (or endpoint missing a return statement).\n";
-
+           std::cerr << "[ERROR] Target likely not found (or endpoint missing a return statement).\n";
     }
 
         else
@@ -1145,7 +437,9 @@ private:
 
 void api_handler_setup()
 {
+    //validation work queue
     getGlobalThreadPool();
+    //blocking IO work goes here
 
     try
     {

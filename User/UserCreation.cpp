@@ -13,7 +13,7 @@
 #include "SeedCipher.h"
 #include "database_comm_v2.h"
 
-STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user_data) {
+STATUS create_new_user_unsec(std::string username, new_user_outbound_data* user_data) {
     //Create auth token ----------------------------------------------------------------
     token auth_token{};
     if (generate_token(auth_token, TOKEN_SIZE) != SUCCESS) {
@@ -68,7 +68,7 @@ STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user
     //TODO DO NOT GO TO PROD WITH THIS PLEASEEEEEEEE
     username[MAX_USERNAME_LENGTH - 1] = '\0';
     new_user_struct new_user_data{};
-    memcpy(new_user_data.new_username, username->c_str(), username->length());
+    memcpy(new_user_data.new_username, username.c_str(), username.length());
     memcpy(new_user_data.new_token_hash, computed_hash, HASH_SIZE);
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
@@ -80,7 +80,7 @@ STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user
     }
     std::cout << "[INFO] Added new user to database.\n";
 
-    memcpy(user_data->new_username, username, sizeof(username));
+    memcpy(user_data->new_username, &username, sizeof(username));
     memcpy(user_data->new_raw_token, auth_token, sizeof(auth_token));
     memcpy(user_data->new_pub_key.pub_key, asym_keys.pub_key, sizeof(asym_keys.pub_key));
     user_data->new_pub_key.pub_key_len = asym_keys.pub_key_len;
