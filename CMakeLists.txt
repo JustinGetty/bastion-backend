@@ -45,10 +45,10 @@ add_library(bastion_data STATIC
 
         DatabaseV2/database_comm_v2.cpp
         DatabaseV2/DBService.cpp
-        DatabaseV2/Scheduler.cpp
-        DatabaseV2/UserDAO.cpp
-        DatabaseV2/DeviceDAO.cpp
-        DatabaseV2/EmailDAO.cpp
+        DatabaseV2/GenericStuff/Scheduler.cpp
+        DatabaseV2/UserServices/UserDAO.cpp
+        DatabaseV2/MobileDeviceServices/DeviceDAO.cpp
+        DatabaseV2/EmailServices/EmailDAO.cpp
 
         AWS_SES_LAMBDA/AWS_manager.cpp
         AWS_SES_LAMBDA/EmailSys.cpp
