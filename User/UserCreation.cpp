@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include "SeedCipher.h"
+#include "database_comm_v2.h"
 
 STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user_data) {
     //Create auth token ----------------------------------------------------------------
@@ -71,7 +72,8 @@ STATUS create_new_user_unsec(std::string* username, new_user_outbound_data* user
     memcpy(new_user_data.new_token_hash, computed_hash, HASH_SIZE);
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
-    STATUS ins_to_db_stat = add_new_user_to_db(&new_user_data);
+    //STATUS ins_to_db_stat = add_new_user_to_db(&new_user_data);
+    STATUS ins_to_db_stat = add_new_user_to_db_v2(&new_user_data);
     if (ins_to_db_stat != SUCCESS) {
         std::cerr << "[ERROR] Failed to insert new user in database\n";
         return DATABASE_FAILURE;
@@ -191,7 +193,8 @@ STATUS create_new_user_sec(bastion_username username, new_user_outbound_data* us
     memcpy(new_user_data.new_priv_key.priv_key, priv_key_full.priv_key, ASYM_SIZE);
     new_user_data.new_priv_key.priv_key_len = priv_key_full.priv_key_len;
     memcpy(new_user_data.seed_phrase, seed_phrase, 64);
-    STATUS ins_to_db_stat = add_new_sec_user_to_db(&new_user_data);
+    //STATUS ins_to_db_stat = add_new_sec_user_to_db(&new_user_data);
+    STATUS ins_to_db_stat = add_new_sec_user_to_db_v2(&new_user_data);
     if (ins_to_db_stat != SUCCESS) {
         std::cerr << "[ERROR] Failed to insert new user in database\n";
         return DATABASE_FAILURE;

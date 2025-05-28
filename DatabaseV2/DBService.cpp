@@ -114,6 +114,32 @@ Future<void> DBService::updateUserLastUsedTime(const std::string &username, cons
         );
 }
 
+Future<void> DBService::insertRegUser(new_user_struct &user_data) {
+    return asyncExec<void>(
+        [this, user_data]() {
+            wtr->insertNewRegularUser(user_data);
+        }
+    );
+}
+
+
+Future<void> DBService::insertSecUser(new_user_struct_sec &user_data) {
+    return asyncExec<void>(
+        [this, user_data]() {
+            wtr->insertNewSecureUser(user_data);
+        }
+    );
+}
+
+Future<void> DBService::insertPrivKey(std::string &username, priv_key_w_length &priv_key) {
+    return asyncExec<void>(
+        [this, username, priv_key]() {
+            wtr->insertUserPrivateKey(username, priv_key);
+        }
+        );
+}
+
+
 
 
 //template to handle void

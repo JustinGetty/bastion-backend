@@ -32,3 +32,4 @@
 24. Make sure new device token is sent every app launch!!!
 25. Build logger output namespace
 26. Side note, need to make demo approval cdn window for development
+27. Ensure device token is sent, add fallbacks

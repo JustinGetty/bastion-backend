@@ -61,6 +61,7 @@ std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
 
 //TODO break these endpoints into smaller functions, just pass the json into a helper
 //TODO optimize, STOP BLOCKING THE FUCKING EVENT LOOP. pass to thread pool for work intensive asks for shit like mobile get-site-data
+//note boost::asio has built in threadpool
 beast::string_view mime_type(beast::string_view path)
 {
     using beast::iequals;
@@ -268,6 +269,7 @@ private:
                     std::cerr << "[ERROR] Failed to create new user.\n";
                     std::string resp = R"({"status": "server_failure"})";
                     send_json_response(resp, http::status::ok);
+                    return;
                 }
                 std::string outbound_response;
                 outbound_data.secure_type = true;
@@ -276,10 +278,12 @@ private:
                     std::cerr << "[ERROR] Failed to parse data to json.\n";
                     std::string resp = R"({"status": "server_failure"})";
                     send_json_response(resp, http::status::ok);
+                    return;
                 }
 
                 std::cout << "[INFO] Username valid, user added.\n";
                 send_json_response(outbound_response, http::status::ok);
+                return;
             }
 
             //CREATE REGULAR USER
@@ -313,6 +317,7 @@ private:
                 std::cerr << "[ERROR] Failed to create new user.\n";
                 std::string resp = R"({"status": "server_failure"})";
                 send_json_response(resp, http::status::ok);
+                return;
             }
             std::string outbound_response;
             outbound_data.secure_type = false;
@@ -321,10 +326,12 @@ private:
                 std::cerr << "[ERROR] Failed to parse data to json.\n";
                 std::string resp = R"({"status": "server_failure"})";
                 send_json_response(resp, http::status::ok);
+                return;
             }
 
             std::cout << "[INFO] Username valid, user added.\n";
             send_json_response(outbound_response, http::status::ok);
+            return;
         }
 
 
@@ -427,8 +434,7 @@ private:
 
             std::cout << "[INFO] Username valid, user added.\n";
             send_json_response(outbound_response, http::status::ok);
-
-
+            return;
         }
 
 
@@ -526,6 +532,7 @@ private:
 
                 std::string resp_string = resp.dump();
                 send_json_response(resp_string, http::status::ok);
+                return;
             }
 
 
@@ -594,6 +601,7 @@ private:
                     return;
                 }
                 std::cout << "[INFO] Device token updated.\n";
+                return;
             }
 
 
@@ -738,6 +746,7 @@ private:
 
                 }
                 //handle error of no recovery method specified
+                std::cerr << "[ERROR] hit end of endpoints, somebody forgot a return statement ... you :(\n";
                 return;
             }
 

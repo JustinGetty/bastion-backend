@@ -4,14 +4,14 @@
 
 #ifndef DBSERVICE_H
 #define DBSERVICE_H
-#include "Scheduler.h"
-#include "UserDAO.h"
-#include "Future.h"
-#include "DatabaseRequest.h"
-#include "DeviceDAO.h"
+#include "GenericStuff/Scheduler.h"
+#include "UserServices/UserDAO.h"
+#include "GenericStuff/Future.h"
+#include "GenericStuff/DatabaseRequest.h"
+#include "MobileDeviceServices/DeviceDAO.h"
 #include <bastion_data.h>
-#include "IDeviceTokenStore.h"
-#include "IEmailWriter.h"
+#include "MobileDeviceServices/IDeviceTokenStore.h"
+#include "EmailServices/IEmailWriter.h"
 
 class DBService {
 public:
@@ -36,6 +36,11 @@ public:
     Future <std::vector<site_data_for_mobile>> getSiteDataForMobile(const std::string& uname);
     Future<void> updateSiteUsageCount(const std::string &site_spa_id);
     Future<void> updateUserLastUsedTime(const std::string &username, const std::string &site_spa_id);
+    Future<void> insertRegUser(new_user_struct &user_data);
+    Future<void> insertSecUser(new_user_struct_sec &user_data);
+    Future<void> insertPrivKey(std::string &username, priv_key_w_length &priv_key);
+
+
 
 private:
     Scheduler&                         sched;

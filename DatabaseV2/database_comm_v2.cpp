@@ -3,13 +3,13 @@
 //
 
 #include "../Headers/database_comm_v2.h"
-#include "Scheduler.h"
+#include "GenericStuff/Scheduler.h"
 #include "DBService.h"
 #include <sqlite3.h>
 #include <iostream>
 #include <bastion_data.h>
 
-#include "EmailDAO.h"
+#include "EmailServices/EmailDAO.h"
 
 sqlite3*   g_db        = nullptr;
 Scheduler  g_sched;
@@ -95,6 +95,22 @@ STATUS update_site_usage_count(const std::string *spa_id) {
 
 STATUS update_user_site_last_usage(const std::string * username, const std::string *spa_id) {
     auto future_ = g_dbService->updateUserLastUsedTime(*username, *spa_id);
+    future_.get();
+    return SUCCESS;
+}
+
+STATUS add_new_user_to_db_v2(new_user_struct *user_data) {
+    auto future_ = g_dbService->insertRegUser(*user_data);
+    future_.get();
+    return SUCCESS;
+}
+STATUS add_new_sec_user_to_db_v2(new_user_struct_sec *user_data) {
+    auto future_ = g_dbService->insertSecUser(*user_data);
+    future_.get();
+    return SUCCESS;
+}
+STATUS store_user_priv_key_by_username_v2(std::string *username, priv_key_w_length* priv_key) {
+    auto future_ = g_dbService->insertPrivKey(*username, *priv_key);
     future_.get();
     return SUCCESS;
 }

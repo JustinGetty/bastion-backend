@@ -6,7 +6,7 @@
 #define DATABASE_COMM_V2_H
 #include <bastion_data.h>
 #include "sqlite3.h"
-#include "../DatabaseV2/Scheduler.h"
+#include "../DatabaseV2/GenericStuff/Scheduler.h"
 #include "../DatabaseV2/DBService.h"
 
 extern sqlite3*    g_db;
@@ -22,5 +22,10 @@ STATUS check_if_user_is_new_to_site(const std::string username, bool* out);
 STATUS get_site_data_for_mobile(const std::string *username, std::vector<site_data_for_mobile>* site_data_out);
 STATUS update_site_usage_count(const std::string *spa_id);
 STATUS update_user_site_last_usage(const std::string * username, const std::string *spa_id);
+
+
+STATUS add_new_user_to_db_v2(new_user_struct *user_data);
+STATUS add_new_sec_user_to_db_v2(new_user_struct_sec *user_data);
+STATUS store_user_priv_key_by_username_v2(std::string *username, priv_key_w_length* priv_key);
 
 #endif //DATABASE_COMM_V2_H

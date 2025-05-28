@@ -21,13 +21,23 @@ UserDAO::UserDAO(sqlite3* _db): db(_db) {
         || sqlite3_prepare_v2(db, GET_SITE_DATA_FOR_MOBILE, -1, &stmtGetSiteData, nullptr) != SQLITE_OK
         || sqlite3_prepare_v2(db, UPDATE_SITE_USAGE, -1, &stmtUpdateSiteUsage, nullptr) != SQLITE_OK
         || sqlite3_prepare_v2(db, UPDATE_LAST_USED_SITE_TIMESTAMP, -1, &stmtUpdateLastSiteUsage, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, CREATE_USER_QUERY_REG, -1, &stmtInsertRegUser, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, CREATE_USER_QUERY_SEC, -1, &stmtInsertSecUser, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, UPDATE_USER_PRIV_KEY_BY_USERNAME, -1, &stmtInsertPrivKey, nullptr) != SQLITE_OK
         )
+        //did you remember to finalize it?
         throw std::runtime_error("Failed to prepare statement");
 }
 
 UserDAO::~UserDAO() {
     sqlite3_finalize(stmtFindByUsername);
     sqlite3_finalize(stmtCheckUserSiteExists);
+    sqlite3_finalize(stmtGetSiteData);
+    sqlite3_finalize(stmtUpdateSiteUsage);
+    sqlite3_finalize(stmtUpdateLastSiteUsage);
+    sqlite3_finalize(stmtInsertRegUser);
+    sqlite3_finalize(stmtInsertSecUser);
+    sqlite3_finalize(stmtInsertPrivKey);
 }
 
 
@@ -121,6 +131,7 @@ bool UserDAO::getUserSiteDataExists(const std::string username) {
 
 }
 
+//TODO move this to DeviceDAO
 std::vector<site_data_for_mobile> UserDAO::getSiteDataForMobileUser(std::string username) {
     sqlite3_reset(stmtGetSiteData);
     sqlite3_clear_bindings(stmtGetSiteData);
@@ -151,6 +162,7 @@ std::vector<site_data_for_mobile> UserDAO::getSiteDataForMobileUser(std::string 
 }
 
 
+//TODO move this to site DAO
 void UserDAO::updateSiteUsage(const std::string spa_id) {
     sqlite3_reset(stmtUpdateSiteUsage);
     sqlite3_clear_bindings(stmtUpdateSiteUsage);
@@ -177,21 +189,73 @@ void UserDAO::updateLastUserSiteUsage(const std::string username, const std::str
        || sqlite3_bind_text(stmtUpdateLastSiteUsage, 2, spa_id.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
        std::cerr << "Failed to bind username or spa id for statement: stmtUpdateLastSiteUsage\n";
 
-    const char *expanded = sqlite3_expanded_sql(stmtUpdateLastSiteUsage);
-    if (expanded) {
-        std::cout
-          << "[DEBUG] Fully bound SQL:\n"
-          << expanded
-          << "\n";
-        sqlite3_free((void*)expanded);
-    } else {
-        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
-    }
-
-
     if (sqlite3_step(stmtUpdateLastSiteUsage) != SQLITE_DONE) {
         std::cerr << "[ERROR] Failed to update last user site usage\n";
     }
+}
+
+
+void UserDAO::insertNewRegularUser(new_user_struct user_data) {
+    sqlite3_reset(stmtInsertRegUser);
+    sqlite3_clear_bindings(stmtInsertRegUser);
+
+    std::cout << "[INFO] Inserting regular user\n";
+
+   //INSERT INTO user (username, auth_token, asym_priv_key, asym_priv_key_len)
+    if (sqlite3_bind_text(stmtInsertRegUser, 1, user_data.new_username, -1, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertRegUser, 2, user_data.new_token_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertRegUser, 3, user_data.new_priv_key.priv_key, user_data.new_priv_key.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_int(stmtInsertRegUser, 4, user_data.new_priv_key.priv_key_len) != SQLITE_OK
+        )
+    std::cerr << "[ERROR] Failed to bind full regular user data\n";
+
+    if (sqlite3_step(stmtInsertRegUser) != SQLITE_DONE) {
+        std::cerr << "[ERROR] Failed to insert reg user\n";
+    }
+}
+
+void UserDAO::insertNewSecureUser(new_user_struct_sec user_data) {
+    sqlite3_reset(stmtInsertSecUser);
+    sqlite3_clear_bindings(stmtInsertSecUser);
+
+    // "INSERT INTO user_sec (username, auth_token hash_size, auth_token_raw_enc 64, asym_priv_key, asym_priv_key_len, seed_phrase_hash)
+
+    std::cout << "[INFO] Inserting secure user\n";
+
+    if (sqlite3_bind_text(stmtInsertSecUser, 1, user_data.new_username, -1, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertSecUser, 2, user_data.new_token_hash, HASH_SIZE, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertSecUser, 3, user_data.new_token_encrypted, 64, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertSecUser, 4, user_data.new_priv_key.priv_key, user_data.new_priv_key.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_int(stmtInsertSecUser, 5, user_data.new_priv_key.priv_key_len) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertSecUser, 6, user_data.seed_phrase, 32, SQLITE_TRANSIENT) != SQLITE_OK
+        )
+        std::cerr << "[ERROR] Failed to bind full secure user data\n";
+
+    if (sqlite3_step(stmtInsertSecUser) != SQLITE_DONE) {
+        std::cerr << "[ERROR] Failed to insert sec user\n";
+    }
+}
+
+void UserDAO::insertUserPrivateKey(std::string username, priv_key_w_length priv_key) {
+    sqlite3_reset(stmtInsertPrivKey);
+    sqlite3_clear_bindings(stmtInsertPrivKey);
+
+
+    std::cout << "[INFO] Inserting user private key\n";
+
+    //UPDATE user SET asym_priv_key = ?, asym_priv_key_len = ? WHERE username = ?"
+
+    if (sqlite3_bind_text(stmtInsertPrivKey, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_blob(stmtInsertPrivKey, 2, priv_key.priv_key, priv_key.priv_key_len, SQLITE_TRANSIENT) != SQLITE_OK
+        || sqlite3_bind_int(stmtInsertPrivKey, 3, priv_key.priv_key_len) != SQLITE_OK
+        )
+        std::cerr << "[ERROR] Failed to bind insert private key data\n";
+
+
+    if (sqlite3_step(stmtInsertPrivKey) != SQLITE_DONE) {
+        std::cerr << "[ERROR] Failed to insert user private key\n";
+    }
+
 }
 
 

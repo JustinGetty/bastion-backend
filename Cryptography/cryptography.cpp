@@ -558,6 +558,7 @@ STATUS verify_seed_phrase(bastion_username username, const std::string received_
     return VERIFICATION_FAILURE;
 }
 
+/*
 //this shit simulates main to test crypto functions
 int test_as_main() {
     sym_key key;
@@ -801,7 +802,7 @@ int test_sym_encode_json() {
         printf("%02x", byte);
     }
     std::cout << std::endl;
-    \*/
+
     return 0;
 }
 
@@ -821,7 +822,7 @@ int test_full_send() {
      * Put those encode in the bash test file
      * Send that back as json
      * Decode it all and verify it works
-     */
+
 
 
 
@@ -869,7 +870,7 @@ int test_full_send() {
     /*
     std::ofstream pub_key_file = std::ofstream("Cryptography/asym_pub_key.bin", std::ios::binary);
     pub_key_file.write(reinterpret_cast<const char*>(&asym_keys.pub_key), sizeof(asym_keys.pub_key));
-    */
+
 
 
     //Generate sym key and iv ------------------------------------------------------------------
@@ -996,3 +997,4 @@ void test_decode() {
 
 }
 
+*/

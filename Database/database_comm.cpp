@@ -214,6 +214,8 @@ size_t get_der_blob_total_length(const unsigned char *der_blob) {
 }
 
 
+//-----------------------------------------------------------------------------------------
+/*
 STATUS get_basic_user_by_id(int userID, user_data_basic *user_data)
 {
     int sock = connect_to_database_daemon();
@@ -265,6 +267,8 @@ STATUS get_basic_user_by_id(int userID, user_data_basic *user_data)
     close(sock);
     return SUCCESS;
 }
+
+
 //for testing, not to be used in Prod
 STATUS post_basic_user_data(user_data_basic user_data) {
     int sock = connect_to_database_daemon();
@@ -315,6 +319,8 @@ STATUS post_full_user_data(full_user_data user_data) {
     close(sock);
     return post_status;
 }
+*/
+
 
 STATUS store_token_hash(const int user_id, const token_hash token_hash_, const size_t hash_len) {
     query_param params[MAX_PARAMS];

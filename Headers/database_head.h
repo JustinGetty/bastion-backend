@@ -5,7 +5,7 @@
 #include <bastion_data.h>
 
 
-#define THREAD_POOL_SIZE 10
+#define THREAD_POOL_SIZE 3
 #define TASK_QUEUE_CAPACITY 10000
 
 
