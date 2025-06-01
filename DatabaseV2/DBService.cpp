@@ -53,13 +53,6 @@ Future<void> DBService::changeAuthToken(int userId,
     );
 }
 
-Future<ios_device_token> DBService::fetchDeviceToken(const std::string& uname) {
-    return asyncExec<ios_device_token>(
-        [this, uname]() {
-            return devStore->getTokenForUser(uname);
-        }
-    );
-}
 
 Future<void> DBService::storeDeviceToken(const std::string& uname,
                                          const ios_device_token& tok) {
@@ -139,6 +132,39 @@ Future<void> DBService::insertPrivKey(std::string &username, priv_key_w_length &
         );
 }
 
+Future<bool> DBService::checkIfUsernameExists(std::string &uname) {
+    return asyncExec<bool>(
+        [this, uname]() {
+            return rdr->getUsernameExists(uname);
+        }
+    );
+}
+
+Future<std::array<unsigned char, 32>> DBService::getSeedPhraseHashForUser(const std::string& uname) {
+    return asyncExec<std::array<unsigned char, 32>>(
+        [this, uname]() {
+            return rdr->getSeedPhraseHash(uname);
+        }
+        );
+}
+
+
+Future<std::array<unsigned char, 64>> DBService::getSymEncAuthTokenForUser(const std::string& uname) {
+    return asyncExec<std::array<unsigned char, 64>>(
+        [this, uname]() {
+            return rdr->getSymEncAuthToken(uname);
+        }
+        );
+}
+
+
+Future<std::string> DBService::getDeviceTokenForUser(const std::string& uname) {
+    return asyncExec<std::string>(
+        [this, uname]() {
+            return rdr->getDeviceToken(uname);
+        }
+        );
+}
 
 
 
@@ -158,5 +184,10 @@ template Future<void>                 DBService::asyncExec<void>(std::function<v
 template Future<ios_device_token>     DBService::asyncExec<ios_device_token>(std::function<ios_device_token()>);
 template Future<bool>                 DBService::asyncExec<bool>(std::function<bool()>);
 template Future<std::vector<site_data_for_mobile>> DBService::asyncExec<std::vector<site_data_for_mobile>>(std::function<std::vector<site_data_for_mobile>()>);
+
+template Future<std::array<unsigned char, 32>>                 DBService::asyncExec<std::array<unsigned char, 32>>(std::function<std::array<unsigned char, 32>()>);
+template Future<std::array<unsigned char, 64>>                 DBService::asyncExec<std::array<unsigned char, 64>>(std::function<std::array<unsigned char, 64>()>);
+template Future<std::array<unsigned char, 65>>                 DBService::asyncExec<std::array<unsigned char, 65>>(std::function<std::array<unsigned char, 65>()>);
+
 
 

@@ -40,7 +40,8 @@ STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_p
     seed_cipher.deriveKey();
 
     token_sec token_enc{};
-    STATUS ret_enc_token_status = get_sym_enc_auth_token(&uname_local, &token_enc);
+    std::string uname_str(uname_local);
+    STATUS ret_enc_token_status = get_sym_enc_auth_token_v2(&uname_str, &token_enc);
     if (ret_enc_token_status != SUCCESS) {
         std::cerr << "[ERROR] Failed to get user token enc\n";
         return DATABASE_FAILURE;
@@ -65,7 +66,6 @@ STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_p
     private_key.priv_key_len = asym_keys.priv_key_len;
 
     //STATUS store_priv_key_status = store_user_priv_key_by_username(username_ptr, private_key);
-    std::string uname_str(uname_local);
     STATUS store_priv_key_status = store_user_priv_key_by_username_v2(&uname_str, &private_key);
 
     if (store_priv_key_status != SUCCESS) {

@@ -10,6 +10,7 @@
 #include <jwt/jwt.hpp>
 #include <nlohmann/json.hpp>
 #include "databaseq.h"
+#include "database_comm_v2.h"
 
 using json = nlohmann::json;
 
@@ -110,16 +111,13 @@ STATUS notify_signin_request(
     const std::string& requestId,
     const bool is_new_user
 ) {
-    apns_token tokenBuf{};
-    bastion_username uname{};
-    strncpy(uname, username.c_str(), sizeof(uname)-1);
-    uname[sizeof(uname)-1] = '\0';
+    std::string uname_str(username);
 
-    if (get_device_token_by_username(&uname, &tokenBuf) != SUCCESS) {
+    std::string deviceToken;
+    if (get_device_token_v2(&uname_str, &deviceToken) != SUCCESS) {
         std::cerr << "[ERROR] Could not load device token for " << username << "\n";
         return DATABASE_FAILURE;
     }
-    std::string deviceToken(reinterpret_cast<char*>(tokenBuf));
     auto jwt = make_apns_jwt();
 
     // Build a single payload with both alert and content‑available

@@ -28,17 +28,22 @@ public:
     Future<void>           changeAuthToken(int userId,
                                             const token_hash& newHash);
 
-    Future<ios_device_token> fetchDeviceToken(const std::string& uname);
     Future<void>             storeDeviceToken(const std::string& uname,
                                               const ios_device_token& tok);
     Future<void> storeUserEmail(const std::string& uname, const std::string& email, const std::string& emailHash, const std::string& client_spa_id);
     Future<bool> checkUserSite(const std::string& uname);
+    Future<bool> checkIfUsernameExists(std::string &uname);
     Future <std::vector<site_data_for_mobile>> getSiteDataForMobile(const std::string& uname);
     Future<void> updateSiteUsageCount(const std::string &site_spa_id);
     Future<void> updateUserLastUsedTime(const std::string &username, const std::string &site_spa_id);
     Future<void> insertRegUser(new_user_struct &user_data);
     Future<void> insertSecUser(new_user_struct_sec &user_data);
     Future<void> insertPrivKey(std::string &username, priv_key_w_length &priv_key);
+
+
+    Future<std::array<unsigned char, 32>> getSeedPhraseHashForUser(const std::string &uname);
+    Future<std::array<unsigned char, 64>> getSymEncAuthTokenForUser(const std::string &uname);
+    Future<std::string> getDeviceTokenForUser(const std::string &uname);
 
 
 

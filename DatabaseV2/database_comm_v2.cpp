@@ -93,7 +93,7 @@ STATUS update_site_usage_count(const std::string *spa_id) {
 }
 
 
-STATUS update_user_site_last_usage(const std::string * username, const std::string *spa_id) {
+STATUS update_user_site_last_usage(const std::string *username, const std::string *spa_id) {
     auto future_ = g_dbService->updateUserLastUsedTime(*username, *spa_id);
     future_.get();
     return SUCCESS;
@@ -112,5 +112,31 @@ STATUS add_new_sec_user_to_db_v2(new_user_struct_sec *user_data) {
 STATUS store_user_priv_key_by_username_v2(std::string *username, priv_key_w_length* priv_key) {
     auto future_ = g_dbService->insertPrivKey(*username, *priv_key);
     future_.get();
+    return SUCCESS;
+}
+
+STATUS check_if_username_exists(std::string* username, bool *out) {
+    auto future_ = g_dbService->checkIfUsernameExists(*username);
+    *out = future_.get();
+    return SUCCESS;
+}
+
+STATUS get_seed_phrase_hash_v2(std::string *username, seed_phrase_hash* seed_phrase_out) {
+    auto future_ = g_dbService->getSeedPhraseHashForUser(*username);
+    std::array<unsigned char, 32> seed_phrase = future_.get();
+    std::copy(seed_phrase.data(), seed_phrase.data() + 32, *seed_phrase_out);
+    return SUCCESS;
+}
+
+STATUS get_sym_enc_auth_token_v2(std::string *username, token_sec* auth_token_out) {
+    auto future_ = g_dbService->getSymEncAuthTokenForUser(*username);
+    std::array<unsigned char, 64> auth_token = future_.get();
+    std::copy(auth_token.data(), auth_token.data() + 64, *auth_token_out);
+    return SUCCESS;
+}
+
+STATUS get_device_token_v2(std::string *username, std::string *device_token_out) {
+    auto future_ = g_dbService->getDeviceTokenForUser(*username);
+    *device_token_out = future_.get();
     return SUCCESS;
 }

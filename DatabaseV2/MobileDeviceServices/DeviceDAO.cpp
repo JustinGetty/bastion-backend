@@ -54,8 +54,3 @@ void DeviceDAO::insertOrUpdateToken(const std::string& uname, const ios_device_t
 
 }
 
-ios_device_token DeviceDAO::getTokenForUser(const std::string& uname) {
-    //implement later
-    ios_device_token token;
-    return token;
-}

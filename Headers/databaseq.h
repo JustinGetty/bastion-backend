@@ -32,19 +32,21 @@ void print_hex(unsigned char *data, int length);
 //subgrouped by return type
 
 //void
-STATUS add_new_user_to_db(new_user_struct *user_data);
-STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data);
+//STATUS add_new_user_to_db(new_user_struct *user_data);
+//STATUS add_new_sec_user_to_db(new_user_struct_sec *user_data);
 //STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_length priv_key);
 
 //bool
+//this has been fixed but leaving for now
 STATUS check_username_exists(bastion_username *username, bool *output);
 
 //Unique returnsss
-STATUS get_token_hash(const int id, token_hash hash_out);
-STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full);
-STATUS get_seed_phrase_hash(bastion_username* username, seed_phrase_hash *seed_phrase);
-STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc);
-STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out);
+//STATUS get_token_hash(const int id, token_hash hash_out);
+//STATUS get_user_private_key(const int user_id, priv_key_w_length *priv_key_full);
+
+//STATUS get_seed_phrase_hash(bastion_username* username, seed_phrase_hash *seed_phrase);
+//STATUS get_sym_enc_auth_token(bastion_username *username, token_sec *token_enc);
+//STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out);
 
 //this goes into SiteDAO
 STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id);

@@ -17,7 +17,6 @@ public:
    ~DeviceDAO() override;
 
    void insertOrUpdateToken(const std::string& uname, const ios_device_token& token) override;
-   ios_device_token getTokenForUser(const std::string& uname) override;
 
 };
 

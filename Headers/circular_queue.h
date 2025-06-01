@@ -21,7 +21,7 @@ public:
         not_empty_.notify_one();
     }
 
-    // Non-blocking pop.
+    //non blocking pop
     bool try_pop(T& item) {
         std::unique_lock<std::mutex> lock(mutex_);
         if (count_ == 0) {

@@ -6,9 +6,25 @@
 #include <bastion_data.h>
 
 
+
 /*NOTES
  * I am too lazy to make a new DAO for every type, so for now User is going to encompass alot of different types lmao
  */
+
+void print_expanded_stmt(sqlite3_stmt *stmt) {
+    const char *expanded = sqlite3_expanded_sql(stmt);
+    if (expanded) {
+        std::cout
+          << "[DEBUG] Fully bound SQL:\n"
+          << expanded
+          << "\n";
+        sqlite3_free((void*)expanded);
+    } else {
+        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
+    }
+}
+
+
 UserDAO::UserDAO(sqlite3* _db): db(_db) {
     //const char* SQL = "SELECT id, username FROM user WHERE id = ?";
     /*
@@ -24,7 +40,12 @@ UserDAO::UserDAO(sqlite3* _db): db(_db) {
         || sqlite3_prepare_v2(db, CREATE_USER_QUERY_REG, -1, &stmtInsertRegUser, nullptr) != SQLITE_OK
         || sqlite3_prepare_v2(db, CREATE_USER_QUERY_SEC, -1, &stmtInsertSecUser, nullptr) != SQLITE_OK
         || sqlite3_prepare_v2(db, UPDATE_USER_PRIV_KEY_BY_USERNAME, -1, &stmtInsertPrivKey, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, CHECK_IF_USERNAME_EXISTS, -1, &stmtCheckUsernameExists, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, GET_SEED_PHRASE_HASH_QUERY, -1, &stmtGetSeedPhraseHash, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, GET_ENC_AUTH_TOKEN_BY_USERNAME_QUERY, -1, &stmtGetSymEncAuthToken, nullptr) != SQLITE_OK
+        || sqlite3_prepare_v2(db, GET_DEVICE_TOKEN_IOS, -1, &stmtGetDeviceToken, nullptr) != SQLITE_OK
         )
+
         //did you remember to finalize it?
         throw std::runtime_error("Failed to prepare statement");
 }
@@ -38,6 +59,10 @@ UserDAO::~UserDAO() {
     sqlite3_finalize(stmtInsertRegUser);
     sqlite3_finalize(stmtInsertSecUser);
     sqlite3_finalize(stmtInsertPrivKey);
+    sqlite3_finalize(stmtCheckUsernameExists);
+    sqlite3_finalize(stmtGetSeedPhraseHash);
+    sqlite3_finalize(stmtGetSymEncAuthToken);
+    sqlite3_finalize(stmtGetDeviceToken);
 }
 
 
@@ -49,16 +74,6 @@ full_user_data UserDAO::findByUsername(const std::string& uname) {
     }
     sqlite3_bind_text(stmtFindByUsername, 2, uname.c_str(), -1, SQLITE_TRANSIENT);
 
-    const char *expanded = sqlite3_expanded_sql(stmtFindByUsername);
-    if (expanded) {
-        std::cout
-          << "[DEBUG] Fully bound SQL:\n"
-          << expanded
-          << "\n";
-        sqlite3_free((void*)expanded);
-    } else {
-        std::cout << "[DEBUG] sqlite3_expanded_sql() returned NULL\n";
-    }
 
     full_user_data user_data{};
 
@@ -172,6 +187,8 @@ void UserDAO::updateSiteUsage(const std::string spa_id) {
         return;
    }
 
+    print_expanded_stmt(stmtUpdateSiteUsage);
+
     if (sqlite3_step(stmtUpdateSiteUsage) != SQLITE_DONE) {
         std::cerr << "[ERROR] Failed to update site usage\n";
     }
@@ -255,7 +272,88 @@ void UserDAO::insertUserPrivateKey(std::string username, priv_key_w_length priv_
     if (sqlite3_step(stmtInsertPrivKey) != SQLITE_DONE) {
         std::cerr << "[ERROR] Failed to insert user private key\n";
     }
-
 }
+
+bool UserDAO::getUsernameExists(const std::string username) {
+    sqlite3_reset(stmtCheckUsernameExists);
+    sqlite3_clear_bindings(stmtCheckUsernameExists);
+
+    if (sqlite3_bind_text(stmtCheckUsernameExists, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtCheckUsernameExists\n";
+    }
+    if (sqlite3_bind_text(stmtCheckUsernameExists, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtCheckUsernameExists\n";
+    }
+
+    if (sqlite3_step(stmtCheckUsernameExists) != SQLITE_ROW) {
+        std::cout << "[INFO] Username does not exist in site\n";
+        return false;
+    }
+    std::cout << "[INFO] Username does exist\n";
+    return true;
+}
+
+
+
+std::array<unsigned char, 32> UserDAO::getSeedPhraseHash(const std::string username) {
+    sqlite3_reset(stmtGetSeedPhraseHash);
+    sqlite3_clear_bindings(stmtGetSeedPhraseHash);
+
+    if (sqlite3_bind_text(stmtGetSeedPhraseHash, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtGetSeedPhraseHash\n";
+    }
+
+    std::array<unsigned char, 32> seed_phrase{};
+    if (sqlite3_step(stmtGetSeedPhraseHash) == SQLITE_ROW) {
+        auto raw_seed_phrase_hash = (const unsigned char*)sqlite3_column_blob(stmtGetSeedPhraseHash, 0);
+        std::copy(raw_seed_phrase_hash, raw_seed_phrase_hash + 32, seed_phrase.begin());
+    }
+    else {
+        std::cerr << "[ERROR] Failed to get seed phrase hash\n";
+    }
+    return seed_phrase;
+}
+
+std::array<unsigned char, 64> UserDAO::getSymEncAuthToken(const std::string username) {
+    sqlite3_reset(stmtGetSymEncAuthToken);
+    sqlite3_clear_bindings(stmtGetSymEncAuthToken);
+
+    if (sqlite3_bind_text(stmtGetSymEncAuthToken, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtGetSymEncAuthToken\n";
+    }
+
+    std::array<unsigned char, 64> symEncAuthToken{};
+    if (sqlite3_step(stmtGetSymEncAuthToken) == SQLITE_ROW) {
+        auto raw_auth_token = (const unsigned char*)sqlite3_column_blob(stmtGetSymEncAuthToken, 0);
+        std::copy(raw_auth_token, raw_auth_token + 64, symEncAuthToken.begin());
+    }
+    else {
+        std::cerr << "[ERROR] Failed to get auth token\n";
+    }
+    return symEncAuthToken;
+}
+
+std::string UserDAO::getDeviceToken(const std::string username) {
+    sqlite3_reset(stmtGetDeviceToken);
+    sqlite3_clear_bindings(stmtGetDeviceToken);
+
+    if (sqlite3_bind_text(stmtGetDeviceToken, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+        std::cerr << "[ERROR] Failed to bind username for statement: stmtGetDeviceToken\n";
+    }
+    std::string device_token;
+    if (sqlite3_step(stmtGetDeviceToken) == SQLITE_ROW) {
+        auto raw_device_token = sqlite3_column_text(stmtGetDeviceToken, 0);
+        std::string s{
+            reinterpret_cast<const char*>(raw_device_token),
+            65
+        };
+        device_token = s;
+    }
+    else {
+        std::cerr << "[ERROR] Failed to get device token\n";
+    }
+    return device_token;
+}
+
 
 

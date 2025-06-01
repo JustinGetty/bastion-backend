@@ -167,10 +167,12 @@ private:
         Helper&& helper,
         http::status status = http::status::ok)
         {
+            auto start = std::chrono::high_resolution_clock::now();
             auto ioc = socket_.get_executor();
 
             boost_thread_pool.enqueue([
                 this,
+                start,
                 ioc,
                 query = std::move(query),
                 helper = std::forward<Helper>(helper),
@@ -180,9 +182,14 @@ private:
 
                 boost::asio::post(ioc, [
                     this,
+                    start,
                     body = std::move(body),
                     status
                 ]() mutable {
+                    auto finish = std::chrono::high_resolution_clock::now();
+                    auto us = std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count();
+                    std::cout << "[TIMING] full round‐trip took " << us << " µs\n";
+
                     send_json_response(body, status);
                 });
             });

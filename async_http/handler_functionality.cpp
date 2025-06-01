@@ -6,7 +6,17 @@
 #include "global_thread_pool_tmp.h"
 
 //TODO make this an object with more comprehensive functions
+//TODO make this NOT pmr, NEED FUCKING MUTEX
 std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
+
+
+/* TODO
+ allocate this on heap, make full class for it.
+ it will be unordered_map of "cache" objects.
+ every time a signin request is approved or denied, update cache
+ flag to whether it should pull new data or not.
+ */
+
 
 namespace nlohmann {
     inline void to_json(json& j, site_data_for_mobile const& data) {
@@ -488,7 +498,6 @@ std::string validate_username_helper(std::string received_json) {
     std::string username = msg_method.keys["username"];
 
     bastion_username user_username{};
-    bastion_username *user_username_ptr = &user_username;
     //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
     if (setUsername(msg_method.keys["username"].c_str(), user_username)) {
         std::cout << "[INFO] Username valid.\n";
@@ -501,14 +510,14 @@ std::string validate_username_helper(std::string received_json) {
      *Check is username exists in DB here, reject if not
      */
     bool username_exists;
-    bool *username_exists_ptr = &username_exists;
-    STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+    std::string uname_str(user_username);
+    STATUS username_exists_status = check_if_username_exists(&uname_str, &username_exists);
     if (username_exists_status != SUCCESS) {
         std::cout << "[ERROR] Error checking username.\n";
         return R"({"status": "db_error"})";
     }
 
-    if (*username_exists_ptr == true) {
+    if (username_exists == true) {
         std::cout << "[INFO] Username already in use.\n";
         return R"({"status": "user_already_exists"})";
     }

@@ -158,7 +158,6 @@ struct WebSocketBehavior
             std::cout << std::endl;
 
             bastion_username user_username{};
-            bastion_username *user_username_ptr = &user_username;
             //TODO SUPER IMPORTANT USE SAME PROCESS FUNCTION TO VALIDATE USERNAMES AT SIGNUP
             if (setUsername(parsed_message.keys["username"].c_str(), user_username)) {
                 std::cout << "[INFO] Username valid.\n";
@@ -173,8 +172,35 @@ struct WebSocketBehavior
              *Check is username exists in DB here, reject if not
              */
             bool username_exists;
-            bool *username_exists_ptr = &username_exists;
-            STATUS username_exists_status = check_username_exists(user_username_ptr, username_exists_ptr);
+            std::string uname_str(user_username);
+
+
+
+
+            //------------test if new way is quicker-------------------------------------------------------
+            auto start = std::chrono::high_resolution_clock::now();
+            STATUS username_exists_status = check_if_username_exists(&uname_str, &username_exists);
+            std::cout << "username exists status: " << username_exists_status << std::endl;
+            auto finish = std::chrono::high_resolution_clock::now();
+            auto micros = std::chrono::duration_cast<std::chrono::microseconds>(finish - start).count();
+            std::cout << "[TIMING] New username lookup took " << micros << " microseconds\n";
+
+
+            //------------test if old way is quicker-------------------------------------------------------
+            /*
+            auto start_v2 = std::chrono::high_resolution_clock::now();
+            STATUS username_exists_leg_status = check_username_exists(&user_username, &username_exists);
+            std::cout << "username exists status: " << username_exists_leg_status << std::endl;
+            auto finish_v2 = std::chrono::high_resolution_clock::now();
+            auto micros_v2 = std::chrono::duration_cast<std::chrono::microseconds>(finish_v2 - start_v2).count();
+            std::cout << "[TIMING] Old username lookup took " << micros_v2 << " microseconds\n";
+            */
+
+
+
+
+
+
             if (username_exists_status != SUCCESS) {
                 std::cout << "[ERROR] Error checking username.\n";
                 std::string user_exists_error = R"({"status": "db_error"})";
@@ -182,7 +208,7 @@ struct WebSocketBehavior
                 return;
             }
 
-            if (*username_exists_ptr == false) {
+            if (username_exists == false) {
                 std::cout << "[INFO] Username does not exist.\n";
                 std::string user_exist_false = R"({"status": "user_no_exist"})";
                 ws->send(user_exist_false, uWS::OpCode::TEXT);

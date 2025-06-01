@@ -20,6 +20,7 @@
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <cctype>
+#include "database_comm_v2.h"
 
 void print_token_hash(token_hash token_hash) {
     printf("[INFO] Token Hash:\n[DATA] ");
@@ -65,6 +66,7 @@ STATUS constant_time_compare(const token_hash a, const token_hash b, size_t len)
    3. Comparing the two hashes in constant time.
    Both the stored and received tokens use fixed-width arrays.
    */
+/*
 STATUS verify_token(int id, const token received_token) {
     token_hash stored_hash;
     token_hash computed_hash;
@@ -85,7 +87,7 @@ STATUS verify_token(int id, const token received_token) {
     printf("[INFO] Token verification failed.\n");
     return VERIFICATION_FAILURE;
 }
-
+*/
 /* ----- ASYMMETRIC KEYS --------- */
 /* Generates an RSA key pair using the EVP_PKEY API and stores the DER-encoded keys
    in fixed-length buffers provided by key_structure.
@@ -305,7 +307,7 @@ cleanup:
     if (pkey) EVP_PKEY_free(pkey);
     return status;
 }
-
+/*
 STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int encrypted_len, unsigned char *decrypted) {
     priv_key_w_length priv_key_full;
     get_user_private_key(user_id, &priv_key_full);
@@ -314,6 +316,7 @@ STATUS decrypt_user_message(int user_id, const unsigned char *encrypted, int enc
     STATUS decrypt_status = decrypt_with_private_key(priv_key_full.priv_key, priv_key_full.priv_key_len, encrypted, encrypted_len, decrypted, ptr);
     return decrypt_status;
 }
+*/
 
 /* SYMMETRIC KEYS ---------------------------------------------------*/
 
@@ -534,8 +537,9 @@ STATUS verify_seed_phrase(bastion_username username, const std::string received_
     seed_phrase_hash computed_hash;
     bastion_username uname_local{};
     memcpy(uname_local, username, sizeof(username));
+    std::string uname_local_str(uname_local);
     //need to implement get_token_hash
-    if (get_seed_phrase_hash(&uname_local, &stored_hash) != SUCCESS) {
+    if (get_seed_phrase_hash_v2(&uname_local_str, &stored_hash) != SUCCESS) {
         fprintf(stderr, "[ERROR] Failed to retrieve stored token hash for username %d.\n", username);
         return CRYPTO_FAILURE;
     }

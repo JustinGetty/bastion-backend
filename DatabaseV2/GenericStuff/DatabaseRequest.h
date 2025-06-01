@@ -30,6 +30,7 @@ public:
             promise.setException(std::current_exception());
         }
     }
+
     Future<T> getFuture() {
         return promise.getFuture();
     }
