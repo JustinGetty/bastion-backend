@@ -37,8 +37,7 @@ void print_hex(unsigned char *data, int length);
 //STATUS store_user_priv_key_by_username(bastion_username *username, priv_key_w_length priv_key);
 
 //bool
-//this has been fixed but leaving for now
-STATUS check_username_exists(bastion_username *username, bool *output);
+//STATUS check_username_exists(bastion_username *username, bool *output);
 
 //Unique returnsss
 //STATUS get_token_hash(const int id, token_hash hash_out);

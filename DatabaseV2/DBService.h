@@ -12,6 +12,8 @@
 #include <bastion_data.h>
 #include "MobileDeviceServices/IDeviceTokenStore.h"
 #include "EmailServices/IEmailWriter.h"
+#include "SiteServices/ISiteReader.h"
+#include "SiteServices/ISiteWriter.h"
 
 class DBService {
 public:
@@ -19,7 +21,9 @@ public:
               std::unique_ptr<IUserReader>  userReader,
               std::unique_ptr<IUserWriter>  userWriter,
               std::unique_ptr<IDeviceTokenStore> deviceStore,
-              std::unique_ptr<IEmailWriter>  emailWriter
+              std::unique_ptr<IEmailWriter>  emailWriter,
+              std::unique_ptr<ISiteReader> siteReader,
+              std::unique_ptr<ISiteWriter> siteWriter
               );
 
     Future<full_user_data> getUserById(int id);
@@ -45,7 +49,8 @@ public:
     Future<std::array<unsigned char, 64>> getSymEncAuthTokenForUser(const std::string &uname);
     Future<std::string> getDeviceTokenForUser(const std::string &uname);
 
-
+    Future<int> getSiteIDBySPA(const std::string &spa_id);
+    Future<void> insertReqInDB(const int& site_id, const std::string& username, const int& approved);
 
 private:
     Scheduler&                         sched;
@@ -53,6 +58,8 @@ private:
     std::unique_ptr<IUserWriter>      wtr;
     std::unique_ptr<IDeviceTokenStore> devStore;
     std::unique_ptr<IEmailWriter>      emailWtr;
+    std::unique_ptr<ISiteReader>       siteRdr;
+    std::unique_ptr<ISiteWriter>       siteWtr;
 
     template<typename T, typename Fn>
     Future<T> asyncExec(Fn work);

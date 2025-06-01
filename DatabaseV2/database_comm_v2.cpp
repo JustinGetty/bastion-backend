@@ -10,6 +10,7 @@
 #include <bastion_data.h>
 
 #include "EmailServices/EmailDAO.h"
+#include "SiteServices/SiteDAO.h"
 
 sqlite3*   g_db        = nullptr;
 Scheduler  g_sched;
@@ -32,6 +33,8 @@ STATUS start_db_comm() {
     auto userWriter = std::make_unique<UserDAO>(g_db);
     auto deviceStore = std::make_unique<DeviceDAO>(g_db);
     auto emailStore = std::make_unique<EmailDAO>(g_db);
+    auto siteReader = std::make_unique<SiteDAO>(g_db);
+    auto siteWriter = std::make_unique<SiteDAO>(g_db);
 
     //move into DBService
     g_dbService = new DBService(
@@ -39,7 +42,9 @@ STATUS start_db_comm() {
         std::move(userReader),
         std::move(userWriter),
         std::move(deviceStore),
-        std::move(emailStore)
+        std::move(emailStore),
+        std::move(siteReader),
+        std::move(siteWriter)
     );
     return SUCCESS;
 }

@@ -9,12 +9,17 @@ DBService::DBService(
     std::unique_ptr<IUserReader>           userReader,
     std::unique_ptr<IUserWriter>           userWriter,
     std::unique_ptr<IDeviceTokenStore>     deviceStore,
-    std::unique_ptr<IEmailWriter> emailWriter)
+    std::unique_ptr<IEmailWriter>          emailWriter,
+    std::unique_ptr<ISiteReader>           siteReader,
+    std::unique_ptr<ISiteWriter>           siteWriter
+    )
   : sched      (sched_)
   , rdr        (std::move(userReader))
   , wtr        (std::move(userWriter))
   , devStore   (std::move(deviceStore))
   , emailWtr   (std::move(emailWriter))
+  , siteRdr    (std::move(siteReader))
+  , siteWtr    (std::move(siteWriter))
 {}
 
 // —————————————————————————————————————————————————
@@ -166,6 +171,21 @@ Future<std::string> DBService::getDeviceTokenForUser(const std::string& uname) {
         );
 }
 
+Future<int> DBService::getSiteIDBySPA(const std::string &spa_id) {
+    return asyncExec<int>(
+        [this, spa_id]() {
+            return siteRdr->getClientIdBySpaId(spa_id);
+        }
+        );
+}
+
+Future<void> DBService::insertReqInDB(const int& site_id, const std::string& username, const int& approved) {
+   return asyncExec<void>(
+       [this, site_id, username, approved]() {
+           return siteWtr->insertRequest(site_id, username, approved);
+       }
+       );
+}
 
 
 //template to handle void
@@ -184,10 +204,11 @@ template Future<void>                 DBService::asyncExec<void>(std::function<v
 template Future<ios_device_token>     DBService::asyncExec<ios_device_token>(std::function<ios_device_token()>);
 template Future<bool>                 DBService::asyncExec<bool>(std::function<bool()>);
 template Future<std::vector<site_data_for_mobile>> DBService::asyncExec<std::vector<site_data_for_mobile>>(std::function<std::vector<site_data_for_mobile>()>);
-
+template Future<int> DBService::asyncExec<int>(std::function<int()>);
 template Future<std::array<unsigned char, 32>>                 DBService::asyncExec<std::array<unsigned char, 32>>(std::function<std::array<unsigned char, 32>()>);
 template Future<std::array<unsigned char, 64>>                 DBService::asyncExec<std::array<unsigned char, 64>>(std::function<std::array<unsigned char, 64>()>);
 template Future<std::array<unsigned char, 65>>                 DBService::asyncExec<std::array<unsigned char, 65>>(std::function<std::array<unsigned char, 65>()>);
+
 
 
 

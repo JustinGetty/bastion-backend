@@ -17,8 +17,6 @@ struct IUserWriter {
     virtual void insertUserPrivateKey(std::string username, priv_key_w_length priv_key) = 0;
 
 
-
-
     virtual ~IUserWriter() = default;
 };
 
