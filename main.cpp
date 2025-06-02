@@ -146,6 +146,7 @@ struct WebSocketBehavior
 
         */
 
+        //TODO offload this later
         if (parsed_message.action == "start_signin") {
         /*
          *Parse input for validity here, reject bad characters

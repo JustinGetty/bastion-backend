@@ -17,6 +17,7 @@
 #include <algorithm>
 #include "database_comm_v2.h"
 #include <openssl/sha.h>
+#include "site_data_cache.h"
 
 
 
@@ -172,6 +173,7 @@ public:
     }
 
     void execute() override {
+
         if (is_secure_mode_ == false) {
             //TODO validate approval BOOL and add to request
             std::cout << "[INFO] Executing regular validation work for: " << id_ << std::endl;
@@ -206,6 +208,9 @@ public:
                 std::cout << "[INFO] Aborting signin.\n";
                 return;
             }
+            std::string uname_str(data_from_storage->username);
+            site_data_cache::update_cache_flag(&uname_str, true);
+
             std::cout << "[INFO] Data pulled from storage with id: " << data_from_storage->connection_id << "\n";
 
             unsigned char decrypted_sym_iv[KEY_SIZE + IV_SIZE] = {0};
@@ -342,6 +347,9 @@ public:
                 return;
             }
             std::cout << "[INFO] Data pulled from storage with id: "     << data_from_storage->connection_id << "\n";
+
+            std::string uname_str(data_from_storage->username);
+            site_data_cache::update_cache_flag(&uname_str, true);
 
             int decrypted_token_len;
             token decrypted_token;

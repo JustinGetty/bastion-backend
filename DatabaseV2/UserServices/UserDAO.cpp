@@ -281,7 +281,7 @@ bool UserDAO::getUsernameExists(const std::string username) {
     if (sqlite3_bind_text(stmtCheckUsernameExists, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         std::cerr << "[ERROR] Failed to bind username for statement: stmtCheckUsernameExists\n";
     }
-    if (sqlite3_bind_text(stmtCheckUsernameExists, 1, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmtCheckUsernameExists, 2, username.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) {
         std::cerr << "[ERROR] Failed to bind username for statement: stmtCheckUsernameExists\n";
     }
 

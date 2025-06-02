@@ -4,19 +4,13 @@
 
 #include "../Headers/handler_functionality.h"
 #include "global_thread_pool_tmp.h"
-
+#include "site_data_cache.h"
 //TODO make this an object with more comprehensive functions
 //TODO make this NOT pmr, NEED FUCKING MUTEX
 std::pmr::unordered_map<std::string, std::string> user_recovery_codes_storage{};
 
 
-/* TODO
- allocate this on heap, make full class for it.
- it will be unordered_map of "cache" objects.
- every time a signin request is approved or denied, update cache
- flag to whether it should pull new data or not.
- */
-
+//TODO make the querys references
 
 namespace nlohmann {
     inline void to_json(json& j, site_data_for_mobile const& data) {
@@ -72,11 +66,13 @@ std::string get_site_data_helper(std::string query) {
     std::string username = parse_query_parameter(query, "username");
     std::cout << "[INFO] Get site data for: username = " << username << "\n";
 
+
     std::vector<site_data_for_mobile> site_data;
-    STATUS get_site_data_status = get_site_data_for_mobile(&username, &site_data);
+    bool is_new_site_data = site_data_cache::check_flag_update_and_fetch_site_data(&username, &site_data);
+    std::cout << "[INFO] Site data is new: " << is_new_site_data << "\n";
 
     nlohmann::json resp;
-    resp["status"]    = (get_site_data_status == SUCCESS ? "valid" : "error");
+    resp["status"]    = "valid";
     resp["site_data"] = site_data;
     std::string body = resp.dump();
     return body;
@@ -252,7 +248,6 @@ std::string signin_response_helper(std::string received_json) {
         }
 
         g_workQueue.push(new MyValidationWork(true, 1, 1, connection_id, token_hash_encoded, "catdogahh", approved_request, false, "NO_EMAIL"));
-
         return R"({"status":"valid"})";
     }
 

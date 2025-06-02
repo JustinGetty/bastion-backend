@@ -57,6 +57,8 @@ add_library(bastion_data STATIC
         async_http/apiHandlerBoostPool.cpp
         async_http/handler_functionality.cpp
 
+        SiteData/site_data_cache.cpp
+
 )
 
 # Specify include directories for the bastion_data library.
