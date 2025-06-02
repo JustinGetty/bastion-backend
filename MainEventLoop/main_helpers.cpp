@@ -12,6 +12,8 @@
 #include "databaseq.h"
 #include <bastion_data.h>
 
+#include "database_comm_v2.h"
+
 std::string generate_transaction_id() {
     std::array<unsigned char, 16> bytes;
 
@@ -31,7 +33,7 @@ std::string generate_transaction_id() {
 
 //TODO make sure when client registers on our site they create a spa id!!!
 STATUS verify_spa_and_get_site_id(std::string spa_id, int *site_id) {
-    STATUS client_id_status = get_client_id_from_spa_id(&spa_id, site_id);
+    STATUS client_id_status = get_site_id_by_spa_id_v2(&spa_id, site_id);
     if (client_id_status != SUCCESS) {
         std::cout << "[INFO] Client ID retrieval failed.\n";
         return DATABASE_FAILURE;

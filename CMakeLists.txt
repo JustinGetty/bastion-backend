@@ -49,12 +49,14 @@ add_library(bastion_data STATIC
         DatabaseV2/UserServices/UserDAO.cpp
         DatabaseV2/MobileDeviceServices/DeviceDAO.cpp
         DatabaseV2/EmailServices/EmailDAO.cpp
+        DatabaseV2/SiteServices/SiteDAO.cpp
 
         AWS_SES_LAMBDA/AWS_manager.cpp
         AWS_SES_LAMBDA/EmailSys.cpp
 
         async_http/apiHandlerBoostPool.cpp
         async_http/handler_functionality.cpp
+
 )
 
 # Specify include directories for the bastion_data library.

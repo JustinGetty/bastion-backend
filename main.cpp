@@ -344,9 +344,6 @@ int main()
     STATUS start_status = start_db_comm();
 
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    setup_threads();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     // Attach WebSocket route
     // equivalant to app.open = XX, app.close = XX
     app.ws<ConnectionData>("/*", {.open = &WebSocketBehavior::open,

@@ -47,5 +47,11 @@ int SiteDAO::getClientIdBySpaId(const std::string spa_id) {
     sqlite3_reset(stmtGetSiteIdBySpaId);
     sqlite3_clear_bindings(stmtGetSiteIdBySpaId);
 
-    if (sqlite3_)
+    if (sqlite3_bind_text(stmtGetSiteIdBySpaId, 1, spa_id.c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
+        std::cerr << "[ERROR] Failed to bind statement: stmtGetSiteIdBySpaId\n";
+
+    if (sqlite3_step(stmtGetSiteIdBySpaId) == SQLITE_ROW) {
+        return sqlite3_column_int(stmtGetSiteIdBySpaId, 0);
+    }
+    return -1;
 }

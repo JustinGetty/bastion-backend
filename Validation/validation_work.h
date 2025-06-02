@@ -258,7 +258,8 @@ public:
                 if (challenge_verification_status != SUCCESS) {
                     std::cout << "[INFO] Challenge codes do not match.\n";
                     std::string failure_msg = R"({"status": "rejected"})";
-                    STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
+                    std::string uname_str(data_from_storage->username);
+                    STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, false);
                     data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
                     return;
                 }
@@ -287,14 +288,16 @@ public:
                 } else if (is_approved_ == false) {
                     success_msg = R"({"status": "rejected"})";
                 }
-                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, is_approved_);
+                std::string uname_str(data_from_storage->username);
+                STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, is_approved_);
                 ws->send(success_msg, uWS::OpCode::TEXT);
                 return;
 
             } else {
                 printf("[INFO] Token verification failed. SignIn rejected.\n");
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
+                std::string uname_str(data_from_storage->username);
+                STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, false);
                 std::string failure_msg = R"({"status": "rejected"})";
                 ws->send(failure_msg, uWS::OpCode::TEXT);
             }
@@ -382,7 +385,8 @@ public:
                 if (challenge_verification_status != SUCCESS) {
                     std::cout << "[INFO] Challenge codes do not match.\n";
                     std::string failure_msg = R"({"status": "rejected"})";
-                    STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
+                    std::string uname_str(data_from_storage->username);
+                    STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, false);
                     data_from_storage->ws->send(failure_msg, uWS::OpCode::TEXT);
                     return;
                 }
@@ -413,14 +417,16 @@ public:
                 } else if (is_approved_ == false) {
                     success_msg = R"({"status": "rejected"})";
                 }
-                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, is_approved_);
+                std::string uname_str(data_from_storage->username);
+                STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, is_approved_);
                 ws->send(success_msg, uWS::OpCode::TEXT);
                 return;
 
             } else {
                 printf("[INFO] Token verification failed. SignIn rejected.\n");
                 uWS::WebSocket<false, true, ConnectionData> *ws = data_from_storage->ws;
-                STATUS added_to_db = insert_request(data_from_storage->site_id, &data_from_storage->username, false);
+                std::string uname_str(data_from_storage->username);
+                STATUS added_to_db = insert_site_request_v2(&data_from_storage->site_id, &uname_str, false);
                 std::string failure_msg = R"({"status": "rejected"})";
                 ws->send(failure_msg, uWS::OpCode::TEXT);
             }

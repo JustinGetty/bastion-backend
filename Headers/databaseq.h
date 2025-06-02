@@ -48,7 +48,7 @@ void print_hex(unsigned char *data, int length);
 //STATUS get_device_token_by_username(bastion_username* username, apns_token *device_token_out);
 
 //this goes into SiteDAO
-STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id);
+//STATUS get_client_id_from_spa_id(std::string *spa_id, int *client_id);
 STATUS insert_request(const int site_id, bastion_username* username, const int approved);
 
 #endif

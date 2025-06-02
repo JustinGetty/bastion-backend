@@ -29,6 +29,8 @@ STATUS store_user_priv_key_by_username_v2(std::string *username, priv_key_w_leng
 STATUS get_seed_phrase_hash_v2(std::string *username, seed_phrase_hash* seed_phrase_out);
 STATUS get_sym_enc_auth_token_v2(std::string *username, token_sec* auth_token_out);
 STATUS get_device_token_v2(std::string *username, std::string *device_token_out);
+STATUS insert_site_request_v2(int *site_id, std::string *username, bool approved);
+STATUS get_site_id_by_spa_id_v2(std::string *spa_id, int* site_id);
 
 
 #endif //DATABASE_COMM_V2_H

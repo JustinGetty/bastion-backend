@@ -145,3 +145,20 @@ STATUS get_device_token_v2(std::string *username, std::string *device_token_out)
     *device_token_out = future_.get();
     return SUCCESS;
 }
+
+STATUS insert_site_request_v2(int *site_id, std::string *username, bool approved) {
+    if (approved == true) {
+        auto future_ = g_dbService->insertReqInDB(*site_id, *username, 1);
+        future_.get();
+        return SUCCESS;
+    }
+    auto future_ = g_dbService->insertReqInDB(*site_id, *username, 0);
+    future_.get();
+    return SUCCESS;
+}
+
+STATUS get_site_id_by_spa_id_v2(std::string *spa_id, int* site_id) {
+    auto future_ = g_dbService->getSiteIDBySPA(*spa_id);
+    *site_id = future_.get();
+    return SUCCESS;
+}
