@@ -286,6 +286,7 @@ private:
                 dispatch_async(query, [this](const std::string& q) {return regular_key_helper(q);});
                 return;
             }
+            //TODO issue is that we are not sending username back to mobile after recovery!!
             if (path == "/rec_by_seed") {
                 dispatch_async(query, [this](const std::string& q) {return recover_by_seed_helper(q);});
                 return;
@@ -293,6 +294,11 @@ private:
             if (path == "/rec_by_code") {
                 /* SEE TODO AT TOP
                  * Requires username and code from email
+                 *STEPS:
+                 * 1. POST to generate the code
+                 * 2. Send the code to the email that's in DB
+                 * 3. they send get req to this endpoint that will either return
+                 * their new user info or invalid. switch on status
                  */
                 return;
             }

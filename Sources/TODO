@@ -1,20 +1,12 @@
-1. Move cryptography and data_base comm to the library project once implemented fully
-2. Mobile comm daemon ( https reqs) - DONE
-3. Signup process (starts with phone) - DONE
-3.5 Sign in/up requests need to come from specific site - DONE
+1. Move cryptography and data_base comm to the library project once implemented fully, NAMESPACE!!
 4. make shit CONST where it can be
-5. all sensitive memory should be erased with explicit_bzero()
-6. https daemon should also have support for user account creation from the app - DONE
+5. all sensitive memory should be erased with explicit_bzero(), especially mem that held keys
 7. make it so you can have 2 accounts udner 1 bastion account, switch between user id forwarded
 8. Move shit to heap to avoid stack overflow, especially in queues
 9. Server side "keep signed in", if sign in request is from same ip and < 30 or 60 days, approve without mobile approval
-10. Everything goes int test, espcially cryptography
 11. Spam filter, dont even send requests from random ip's. Use cloudflare too. If sus, ping phone in app but dont send push. Only push as notif if legit. Mark as weird if weird
-12. Make sure to zero out any memory that previously held keys
 13. Add threadsafe logger or mutex at least
-14. Fix load issues
 15. Give user choice of more secure or less secure recovery
-16. Make sure auth token is stored hashed and enc with sym key on server side, super important - DONE
 17. Check username isnt too long, some are null terminated in places, try and switch all to string. Also make username length max 2 less than bastion_username size
 18. Prepend/Append unique id to usernames to help prevent accidental signins
 19. It tries to store the device token like 20 times wtf
@@ -33,3 +25,4 @@
 25. Build logger output namespace
 26. Side note, need to make demo approval cdn window for development
 27. Ensure device token is sent, add fallbacks
+28. Everything in DB encrypted with server side key!!

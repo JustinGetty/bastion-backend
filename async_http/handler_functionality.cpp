@@ -184,13 +184,10 @@ std::string recover_by_seed_helper(std::string query) {
         std::cerr << "[ERROR] Username not provided in query" << std::endl;
         return R"({"status": "username_missing"})";
     }
-    bastion_username temp_username{};
-    //TODO fucked!
-    memcpy(temp_username, username.c_str(), username.length());
 
 
     recovered_sec_user_outbound_data outbound_data{};
-    STATUS recover_user_stat = recover_user_by_seed_phrase(temp_username, seed, &outbound_data);
+    STATUS recover_user_stat = recover_user_by_seed_phrase(username, seed, &outbound_data);
     if (recover_user_stat != SUCCESS) {
         std::cerr << "[ERROR] Failed to create new user.\n";
         return R"({"status": "server_failure"})";
@@ -203,6 +200,7 @@ std::string recover_by_seed_helper(std::string query) {
     }
 
     std::cout << "[INFO] Username valid, user added.\n";
+    std::cout << "[DEBUG] Sending data for seed recovery: \n" << outbound_response << "\n";
     return outbound_response;
 }
 

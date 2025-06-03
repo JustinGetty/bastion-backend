@@ -730,6 +730,7 @@ async_http/mobile_api_handler.o: async_http/mobile_api_handler.cpp.o
 
 # target to build an object file
 async_http/mobile_api_handler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_data.dir/build.make CMakeFiles/bastion_data.dir/async_http/mobile_api_handler.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_auth.dir/build.make CMakeFiles/bastion_auth.dir/async_http/mobile_api_handler.cpp.o
 .PHONY : async_http/mobile_api_handler.cpp.o
 
@@ -738,6 +739,7 @@ async_http/mobile_api_handler.i: async_http/mobile_api_handler.cpp.i
 
 # target to preprocess a source file
 async_http/mobile_api_handler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_data.dir/build.make CMakeFiles/bastion_data.dir/async_http/mobile_api_handler.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_auth.dir/build.make CMakeFiles/bastion_auth.dir/async_http/mobile_api_handler.cpp.i
 .PHONY : async_http/mobile_api_handler.cpp.i
 
@@ -746,6 +748,7 @@ async_http/mobile_api_handler.s: async_http/mobile_api_handler.cpp.s
 
 # target to generate assembly for a file
 async_http/mobile_api_handler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_data.dir/build.make CMakeFiles/bastion_data.dir/async_http/mobile_api_handler.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bastion_auth.dir/build.make CMakeFiles/bastion_auth.dir/async_http/mobile_api_handler.cpp.s
 .PHONY : async_http/mobile_api_handler.cpp.s
 

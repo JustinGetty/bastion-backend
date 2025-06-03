@@ -55,7 +55,7 @@ STATUS sym_encrypt(const unsigned char *plaintext, int *plaintext_len,
 
 // SEED PHRASE -----------------------------------------------------
 void compute_seed_phrase_hash(std::string seed_phrase, int seed_phrase_size, seed_phrase_hash seed_phrase_hash_);
-STATUS verify_seed_phrase(bastion_username username, const std::string received_seed_phrase);
+STATUS verify_seed_phrase(std::string username, const std::string received_seed_phrase);
 
 // GENERIC ----------------------------------------------------------
 std::string base64_encode(const unsigned char* buffer, size_t length);

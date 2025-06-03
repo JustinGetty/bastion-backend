@@ -11,9 +11,7 @@
 #include "database_comm_v2.h"
 
 //TODO need to standardize seed phrase!!!
-STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_phrase, recovered_sec_user_outbound_data *outbound_data) {
-    bastion_username uname_local{};
-    memcpy(uname_local, username, sizeof(username));
+STATUS recover_user_by_seed_phrase(std::string username, std::string seed_phrase, recovered_sec_user_outbound_data *outbound_data) {
     STATUS verification_status = verify_seed_phrase(username, seed_phrase);
     if (verification_status != SUCCESS) {
         std::cout << "[INFO] Verificaiton of seed phrase failed.\n";
@@ -40,7 +38,7 @@ STATUS recover_user_by_seed_phrase(bastion_username username, std::string seed_p
     seed_cipher.deriveKey();
 
     token_sec token_enc{};
-    std::string uname_str(uname_local);
+    std::string uname_str = username;
     STATUS ret_enc_token_status = get_sym_enc_auth_token_v2(&uname_str, &token_enc);
     if (ret_enc_token_status != SUCCESS) {
         std::cerr << "[ERROR] Failed to get user token enc\n";

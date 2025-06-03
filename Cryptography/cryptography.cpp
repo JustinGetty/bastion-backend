@@ -532,14 +532,11 @@ STATUS constant_time_compare_seed_phrase(const seed_phrase_hash a, const seed_ph
    3. Comparing the two hashes in constant time.
    Both the stored and received tokens use fixed-width arrays.
    */
-STATUS verify_seed_phrase(bastion_username username, const std::string received_seed_phrase) {
-    seed_phrase_hash stored_hash;
-    seed_phrase_hash computed_hash;
-    bastion_username uname_local{};
-    memcpy(uname_local, username, sizeof(username));
-    std::string uname_local_str(uname_local);
-    //need to implement get_token_hash
-    if (get_seed_phrase_hash_v2(&uname_local_str, &stored_hash) != SUCCESS) {
+STATUS verify_seed_phrase(const std::string username, const std::string received_seed_phrase) {
+    seed_phrase_hash stored_hash{};
+    seed_phrase_hash computed_hash{};
+    std::string lcl_username = username;
+    if (get_seed_phrase_hash_v2(&lcl_username, &stored_hash) != SUCCESS) {
         fprintf(stderr, "[ERROR] Failed to retrieve stored token hash for username %d.\n", username);
         return CRYPTO_FAILURE;
     }

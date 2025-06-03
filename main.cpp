@@ -19,6 +19,7 @@
 #include "Headers/validate_username.h"
 #include "main_helpers.h"
 #include "Headers/database_comm_v2.h"
+#include "Headers/site_data_cache.h"
 
 #define EMPTY_USERNAME "NOTSET"
 
@@ -330,11 +331,12 @@ int main()
 {
     uWS::App app;
 
+    site_data_cache::ensureReserved(50'000);
+
     /*
     create thread pool to do the work for each connection
     i.e get data, handle data, etc.
     */
-
     ConnThreadPool local_thread_pool;
     g_connThreadPool = &local_thread_pool;
 

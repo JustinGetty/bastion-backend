@@ -8,6 +8,9 @@
 std::shared_mutex site_data_cache::mtx;
 std::unordered_map<std::string, site_data_cache_object> site_data_cache::site_data_cache_map;
 
+void site_data_cache::ensureReserved(size_t count) {
+    site_data_cache_map.reserve(count);
+}
 
 void site_data_cache::update_cache_flag(std::string *username, bool flag) {
     std::lock_guard<std::shared_mutex> lock(mtx);
